@@ -1,0 +1,1 @@
+"""Validazione dei risultati estratti."""
