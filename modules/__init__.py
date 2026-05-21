@@ -1,0 +1,1 @@
+"""Moduli applicativi bandi-scanner."""
