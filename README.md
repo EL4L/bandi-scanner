@@ -19,13 +19,22 @@ copy .env.example .env
 
 Modifica `.env` e imposta `ANTHROPIC_API_KEY`.
 
+## Database (Fase 2)
+
+```bash
+python db/init_db.py
+```
+
+Crea o aggiorna le tabelle in `db/bandi.db` (clienti, bandi, match_results).
+
 ## Avvio
 
 ```bash
 streamlit run app.py
 ```
 
-Carica un PDF bando dalla UI. Il flusso esegue: upload → estrazione testo (PyMuPDF) → chiamata Claude → validazione JSON.
+- **Estrazione bandi:** upload PDF → testo → (opzionale) estrazione AI → validazione JSON.
+- **Profilo cliente:** form anagrafica, lista clienti, modifica ed eliminazione (RF-001).
 
 ## Test Fase 1 (PDF in `data/test_pdfs/`)
 
