@@ -97,6 +97,15 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 
 ---
 
+## Scoring matching (Fase 3)
+
+| Data | Modifica |
+|------|----------|
+| 2026-05-21 | Implementazione `calculate_score` in `modules/matcher.py`: regione 30, ATECO 40 (20 se solo prefisso 2 cifre), dimensione 20, fatturato 10. Regioni vuote o `"tutte"` → pieno; dimensione vuota → pieno; `ateco_aperto_a_tutti` → pieno ATECO. |
+| 2026-05-21 | Match su `attivita_ammesse`: senza codici ATECO nel bando, punteggio settore 15 (incerto) / 15 (1 parola) / 30 (≥2 parole) vs `descrizione_attivita` cliente; flag dashboard *compatibilità settore da verificare*. Ricalcolo match al salvataggio cliente (`run_matching_for_all_bandi`). |
+
+---
+
 ## Prossimi passi (log)
 
 - [ ] Ritestare **Complesso.pdf** e **Semplice.pdf** con schema v2.0 e registrare esito campo per campo
@@ -106,3 +115,18 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 ---
 
 *Le voci con timestamp generate da `app.py` o `scripts/test_phase1.py --with-api` vengono aggiunte automaticamente in fondo a questo file durante l’uso.*
+
+### Semplice.pdf — 2026-05-21 17:46:13
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
+- **Note:** Validazione: 0 errori, 27% campi vuoti
+
+### Semplice.pdf — 2026-05-21 17:53:14
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
+- **Note:** Validazione: 0 errori, 27% campi vuoti
+
+### Semplice.pdf — 2026-05-21 19:11:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
+- **Note:** Validazione: 0 errori, 27% campi vuoti

@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS clienti (
     ragione_sociale TEXT NOT NULL,
     p_iva TEXT,
     codice_ateco TEXT,
+    descrizione_attivita TEXT,
     regione TEXT,
     fatturato REAL,
     dimensione_impresa TEXT NOT NULL,
@@ -48,11 +49,23 @@ CREATE INDEX IF NOT EXISTS idx_match_bando ON match_results(bando_id);
 """
 
 
+def _migrate_schema(conn: sqlite3.Connection) -> None:
+    """Aggiunge colonne nuove su DB esistenti senza cancellare dati."""
+    cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(clienti)").fetchall()
+    }
+    if "descrizione_attivita" not in cols:
+        conn.execute(
+            "ALTER TABLE clienti ADD COLUMN descrizione_attivita TEXT"
+        )
+
+
 def init_database(db_path: Path | None = None) -> Path:
     path = db_path or DB_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(path) as conn:
         conn.executescript(SCHEMA_SQL)
+        _migrate_schema(conn)
         conn.commit()
     return path
 

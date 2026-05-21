@@ -61,19 +61,21 @@ def create_cliente(
     regione: str,
     fatturato: float,
     dimensione_impresa: str,
+    descrizione_attivita: str = "",
 ) -> int:
     with get_connection() as conn:
         cur = conn.execute(
             """
             INSERT INTO clienti (
-                ragione_sociale, p_iva, codice_ateco, regione,
-                fatturato, dimensione_impresa
-            ) VALUES (?, ?, ?, ?, ?, ?)
+                ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
+                regione, fatturato, dimensione_impresa
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 ragione_sociale.strip(),
                 p_iva.strip() or None,
                 codice_ateco.strip() or None,
+                descrizione_attivita.strip() or None,
                 regione.strip(),
                 fatturato,
                 dimensione_impresa,
@@ -87,8 +89,8 @@ def list_clienti() -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
             """
-            SELECT id, ragione_sociale, p_iva, codice_ateco, regione,
-                   fatturato, dimensione_impresa, created_at
+            SELECT id, ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
+                   regione, fatturato, dimensione_impresa, created_at
             FROM clienti
             ORDER BY ragione_sociale COLLATE NOCASE
             """
@@ -112,6 +114,7 @@ def update_cliente(
     regione: str,
     fatturato: float,
     dimensione_impresa: str,
+    descrizione_attivita: str = "",
 ) -> bool:
     with get_connection() as conn:
         cur = conn.execute(
@@ -120,6 +123,7 @@ def update_cliente(
                 ragione_sociale = ?,
                 p_iva = ?,
                 codice_ateco = ?,
+                descrizione_attivita = ?,
                 regione = ?,
                 fatturato = ?,
                 dimensione_impresa = ?,
@@ -130,6 +134,7 @@ def update_cliente(
                 ragione_sociale.strip(),
                 p_iva.strip() or None,
                 codice_ateco.strip() or None,
+                descrizione_attivita.strip() or None,
                 regione.strip(),
                 fatturato,
                 dimensione_impresa,

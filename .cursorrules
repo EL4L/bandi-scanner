@@ -1,0 +1,20 @@
+# Regole di Sviluppo - Bandi AI Scanner
+
+Questo progetto è un AI-Agent per il monitoraggio e il matching di bandi pubblici.
+
+## Stack Tecnologico
+- Linguaggio: Python 3.12
+- Framework UI: Streamlit
+- Database: SQLite
+- AI Provider: Anthropic (Claude)
+
+## Documentazione di Riferimento
+- Specifica Tecnica: @Specifica_v1.3.md
+- Roadmap/Breakdown: @Breakdown.md
+
+## Regole Operative
+1. **Contesto:** Prima di scrivere qualsiasi codice, analizza sempre lo stato attuale rispetto al piano definito in @Breakdown.md.
+2. **Coerenza:** Assicurati che ogni nuovo codice sia coerente con le definizioni nello schema JSON indicato in @Specifica_v1.3.md.
+3. **Validazione:** Ogni task completato deve soddisfare i criteri di accettazione (RF) elencati nella specifica.
+4. **Logging:** Ricorda all'utente di aggiornare @logs/PROMPT_LOG.md e @logs/INCIDENTS.md dopo ogni modifica significativa al modulo AI o alla logica di estrazione.
+5. **Standard:** Segui la struttura di cartelle definita nella Fase 1 del Breakdown. Non creare file fuori posizione.

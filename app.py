@@ -1,3 +1,5 @@
+import json
+
 import streamlit as st
 from pathlib import Path
 
@@ -8,8 +10,20 @@ from modules.database import (
     delete_cliente,
     ensure_database,
     get_cliente,
+    get_connection,
     list_clienti,
+    save_bando_from_json,
     update_cliente,
+)
+from modules.matcher import (
+    count_bandi,
+    format_scadenza_italiana,
+    genera_scheda,
+    get_fonte_url,
+    load_dashboard_rows,
+    run_matching_for_all_bandi,
+    run_matching_for_bando,
+    settore_da_verificare,
 )
 from modules.extractor import (
     EmptyPDFException,
@@ -31,7 +45,125 @@ ensure_database()
 
 st.title("Bandi Scanner")
 
-tab_estrazione, tab_clienti = st.tabs(["Estrazione bandi", "Profilo cliente"])
+tab_dashboard, tab_estrazione, tab_clienti = st.tabs(
+    ["Dashboard", "Estrazione bandi", "Profilo cliente"]
+)
+
+
+def render_disclaimer(bando_payload: dict) -> None:
+    """Disclaimer obbligatorio e link fonte ufficiale se disponibile."""
+    st.warning(
+        "⚠️ Dati estratti tramite AI — verificare sempre sulla fonte ufficiale "
+        "prima di procedere."
+    )
+    url = get_fonte_url(bando_payload)
+    if url:
+        st.markdown(f"[Apri la fonte ufficiale]({url})")
+
+
+def render_colored_progress(score: int) -> None:
+    """Barra di progresso con colore verde / giallo / rosso in base allo score."""
+    if score > 70:
+        color = "#22c55e"
+    elif score >= 40:
+        color = "#eab308"
+    else:
+        color = "#ef4444"
+    pct = max(0, min(100, score))
+    st.markdown(
+        f'<div style="background:#e5e7eb;border-radius:6px;height:14px;margin:4px 0;">'
+        f'<div style="width:{pct}%;background:{color};height:14px;'
+        f'border-radius:6px;"></div></div>'
+        f'<span style="font-size:0.9rem;color:#374151;">Compatibilità: {score}/100</span>',
+        unsafe_allow_html=True,
+    )
+
+
+with tab_dashboard:
+    st.header("Dashboard alert")
+    st.caption("RF-005 / RF-006 — Match bando↔cliente e schede sintetiche.")
+
+    with get_connection() as conn:
+        n_bandi = count_bandi(conn)
+        if n_bandi == 0:
+            st.info(
+                "Nessun bando in archivio. Carica il primo PDF dalla scheda "
+                "**Estrazione bandi** per popolare la dashboard."
+            )
+        else:
+            rows = load_dashboard_rows(conn)
+            if not rows:
+                st.warning(
+                    "Ci sono bandi salvati ma nessun match. Aggiungi almeno un "
+                    "profilo cliente o ricarica un bando per ricalcolare gli abbinamenti."
+                )
+            else:
+                by_bando: dict[int, dict] = {}
+                for row in rows:
+                    bid = row["bando_id"]
+                    if bid not in by_bando:
+                        by_bando[bid] = {
+                            "titolo": row["bando_titolo"] or f"Bando #{bid}",
+                            "ente": row["bando_ente"],
+                            "data_scadenza": row["data_scadenza"],
+                            "json_completo": row["json_completo"],
+                            "matches": [],
+                            "max_score": row["score"],
+                        }
+                    by_bando[bid]["matches"].append(row)
+                    by_bando[bid]["max_score"] = max(
+                        by_bando[bid]["max_score"], row["score"]
+                    )
+
+                for bid in sorted(
+                    by_bando.keys(),
+                    key=lambda x: by_bando[x]["max_score"],
+                    reverse=True,
+                ):
+                    info = by_bando[bid]
+                    titolo_exp = info["titolo"]
+                    max_sc = int(info["max_score"])
+                    with st.expander(f"{titolo_exp} — score max {max_sc}/100"):
+                        render_colored_progress(max_sc)
+                        if info["data_scadenza"]:
+                            scad_fmt = (
+                                format_scadenza_italiana(info["data_scadenza"])
+                                or info["data_scadenza"]
+                            )
+                            st.markdown(f"**Scadenza:** {scad_fmt}")
+                        if info["ente"]:
+                            st.markdown(f"**Ente:** {info['ente']}")
+
+                        st.markdown("**Clienti compatibili**")
+                        try:
+                            payload = json.loads(info["json_completo"])
+                        except (json.JSONDecodeError, TypeError):
+                            payload = {}
+                        for m in sorted(
+                            info["matches"],
+                            key=lambda x: x["score"],
+                            reverse=True,
+                        ):
+                            cliente_match = {
+                                "codice_ateco": m.get("cliente_codice_ateco"),
+                                "descrizione_attivita": m.get(
+                                    "cliente_descrizione_attivita"
+                                ),
+                            }
+                            line = (
+                                f"- **{m['cliente_nome']}** — score "
+                                f"{int(m['score'])}/100"
+                            )
+                            if settore_da_verificare(payload, cliente_match):
+                                line += (
+                                    " — ⚠️ *compatibilità settore da verificare*"
+                                )
+                            st.markdown(line)
+
+                        st.divider()
+                        st.subheader("Bando in 1 minuto")
+                        render_disclaimer(payload)
+                        st.markdown(genera_scheda(payload))
 
 
 def render_cliente_form(
@@ -49,6 +181,14 @@ def render_cliente_form(
             "Codice ATECO",
             value=d.get("codice_ateco", "") or "",
             help='Formato standard, es. "62.01"',
+        )
+        descrizione_attivita = st.text_area(
+            "Descrizione attività",
+            value=d.get("descrizione_attivita", "") or "",
+            help=(
+                "Descrivi l'attività in parole (es. noleggio strutture per eventi). "
+                "Serve per bandi con attivita_ammesse ma senza codici ATECO numerici."
+            ),
         )
         regione = st.selectbox(
             "Regione *",
@@ -89,6 +229,7 @@ def render_cliente_form(
         "ragione_sociale": ragione_sociale,
         "p_iva": p_iva,
         "codice_ateco": codice_ateco,
+        "descrizione_attivita": descrizione_attivita,
         "regione": regione,
         "fatturato": fatturato,
         "dimensione_impresa": dimensione_impresa,
@@ -104,7 +245,12 @@ with tab_clienti:
     if nuovo:
         try:
             cid = create_cliente(**nuovo)
-            st.success(f"Cliente salvato (id {cid}): {nuovo['ragione_sociale']}")
+            with get_connection() as conn:
+                run_matching_for_all_bandi(conn)
+            st.success(
+                f"Cliente salvato (id {cid}): {nuovo['ragione_sociale']}. "
+                "Abbinamenti ricalcolati."
+            )
             st.rerun()
         except Exception as exc:
             st.error(f"Errore salvataggio: {exc}")
@@ -138,7 +284,11 @@ with tab_clienti:
                 if aggiornato:
                     try:
                         if update_cliente(cliente_id, **aggiornato):
-                            st.success("Cliente aggiornato.")
+                            with get_connection() as conn:
+                                run_matching_for_all_bandi(conn)
+                            st.success(
+                                "Cliente aggiornato. Abbinamenti ricalcolati."
+                            )
                             st.rerun()
                         else:
                             st.error("Aggiornamento non riuscito.")
@@ -220,6 +370,21 @@ with tab_estrazione:
 
                         if not result["errors"] and not result["needs_manual_review"]:
                             st.success("Validazione completata senza errori")
+
+                        if not result["errors"]:
+                            try:
+                                bando_id = save_bando_from_json(data)
+                                with get_connection() as conn:
+                                    run_matching_for_bando(bando_id, conn)
+                                st.success(
+                                    f"Bando salvato (id {bando_id}) e matching "
+                                    "eseguito con tutti i clienti."
+                                )
+                            except Exception as exc:
+                                st.error(f"Salvataggio bando o matching fallito: {exc}")
+                                log_error(
+                                    f"Salvataggio/matching bando {safe_name}: {exc}"
+                                )
 
                         ok_fields, null_fields = fields_status(data)
                         log_prompt_run(
