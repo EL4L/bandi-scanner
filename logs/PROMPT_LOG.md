@@ -1,40 +1,41 @@
-# PROMPT_LOG — Estrazione bandi
+# PROMPT LOG - MLPG Project
+Registro delle modifiche e dei test effettuati sui prompt.
 
-Registro delle estrazioni e dei test Fase 1. Ogni upload o esecuzione di `scripts/test_phase1.py --with-api` aggiunge una voce sotto.
+## [15 Maggio 2026] - Setup Iniziale
+- **Azione:** Creato `system_mlpg.md` basato sulla Specifica v3.0.
+- **Obiettivo:** Definire il comportamento del tutor e il formato JSON di output.
+- **Risultato atteso:** L'LLM deve restituire esattamente 3 moduli validabili via Pydantic.
 
-## Prompt di sistema
+## [15 Maggio 2026] - Prompt aggiornati
+- **Azione:** Aggiornato prompt del tutor per richiedere risposta JSON-only e `spiegazione_semplificata` in caso di confusione.
+- **Obiettivo:** Assicurare che il modello non generi testo libero oltre al JSON e che fornisca spiegazioni semplificate quando l'utente dice di non capire.
+- **Risultato atteso:** Risposta valida JSON con campo `spiegazione_semplificata` e nessun modulo rigenerato inutilmente.
 
-- **File:** `prompts/system_extraction.md`
-- **Versione:** 2.0 (Fase 1)
-- **Modifiche:** schema annidato `{"bando": {...}}`, nuovi campi (attivita_ammesse, note_esclusioni, dimensione_impresa oggetto), `null` per dati assenti
+- **Azione:** Aggiunta logica di parsing in `src/generator.py` per estrarre JSON da risposte contenenti blocchi markdown.
+- **Obiettivo:** Rendere robusto il processo di validazione anche quando Gemini ritorna codice o testo extra.
+- **Risultato atteso:** Valutazioni e spiegazioni alternative processate correttamente senza errori di parsing.
 
-## Iterazioni prompt
+- **Azione:** Aggiunta prompt di chiusura empatica personalizzata in `genera_saluto_finale()`.
+- **Obiettivo:** Generare un saluto finale motivante e rassicurante, diverso se l'utente ha interrotto per dubbi.
+- **Risultato atteso:** Saluto umano in italiano, con tono incoraggiante e rassicurante.
 
-| Data | Versione | Modifica | Motivo | Risultato test |
-|------|----------|----------|--------|----------------|
-| 2026-05-21 | 1.0 | Prompt esterno con schema e regole RF-002 | Completamento Fase 1 | Eseguire test su PDF in `data/test_pdfs/` |
-| 2026-05-21 | 2.0 | Schema `bando` annidato + vincoli estrazione solo da testo | Allineamento spec Melanie | Ritestare Semplice/Complesso |
+## [19 Maggio 2026] - Prompt per spiegazioni mirate ai livelli intermedi/avanzati
+- **Azione:** Aggiornato `genera_spiegazione_alternativa()` perché risponda in modo differenziato secondo il livello `base/intermedio/avanzato`.
+- **Obiettivo:** Fornire spiegazioni più utili per utenti intermedi/avanzati usando esempio pratico e passaggi chiari.
+- **Risultato atteso:** L'AI fornisce una spiegazione mirata al livello e un output JSON strutturato con contenuti di supporto.
 
-## Estrazioni / test PDF
+- **Azione:** Modificato `main.py` per chiedere un dubbio specifico e passare quel contesto al prompt.
+- **Obiettivo:** Ridurre l'ambiguità del feedback dell'utente e indirizzare meglio la spiegazione alternativa.
+- **Risultato atteso:** Il tutor risponde a un punto preciso di confusione e non ripete un modulo inutile.
 
-<!-- Le voci vengono aggiunte automaticamente da app.py e scripts/test_phase1.py -->
+## [19 Maggio 2026] - Web interface e Streamlit
+- **Azione:** Creato `app.py` (Flask) e `streamlit_app.py` con interfaccia Streamlit.
+- **Obiettivo:** Rendere il tutor fruibile tramite browser con UI grafica e percorsi interattivi.
+- **Risultato atteso:** L’utente può usare il tutor via web, generare moduli e richiedere chiarimenti mirati senza terminale.
 
-### Semplice.pdf — 2026-05-21 10:17:40
-- **Campi estratti correttamente:** titolo, ente, ateco_aperto_a_tutti, regioni, dimensione_impresa, contributo_max, percentuale_fondo_perduto, spese_ammissibili, link_fonte
-- **Campi null/vuoti:** data_scadenza, codici_ateco, fatturato_min, fatturato_max
-- **Note:** Validazione: 1 errori, 31% campi vuoti
+- **Azione:** Aggiornato `requirements.txt` includendo `flask` e `streamlit`.
+- **Obiettivo:** Assicurare che l’ambiente supporti le nuove interfacce web.
+- **Risultato atteso:** Installazione completa delle dipendenze per eseguire sia Flask che Streamlit.
 
-### Semplice.pdf — 2026-05-21 10:51:31
-- **Campi estratti correttamente:** titolo, ente, ateco_aperto_a_tutti, regioni, dimensione_impresa, contributo_max, percentuale_fondo_perduto, spese_ammissibili, link_fonte
-- **Campi null/vuoti:** data_scadenza, codici_ateco, fatturato_min, fatturato_max
-- **Note:** Validazione: 1 errori, 31% campi vuoti
-
-### Semplice.pdf — 2026-05-21 11:01:45
-- **Campi estratti correttamente:** titolo, ente, ateco_aperto_a_tutti, regioni, dimensione_impresa, contributo_max, percentuale_fondo_perduto, spese_ammissibili, link_fonte
-- **Campi null/vuoti:** data_scadenza, codici_ateco, fatturato_min, fatturato_max
-- **Note:** Validazione: 1 errori, 31% campi vuoti
-
-### Semplice.pdf — 2026-05-21 11:44:46
-- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
-- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
-- **Note:** Validazione: 0 errori, 27% campi vuoti
+---
+*Aggiungi qui le prossime modifiche quando testerai i prompt su VS Code.*
