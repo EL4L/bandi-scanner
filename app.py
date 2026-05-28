@@ -1,5 +1,6 @@
 import json
 
+import pandas as pd
 import streamlit as st
 from pathlib import Path
 
@@ -24,6 +25,8 @@ from modules.matcher import (
     run_matching_for_all_bandi,
     run_matching_for_bando,
     settore_da_verificare,
+    bando_has_constraints,
+    get_score_breakdown,
 )
 from modules.extractor import (
     EmptyPDFException,
@@ -40,6 +43,22 @@ st.set_page_config(page_title="Bandi Scanner", layout="wide")
 ROOT = Path(__file__).resolve().parent
 TEMP_DIR = ROOT / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
+
+# Inject custom CSS theme if available
+css_path = ROOT / "assets" / "styles" / "theme.css"
+if css_path.exists():
+    try:
+        with open(css_path, "r", encoding="utf-8") as fh:
+            css = fh.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except Exception as exc:
+        # don't fail startup if CSS injection fails; log for debugging
+        try:
+            from modules.log_utils import log_error
+
+            log_error(f"Failed to inject CSS: {exc}")
+        except Exception:
+            pass
 
 ensure_database()
 
@@ -70,11 +89,11 @@ def render_colored_progress(score: int) -> None:
     else:
         color = "#ef4444"
     pct = max(0, min(100, score))
+    # Use CSS classes so theme.css can control contrast
     st.markdown(
-        f'<div style="background:#e5e7eb;border-radius:6px;height:14px;margin:4px 0;">'
-        f'<div style="width:{pct}%;background:{color};height:14px;'
-        f'border-radius:6px;"></div></div>'
-        f'<span style="font-size:0.9rem;color:#374151;">Compatibilità: {score}/100</span>',
+        f'<div class="compat-bar" style="margin:6px 0;">'
+        f'<div class="fill" style="width:{pct}%;background:{color};"></div></div>'
+        f'<span style="font-size:0.95rem;color:var(--text);">&nbsp;Compatibilità: {score}/100</span>',
         unsafe_allow_html=True,
     )
 
@@ -82,6 +101,30 @@ def render_colored_progress(score: int) -> None:
 with tab_dashboard:
     st.header("Dashboard alert")
     st.caption("RF-005 / RF-006 — Match bando↔cliente e schede sintetiche.")
+
+    col_action_left, col_action_right = st.columns(2)
+    with col_action_left:
+        if st.button("🔄 Ricalcola tutti i match"):
+            try:
+                with get_connection() as conn:
+                    run_matching_for_all_bandi(conn)
+                st.success("Ricalcolo completato.")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Ricalcolo fallito: {exc}")
+    with col_action_right:
+        with get_connection() as export_conn:
+            export_rows = load_dashboard_rows(export_conn)
+        if export_rows:
+            df_export = pd.DataFrame(export_rows)
+            st.download_button(
+                "📥 Esporta risultati CSV",
+                df_export.to_csv(index=False),
+                file_name="export_matching.csv",
+                mime="text/csv",
+            )
+        else:
+            st.info("Nessun risultato disponibile per l'esportazione.")
 
     with get_connection() as conn:
         n_bandi = count_bandi(conn)
@@ -159,6 +202,45 @@ with tab_dashboard:
                                     " — ⚠️ *compatibilità settore da verificare*"
                                 )
                             st.markdown(line)
+                            
+                            # --- INIZIO BREAKDOWN SCORE ---
+                            try:
+                                cliente_id = m.get("cliente_id")
+                                cliente_row_db = conn.execute(
+                                    "SELECT * FROM clienti WHERE id = ?",
+                                    (cliente_id,),
+                                ).fetchone()
+                                
+                                if cliente_row_db:
+                                    cliente_row = dict(cliente_row_db)
+                                else:
+                                    cliente_row = {
+                                        "id": cliente_id,
+                                        "ragione_sociale": m.get("cliente_nome"),
+                                        "codice_ateco": m.get("cliente_codice_ateco"),
+                                        "regione": m.get("cliente_regione"),
+                                        "fatturato": m.get("cliente_fatturato"),
+                                        "dimensione_impresa": m.get("cliente_dimensione_impresa"),
+                                    }
+                                    
+                                breakdown = get_score_breakdown(payload, cliente_row)
+                                st.caption(
+                                    f"Breakdown — Regione: {breakdown['regione']}/30 | ATECO: {breakdown['ateco']}/40 | Dimensione: {breakdown['dimensione']}/20 | Fatturato: {breakdown['fatturato']}/10"
+                                )
+                                
+                                stored_score = int(m.get("score") or 0)
+                                if stored_score != int(breakdown["total"]):
+                                    st.warning(f"⚠️ Discrepanza: score salvato = {stored_score}, ricalcolato = {breakdown['total']}. Usa il pulsante 'Ricalcola tutti i match' in alto.")
+                            except Exception as e:
+                                st.error(f"Errore nel calcolo breakdown: {e}")
+
+                        # Avviso bandi senza vincoli
+                        try:
+                            if not bando_has_constraints(payload):
+                                st.warning("⚠️ Questo bando non contiene vincoli espliciti (regioni/ATECO). Lo score potrebbe non essere rilevante.")
+                        except Exception as e:
+                            st.error(f"Errore vincoli: {e}")
+                        # --- FINE BREAKDOWN SCORE ---
 
                         st.divider()
                         st.subheader("Bando in 1 minuto")
@@ -380,6 +462,63 @@ with tab_estrazione:
                                     f"Bando salvato (id {bando_id}) e matching "
                                     "eseguito con tutti i clienti."
                                 )
+
+                                bando_payload = data.get("bando", {}) if isinstance(data, dict) else {}
+                                contributo_max = bando_payload.get("contributo_max")
+                                percentuale_fondo_perduto = bando_payload.get(
+                                    "percentuale_fondo_perduto"
+                                )
+                                data_scadenza = bando_payload.get("data_scadenza")
+                                dimensione_impresa = bando_payload.get(
+                                    "dimensione_impresa", {}
+                                )
+                                if not isinstance(dimensione_impresa, dict):
+                                    dimensione_impresa = {}
+                                dimensioni_attive = [
+                                    key
+                                    for key, value in dimensione_impresa.items()
+                                    if value
+                                ]
+
+                                st.divider()
+                                st.subheader("Bando in 1 minuto")
+                                left, right = st.columns(2)
+                                with left:
+                                    if isinstance(contributo_max, (int, float)):
+                                        st.markdown(
+                                            f"**Contributo massimo:** {contributo_max:,.0f} €"
+                                        )
+                                    else:
+                                        st.markdown(
+                                            "**Contributo massimo:** Non disponibile"
+                                        )
+                                    if isinstance(percentuale_fondo_perduto, (int, float)):
+                                        st.markdown(
+                                            f"**% fondo perduto:** {percentuale_fondo_perduto:.0f}%"
+                                        )
+                                    else:
+                                        st.markdown(
+                                            "**% fondo perduto:** Non disponibile"
+                                        )
+                                with right:
+                                    if data_scadenza:
+                                        st.markdown(
+                                            f"**Scadenza:** {data_scadenza}"
+                                        )
+                                    else:
+                                        st.warning(
+                                            "Data di scadenza non disponibile o non trovata."
+                                        )
+                                    if dimensioni_attive:
+                                        st.markdown(
+                                            "**Dimensione impresa:** "
+                                            + ", ".join(dimensioni_attive)
+                                        )
+                                    else:
+                                        st.markdown(
+                                            "**Dimensione impresa:** Non specificata"
+                                        )
+                                render_disclaimer(data)
                             except Exception as exc:
                                 st.error(f"Salvataggio bando o matching fallito: {exc}")
                                 log_error(

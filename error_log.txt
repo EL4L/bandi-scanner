@@ -1,1 +1,2 @@
 
+[2026-05-28 18:11:21] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API

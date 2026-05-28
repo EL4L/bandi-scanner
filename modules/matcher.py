@@ -39,36 +39,29 @@ _MESI_IT = (
     "dicembre",
 )
 
-
 def _unwrap_bando(bando: dict[str, Any]) -> dict[str, Any]:
-    """Restituisce il dict interno 'bando' se presente."""
     inner = bando.get("bando")
     if isinstance(inner, dict):
         return inner
     return bando
-
 
 def _norm_str(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
 
-
 def _norm_list(value: Any) -> list[str]:
     if not isinstance(value, list):
         return []
     return [_norm_str(v) for v in value if _norm_str(v)]
 
-
 def _ateco_prefix_two(code: str | None) -> str:
-    """Primi due caratteri significativi del codice ATECO (es. '62' da '62.01')."""
     if not code:
         return ""
     c = _norm_str(code).replace(" ", "")
     if "." in c:
         return c.split(".", 1)[0][:2]
     return c[:2]
-
 
 def _dimensioni_ammesse(bando: dict[str, Any]) -> list[str]:
     dim = bando.get("dimensione") or bando.get("dimensione_impresa")
@@ -80,10 +73,8 @@ def _dimensioni_ammesse(bando: dict[str, Any]) -> list[str]:
         return [_norm_str(d) for d in dim if _norm_str(d)]
     return []
 
-
 def _regioni_bando(bando: dict[str, Any]) -> list[str]:
     return _norm_list(bando.get("regioni") or bando.get("regioni_ammesse"))
-
 
 def _codici_ateco_bando(bando: dict[str, Any]) -> list[str]:
     return _norm_list(
@@ -91,22 +82,17 @@ def _codici_ateco_bando(bando: dict[str, Any]) -> list[str]:
         or bando.get("codici_ateco_ammessi")
     )
 
-
 def _attivita_ammesse_bando(bando: dict[str, Any]) -> list[str]:
     return _norm_list(bando.get("attivita_ammesse"))
 
-
 def _tokenize(text: str) -> set[str]:
-    """Token significativi (>= 4 caratteri) per overlap attività–descrizione cliente."""
     return {
         m.group(0).lower()
         for m in _TOKEN_RE.finditer(text)
         if len(m.group(0)) >= 4
     }
 
-
 def _max_word_overlap(descrizione: str, attivita: list[str]) -> int:
-    """Massimo numero di parole in comune tra descrizione cliente e una voce attività."""
     cliente_tokens = _tokenize(descrizione)
     if not cliente_tokens or not attivita:
         return 0
@@ -117,9 +103,7 @@ def _max_word_overlap(descrizione: str, attivita: list[str]) -> int:
             best = common
     return best
 
-
 def bando_solo_attivita_ammesse(bando: dict[str, Any]) -> bool:
-    """True se il bando vincola il settore solo tramite attivita_ammesse (no codici ATECO)."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     if b.get("ateco_aperto_a_tutti") is True:
         return False
@@ -127,9 +111,7 @@ def bando_solo_attivita_ammesse(bando: dict[str, Any]) -> bool:
         return False
     return bool(_attivita_ammesse_bando(b))
 
-
 def settore_da_verificare(bando: dict[str, Any], cliente: dict[str, Any]) -> bool:
-    """True se il match sul settore è incerto e va controllato manualmente."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     if not bando_solo_attivita_ammesse(b):
         return False
@@ -140,9 +122,7 @@ def settore_da_verificare(bando: dict[str, Any], cliente: dict[str, Any]) -> boo
         return True
     return _max_word_overlap(desc, _attivita_ammesse_bando(b)) < 2
 
-
 def _score_attivita_ammesse(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
-    """Punteggio settore da attivita_ammesse e descrizione attività del cliente."""
     attivita = _attivita_ammesse_bando(bando)
     if not attivita:
         return 0
@@ -158,7 +138,6 @@ def _score_attivita_ammesse(bando: dict[str, Any], cliente: dict[str, Any]) -> i
         return SCORE_ATECO_ATTIVITA_PARZIALE
     return 0
 
-
 def _score_regione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     regioni = _regioni_bando(bando)
     if not regioni:
@@ -172,7 +151,6 @@ def _score_regione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     if cliente_regione.lower() in lowered:
         return WEIGHT_REGIONE
     return 0
-
 
 def _score_ateco(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     if bando.get("ateco_aperto_a_tutti") is True:
@@ -202,7 +180,6 @@ def _score_ateco(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
         return WEIGHT_ATECO
     return WEIGHT_ATECO
 
-
 def _score_dimensione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     ammesse = _dimensioni_ammesse(bando)
     if not ammesse:
@@ -215,7 +192,6 @@ def _score_dimensione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     if dim_cliente.lower() in {d.lower() for d in ammesse}:
         return WEIGHT_DIMENSIONE
     return 0
-
 
 def _score_fatturato(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     contributo_max = bando.get("contributo_max")
@@ -242,9 +218,25 @@ def _score_fatturato(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
         return WEIGHT_FATTURATO // 2
     return WEIGHT_FATTURATO
 
+def bando_has_constraints(payload: dict[str, Any]) -> bool:
+    bando = _unwrap_bando(payload)
+    ateco_aperto = bando.get("ateco_aperto_a_tutti", False)
+    codici_ateco = _codici_ateco_bando(bando)
+    regioni = _regioni_bando(bando)
+    fatturato_max = bando.get("fatturato_max")
+    dimensioni = _dimensioni_ammesse(bando)
+    
+    if codici_ateco and not ateco_aperto:
+        return True
+    if regioni and len(regioni) > 0 and "Tutta Italia" not in [r.title() for r in regioni]:
+        return True
+    if fatturato_max:
+        return True
+    if dimensioni and len(dimensioni) > 0 and len(dimensioni) < 4:
+        return True
+    return False
 
 def calculate_score(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
-    """Calcola lo score di compatibilità bando–cliente (0–100)."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     c = cliente if isinstance(cliente, dict) else {}
     total = (
@@ -253,11 +245,28 @@ def calculate_score(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
         + _score_dimensione(b, c)
         + _score_fatturato(b, c)
     )
+    if not bando_has_constraints(bando):
+        return 0
     return max(0, min(100, int(total)))
 
+def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dict[str, int]:
+    bando = _unwrap_bando(payload)
+    score_regione = _score_regione(bando, cliente)
+    score_ateco = _score_ateco(bando, cliente)
+    score_dim = _score_dimensione(bando, cliente)
+    score_fat = _score_fatturato(bando, cliente)
+    totale = score_regione + score_ateco + score_dim + score_fat
+    if not bando_has_constraints(payload):
+        totale = 0
+    return {
+        "regione": score_regione,
+        "ateco": score_ateco,
+        "dimensione": score_dim,
+        "fatturato": score_fat,
+        "total": max(0, min(100, int(totale)))
+    }
 
 def run_matching_for_bando(bando_id: int, conn: sqlite3.Connection) -> None:
-    """Esegue il matching di un bando con tutti i clienti e salva/aggiorna match_results."""
     try:
         row = conn.execute(
             "SELECT json_completo FROM bandi WHERE id = ?",
@@ -266,45 +275,31 @@ def run_matching_for_bando(bando_id: int, conn: sqlite3.Connection) -> None:
         if not row:
             log_error(f"run_matching_for_bando: bando {bando_id} non trovato")
             return
-
         payload = json.loads(row["json_completo"])
         bando_data = payload if isinstance(payload, dict) else {}
-
         clienti = conn.execute("SELECT * FROM clienti").fetchall()
         for cliente_row in clienti:
             cliente = dict(cliente_row)
             score = calculate_score(bando_data, cliente)
             existing = conn.execute(
-                """
-                SELECT id FROM match_results
-                WHERE cliente_id = ? AND bando_id = ?
-                """,
+                "SELECT id FROM match_results WHERE cliente_id = ? AND bando_id = ?",
                 (cliente["id"], bando_id),
             ).fetchone()
             if existing:
                 conn.execute(
-                    """
-                    UPDATE match_results
-                    SET score = ?, data_match = datetime('now')
-                    WHERE id = ?
-                    """,
+                    "UPDATE match_results SET score = ?, data_match = datetime('now') WHERE id = ?",
                     (score, existing["id"]),
                 )
             else:
                 conn.execute(
-                    """
-                    INSERT INTO match_results (cliente_id, bando_id, score)
-                    VALUES (?, ?, ?)
-                    """,
+                    "INSERT INTO match_results (cliente_id, bando_id, score) VALUES (?, ?, ?)",
                     (cliente["id"], bando_id, score),
                 )
         conn.commit()
     except Exception as exc:
         log_error(f"run_matching_for_bando({bando_id}): {exc}")
 
-
 def run_matching_for_all_bandi(conn: sqlite3.Connection) -> None:
-    """Ricalcola il matching per tutti i bandi in archivio."""
     try:
         rows = conn.execute("SELECT id FROM bandi").fetchall()
         for row in rows:
@@ -312,9 +307,7 @@ def run_matching_for_all_bandi(conn: sqlite3.Connection) -> None:
     except Exception as exc:
         log_error(f"run_matching_for_all_bandi: {exc}")
 
-
 def format_scadenza_italiana(raw: str | None) -> str | None:
-    """Formatta una data ISO in italiano (es. '30 giugno 2026')."""
     if not raw or not _norm_str(raw):
         return None
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
@@ -325,7 +318,6 @@ def format_scadenza_italiana(raw: str | None) -> str | None:
             continue
     return _norm_str(raw)
 
-
 def _format_euro(value: Any) -> str | None:
     if value is None:
         return None
@@ -334,7 +326,6 @@ def _format_euro(value: Any) -> str | None:
         return f"€ {n:,.0f}".replace(",", ".")
     except (TypeError, ValueError):
         return None
-
 
 def _chi_puo_accedere(bando: dict[str, Any]) -> str | None:
     parts: list[str] = []
@@ -357,9 +348,7 @@ def _chi_puo_accedere(bando: dict[str, Any]) -> str | None:
         return None
     return "\n\n".join(parts)
 
-
 def genera_scheda(bando: dict[str, Any]) -> str:
-    """Genera la scheda markdown 'Bando in 1 minuto' dal JSON bando."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     lines: list[str] = []
 
@@ -409,9 +398,7 @@ def genera_scheda(bando: dict[str, Any]) -> str:
 
     return "\n\n".join(lines) if lines else "*Scheda non disponibile — dati bando insufficienti.*"
 
-
 def get_fonte_url(bando: dict[str, Any]) -> str | None:
-    """URL fonte ufficiale se presente nel JSON."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     link = _norm_str(
         b.get("url_fonte")
@@ -420,9 +407,7 @@ def get_fonte_url(bando: dict[str, Any]) -> str | None:
     )
     return link or None
 
-
 def load_dashboard_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
-    """Carica match_results con join bando e cliente, ordinati per score decrescente."""
     rows = conn.execute(
         """
         SELECT
@@ -445,8 +430,6 @@ def load_dashboard_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     ).fetchall()
     return [dict(r) for r in rows]
 
-
 def count_bandi(conn: sqlite3.Connection) -> int:
-    """Numero di bandi salvati in archivio."""
     row = conn.execute("SELECT COUNT(*) AS n FROM bandi").fetchone()
     return int(row["n"]) if row else 0
