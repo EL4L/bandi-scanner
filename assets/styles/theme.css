@@ -1,0 +1,172 @@
+:root{
+  --bg:#0f1724;
+  --panel:#071026;
+  --card:#0b1220;
+  --muted:#9aa4b2;
+  --accent:#4f46e5;
+  --accent-2:#06b6d4;
+  --text:#e6eef6;
+  --muted-2:#93a0b0;
+  --radius:12px;
+  --shadow: 0 10px 30px rgba(2,6,23,0.6);
+  --glass: rgba(255,255,255,0.03);
+  --max-width:1100px;
+  --card-padding:18px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Base */
+html, body, .stApp {
+  height:100%;
+  margin:0;
+  background: linear-gradient(180deg,var(--bg) 0%, var(--panel) 100%) !important;
+  color:var(--text) !important;
+  font-family:var(--font-family, Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial) !important;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Ensure all textual elements are legible on top of dark backgrounds */
+.stApp * {
+  color: var(--text) !important;
+}
+
+/* Make block container visually separated from background for contrast */
+.stApp > .block-container {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)) !important;
+  border-radius: 14px !important;
+  padding: 20px !important;
+}
+
+/* Page container */
+.main-container, .app-container, .stApp > .block-container {
+  max-width:var(--max-width);
+  margin:28px auto !important;
+  padding:22px !important;
+}
+
+/* Title */
+h1, .stTitle, .stApp h1 {
+  color:var(--text) !important;
+  font-weight:700;
+  letter-spacing:0.2px;
+}
+
+/* Header panel look for top elements */
+.stHeader, .stSidebar, .header, header {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent);
+  border-radius:calc(var(--radius) + 6px);
+  padding:12px !important;
+  box-shadow:var(--shadow) !important;
+  backdrop-filter: blur(6px);
+}
+
+/* Buttons */
+.stButton > button, button {
+  background: linear-gradient(90deg,var(--accent),var(--accent-2)) !important;
+  color: #fff !important;
+  border: 0 !important;
+  padding:10px 14px !important;
+  border-radius:10px !important;
+  box-shadow: 0 8px 20px rgba(79,70,229,0.18) !important;
+}
+.stButton > button:active { transform: translateY(1px); }
+
+/* Inputs */
+input, textarea, select {
+  background: rgba(255,255,255,0.02) !important;
+  color: var(--text) !important;
+  border:1px solid rgba(255,255,255,0.06) !important;
+  padding:10px !important;
+  border-radius:8px !important;
+}
+
+/* File uploader */
+.stFileUploader, .stFileUploader div {
+  border-radius:10px !important;
+}
+
+/* Cards / expanders */
+.stExpander, .stExpander > .st-expander {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)) !important;
+  border-radius:var(--radius) !important;
+  padding: var(--card-padding) !important;
+  box-shadow: var(--shadow) !important;
+  color: var(--text) !important;
+}
+
+/* Dataframe / tables */
+.stDataFrame, .stTable, table {
+  background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01)) !important;
+  color: var(--text) !important;
+  border-radius:10px !important;
+}
+
+/* Table headers stronger contrast */
+table thead th {
+  background: rgba(255,255,255,0.03) !important;
+  color: var(--text) !important;
+}
+
+/* Small cards grid used in app markdown */
+.card{
+  background: linear-gradient(180deg,var(--card), rgba(11,18,32,0.95));
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+  color:var(--text) !important;
+}
+
+/* Progress / compatibility bar styling (keeps Streamlit markup) */
+.compat-bar {
+  background:#0b1220;
+  border-radius:8px;
+  height:14px;
+  overflow:hidden;
+}
+.compat-bar > .fill { height:100%; border-radius:8px; }
+
+/* Markdown specific readability */
+.stMarkdown, .stMarkdown p, .stMarkdown li, .stText, .stCaption {
+  color: var(--text) !important;
+  line-height:1.45 !important;
+}
+
+/* Code / pre blocks */
+pre, code, .stCodeBlock {
+  background: rgba(0,0,0,0.45) !important;
+  color: var(--text) !important;
+  padding:8px !important;
+  border-radius:8px !important;
+}
+
+/* Streamlit JSON output readability */
+div[data-testid="stJson"] pre,
+div.stJson, div.st-json, .stJson, .st-json {
+  background: linear-gradient(180deg, rgba(2,6,23,0.75), rgba(11,18,32,0.75)) !important;
+  color: var(--text) !important;
+  padding: 14px !important;
+  border-radius: 8px !important;
+  overflow: auto !important;
+  max-height: 420px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace !important;
+  font-size: 0.95rem !important;
+  line-height:1.5 !important;
+}
+
+/* JSON keys/values color hints to improve scanning */
+div.stJson code span, div.st-json code span, div[data-testid="stJson"] code span {
+  color: var(--text) !important;
+}
+
+
+/* Responsive tweaks */
+@media (max-width:640px){
+  .main-container, .app-container, .stApp > .block-container { margin:14px !important; padding:12px !important; }
+}
+
+/* Small utility */
+.muted { color:var(--muted-2); }
+
+/* Ensure links stand out */
+a, a:link { color: var(--accent-2) !important; }

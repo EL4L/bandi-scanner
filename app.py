@@ -24,6 +24,8 @@ from modules.matcher import (
     run_matching_for_all_bandi,
     run_matching_for_bando,
     settore_da_verificare,
+    bando_has_constraints,
+    get_score_breakdown,
 )
 from modules.extractor import (
     EmptyPDFException,
@@ -40,6 +42,22 @@ st.set_page_config(page_title="Bandi Scanner", layout="wide")
 ROOT = Path(__file__).resolve().parent
 TEMP_DIR = ROOT / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
+
+# Inject custom CSS theme if available
+css_path = ROOT / "assets" / "styles" / "theme.css"
+if css_path.exists():
+    try:
+        with open(css_path, "r", encoding="utf-8") as fh:
+            css = fh.read()
+        st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    except Exception as exc:
+        # don't fail startup if CSS injection fails; log for debugging
+        try:
+            from modules.log_utils import log_error
+
+            log_error(f"Failed to inject CSS: {exc}")
+        except Exception:
+            pass
 
 ensure_database()
 
@@ -70,11 +88,11 @@ def render_colored_progress(score: int) -> None:
     else:
         color = "#ef4444"
     pct = max(0, min(100, score))
+    # Use CSS classes so theme.css can control contrast
     st.markdown(
-        f'<div style="background:#e5e7eb;border-radius:6px;height:14px;margin:4px 0;">'
-        f'<div style="width:{pct}%;background:{color};height:14px;'
-        f'border-radius:6px;"></div></div>'
-        f'<span style="font-size:0.9rem;color:#374151;">Compatibilità: {score}/100</span>',
+        f'<div class="compat-bar" style="margin:6px 0;">'
+        f'<div class="fill" style="width:{pct}%;background:{color};"></div></div>'
+        f'<span style="font-size:0.95rem;color:var(--text);">&nbsp;Compatibilità: {score}/100</span>',
         unsafe_allow_html=True,
     )
 
@@ -159,6 +177,56 @@ with tab_dashboard:
                                     " — ⚠️ *compatibilità settore da verificare*"
                                 )
                             st.markdown(line)
+                            # show breakdown per criterio
+                            try:
+                                # Retrieve full cliente record to compute an accurate breakdown
+                                cliente_id = m.get("cliente_id")
+                                cliente_row_db = conn.execute(
+                                    "SELECT * FROM clienti WHERE id = ?",
+                                    (cliente_id,),
+                                ).fetchone()
+                                if cliente_row_db:
+                                    cliente_row = dict(cliente_row_db)
+                                else:
+                                    cliente_row = {
+                                        "id": cliente_id,
+                                        "ragione_sociale": m.get("cliente_nome"),
+                                        "codice_ateco": m.get("cliente_codice_ateco"),
+                                        "descrizione_attivita": m.get(
+                                            "cliente_descrizione_attivita"
+                                        ),
+                                    }
+                                breakdown = get_score_breakdown(payload, cliente_row)
+                                st.caption(
+                                    f"Breakdown — Regione: {breakdown['regione']} | ATECO: {breakdown['ateco']} | Dimensione: {breakdown['dimensione']} | Fatturato: {breakdown['fatturato']}"
+                                )
+                                # If stored score differs from recalculated breakdown, offer recalculation
+                                stored_score = int(m.get("score") or 0)
+                                if stored_score != int(breakdown["total"]):
+                                    st.warning(
+                                        f"Discrepanza punteggio: valore salvato = {stored_score}, ricalcolato = {breakdown['total']}."
+                                    )
+                                    if st.button(
+                                        "Ricalcola matching per questo bando",
+                                        key=f"recalc_{bid}_{cliente_id}",
+                                    ):
+                                        try:
+                                            run_matching_for_bando(bid, conn)
+                                            st.success("Ricalcolo completato.")
+                                            st.rerun()
+                                        except Exception as exc:
+                                            st.error(f"Ricalcolo fallito: {exc}")
+                            except Exception:
+                                pass
+
+                        # warn if bando has no explicit constraints
+                        try:
+                            if not bando_has_constraints(payload):
+                                st.warning(
+                                    "Avviso: il bando non contiene vincoli espliciti (regioni/ATECO/dimensione/contributi). I punteggi potrebbero non essere affidabili."
+                                )
+                        except Exception:
+                            pass
 
                         st.divider()
                         st.subheader("Bando in 1 minuto")

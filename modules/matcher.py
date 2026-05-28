@@ -118,6 +118,52 @@ def _max_word_overlap(descrizione: str, attivita: list[str]) -> int:
     return best
 
 
+def _bando_has_constraints(bando: dict[str, Any]) -> bool:
+    """Return True if the bando contains any explicit constraints used for matching.
+
+    We consider regioni, codici ATECO, attivita_ammesse, dimensione_impresa,
+    contributo_max/fatturato_max or ateco_aperto_a_tutti=True as constraints. If
+    none are present we treat the bando as 'no constraint info' and avoid
+    giving maximal default scores.
+    """
+    if not isinstance(bando, dict):
+        return False
+    if bando.get("ateco_aperto_a_tutti") is True:
+        return True
+    if _codici_ateco_bando(bando):
+        return True
+    if _attivita_ammesse_bando(bando):
+        return True
+    if _regioni_bando(bando):
+        return True
+    if _dimensioni_ammesse(bando):
+        return True
+    if bando.get("contributo_max") is not None or bando.get("fatturato_max") is not None:
+        return True
+    return False
+
+
+def bando_has_constraints(bando: dict[str, Any]) -> bool:
+    """Public wrapper that returns True if the bando contains explicit constraints."""
+    b = _unwrap_bando(bando if isinstance(bando, dict) else {})
+    return _bando_has_constraints(b)
+
+
+def get_score_breakdown(bando: dict[str, Any], cliente: dict[str, Any]) -> dict[str, int]:
+    """Return a breakdown dict with individual contributions and total score.
+
+    Keys: regione, ateco, dimensione, fatturato, total
+    """
+    b = _unwrap_bando(bando if isinstance(bando, dict) else {})
+    c = cliente if isinstance(cliente, dict) else {}
+    r = _score_regione(b, c)
+    a = _score_ateco(b, c)
+    d = _score_dimensione(b, c)
+    f = _score_fatturato(b, c)
+    total = max(0, min(100, int(r + a + d + f)))
+    return {"regione": int(r), "ateco": int(a), "dimensione": int(d), "fatturato": int(f), "total": int(total)}
+
+
 def bando_solo_attivita_ammesse(bando: dict[str, Any]) -> bool:
     """True se il bando vincola il settore solo tramite attivita_ammesse (no codici ATECO)."""
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
@@ -205,8 +251,11 @@ def _score_ateco(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
 
 def _score_dimensione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     ammesse = _dimensioni_ammesse(bando)
+    # If the bando does not specify allowed sizes, do not award the
+    # dimensione weight by default (previously returned full weight).
+    # This avoids giving free points when the field is absent.
     if not ammesse:
-        return WEIGHT_DIMENSIONE
+        return 0
     dim_cliente = _norm_str(
         cliente.get("dimensione_impresa") or cliente.get("dimensione")
     )
@@ -221,8 +270,10 @@ def _score_fatturato(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     contributo_max = bando.get("contributo_max")
     fatturato_max = bando.get("fatturato_max")
     fatturato_cliente = cliente.get("fatturato")
+    # If the bando does not specify any economic cap, do not award the
+    # fatturato weight by default.
     if contributo_max is None and fatturato_max is None:
-        return WEIGHT_FATTURATO
+        return 0
     try:
         fat_cli = float(fatturato_cliente) if fatturato_cliente is not None else 0.0
     except (TypeError, ValueError):
@@ -269,6 +320,50 @@ def run_matching_for_bando(bando_id: int, conn: sqlite3.Connection) -> None:
 
         payload = json.loads(row["json_completo"])
         bando_data = payload if isinstance(payload, dict) else {}
+
+        # If the extracted bando is empty/invalid, don't treat it as "open to all"
+        # (which would give maximal scores). Instead, set score 0 for all clients
+        # and log the condition for manual inspection.
+        inner = _unwrap_bando(bando_data)
+        if not inner or not _bando_has_constraints(inner):
+            log_error(
+                f"run_matching_for_bando: bando {bando_id} vuoto o senza vincoli espliciti — imposto score 0 per tutti i clienti"
+            )
+            # Log a small diagnostic of the bando content for debugging
+            try:
+                log_error(f"bando {bando_id} content keys: {list(inner.keys())}")
+            except Exception:
+                pass
+            clienti = conn.execute("SELECT * FROM clienti").fetchall()
+            for cliente_row in clienti:
+                cliente = dict(cliente_row)
+                score = 0
+                existing = conn.execute(
+                    """
+                    SELECT id FROM match_results
+                    WHERE cliente_id = ? AND bando_id = ?
+                    """,
+                    (cliente["id"], bando_id),
+                ).fetchone()
+                if existing:
+                    conn.execute(
+                        """
+                        UPDATE match_results
+                        SET score = ?, data_match = datetime('now')
+                        WHERE id = ?
+                        """,
+                        (score, existing["id"]),
+                    )
+                else:
+                    conn.execute(
+                        """
+                        INSERT INTO match_results (cliente_id, bando_id, score)
+                        VALUES (?, ?, ?)
+                        """,
+                        (cliente["id"], bando_id, score),
+                    )
+            conn.commit()
+            return
 
         clienti = conn.execute("SELECT * FROM clienti").fetchall()
         for cliente_row in clienti:
