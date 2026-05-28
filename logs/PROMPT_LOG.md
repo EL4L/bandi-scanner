@@ -131,12 +131,28 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
 - **Note:** Validazione: 0 errori, 27% campi vuoti
 
+<<<<<<< HEAD
 ### Semplice.pdf — 2026-05-28 17:00:24
+=======
+### Semplice.pdf — 2026-05-26 22:19:40
+>>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
 - **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max
 - **Note:** Validazione: 0 errori, 27% campi vuoti
 
+<<<<<<< HEAD
 ### Complesso.pdf — 2026-05-28 18:11:47
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.data_scadenza, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
 - **Campi null/vuoti:** bando.codici_ateco_ammessi
 - **Note:** Validazione: 1 errori, 7% campi vuoti
+=======
+### Complesso.pdf — 2026-05-26 22:27:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.data_scadenza, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Campi null/vuoti:** bando.codici_ateco_ammessi
+- **Note:** Validazione: 1 errori, 7% campi vuoti
+
+### bando_ateco_specifico.pdf — 2026-05-26 22:31:00
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Note:** Validazione: 0 errori, 60% campi vuoti
+>>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7

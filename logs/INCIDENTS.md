@@ -19,6 +19,8 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 | 2026-05-21 | Schema JSON cambiato (v2 `bando`) | Log e test vecchi con nomi campo obsoleti (`link_fonte`, `codici_ateco`) | Migrazione schema Melanie | `modules/schema.py`, prompt 2.0, validatore aggiornato |
 | 2026-05-21 | Progetto spostato su disco locale | Possibile venv rotto / path errati | Spostamento cartella da sync cloud | Verificare `cd` su `C:\bandi-scanner` o percorso attuale; ritestare `venv\Scripts\python.exe` |
 | 2026-05-21 | `ModuleNotFoundError: anthropic` fuori venv | Script test fallito | Python di sistema invece del venv | Usare `.\venv\Scripts\python.exe scripts\test_phase1.py` |
+| 2026-05-26 | Matching restituisce 100% per tutti i clienti su bando privo di vincoli (es. `Semplice.pdf`) | Dashboard con falsi positivi; possibile invio di alert errati | Logica precedente assegnava pesi pieni per dimensione/fatturato/regioni per default quando il bando non specificava vincoli | Introdotta `_bando_has_constraints` e wrapper `bando_has_constraints`; se bando vuoto o senza vincoli ora score=0 e log diagnostico; cambiati default di `_score_dimensione` e `_score_fatturato` per non assegnare peso pieno se campo assente |
+| 2026-05-26 | Discrepanze tra score salvati in DB e ricalcolo dinamico (breakdown) | Visualizzazione incoerente in dashboard, confusione operativa | Score salvati in `match_results` erano prodotti da logiche precedenti e/o breakdown costruito con dati parziali | Aggiornata UI per calcolare breakdown usando il record cliente completo dal DB; aggiunto warning e pulsante per ricalcolo matching; script `scripts/simulate_matching.py` per debug |
 
 ---
 
@@ -28,7 +30,10 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 |----|----------|------------|
 | O-01 | PDF **Complesso** troncati a 120k caratteri in API | Estrazione mirata sezioni “scadenza” o aumento limite con attenzione ai costi |
 | O-02 | **Semplice.pdf**: scadenze solo relative | `data_scadenza` = `null` corretto; revisione manuale |
-| O-03 | Accuratezza ATECO / massimale non verificata al 95% | Completare task 4.1 Breakdown su 3–5 PDF |
+| O-03 | Accuratezza ATECO / massimale non verificata al 95% | Completare task 4.1 Breakdown su 3–5 PDF
+ |
+
+
 
 ---
 
@@ -38,12 +43,6 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 - `logs/PROMPT_LOG.md` — versioni prompt e risultati test PDF
 
 ---
-
-## Fase 2 — Profilo cliente (RF-001)
-
-| Data | Descrizione | Impatto | Causa | Fix |
-|------|-------------|---------|-------|-----|
-| 2026-05-21 | DB non inizializzato | Salvataggio clienti fallito | `init_db.py` era stub | Implementato schema `clienti`, `bandi`, `match_results` in `db/init_db.py`; `ensure_database()` all’avvio app |
 
 ---
 

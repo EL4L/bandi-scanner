@@ -1,2 +1,7 @@
 
+<<<<<<< HEAD
 [2026-05-28 18:11:21] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+=======
+[2026-05-26 22:27:14] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-26 22:59:17] PDF illeggibile bando_senza_vincoli.pdf: PDF vuoto o non leggibile (estratto 88 caratteri, soglia minima 100)
+>>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
