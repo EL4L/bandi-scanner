@@ -156,3 +156,8 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
 - **Note:** Validazione: 0 errori, 60% campi vuoti
 >>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
+
+### Complesso.pdf — 2026-05-29 17:17:01
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.data_scadenza, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni
+- **Campi null/vuoti:** bando.codici_ateco_ammessi
+- **Note:** Validazione: 1 errori, 7% campi vuoti
