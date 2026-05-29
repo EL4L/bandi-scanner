@@ -52,13 +52,7 @@ if css_path.exists():
             css = fh.read()
         st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
     except Exception as exc:
-        # don't fail startup if CSS injection fails; log for debugging
-        try:
-            from modules.log_utils import log_error
-
-            log_error(f"Failed to inject CSS: {exc}")
-        except Exception:
-            pass
+        pass
 
 ensure_database()
 
@@ -89,10 +83,9 @@ def render_colored_progress(score: int) -> None:
     else:
         color = "#ef4444"
     pct = max(0, min(100, score))
-    # Use CSS classes so theme.css can control contrast
     st.markdown(
         f'<div class="compat-bar" style="margin:6px 0;">'
-        f'<div class="fill" style="width:{pct}%;background:{color};"></div></div>'
+        f'<div class="fill" style="width:{pct}%;background:{color};height:8px;border-radius:4px;"></div></div>'
         f'<span style="font-size:0.95rem;color:var(--text);">&nbsp;Compatibilità: {score}/100</span>',
         unsafe_allow_html=True,
     )
@@ -202,24 +195,15 @@ with tab_dashboard:
                                     " — ⚠️ *compatibilità settore da verificare*"
                                 )
                             st.markdown(line)
-<<<<<<< HEAD
                             
                             # --- INIZIO BREAKDOWN SCORE ---
                             try:
-=======
-                            # show breakdown per criterio
-                            try:
-                                # Retrieve full cliente record to compute an accurate breakdown
->>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
                                 cliente_id = m.get("cliente_id")
                                 cliente_row_db = conn.execute(
                                     "SELECT * FROM clienti WHERE id = ?",
                                     (cliente_id,),
                                 ).fetchone()
-<<<<<<< HEAD
                                 
-=======
->>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
                                 if cliente_row_db:
                                     cliente_row = dict(cliente_row_db)
                                 else:
@@ -227,7 +211,6 @@ with tab_dashboard:
                                         "id": cliente_id,
                                         "ragione_sociale": m.get("cliente_nome"),
                                         "codice_ateco": m.get("cliente_codice_ateco"),
-<<<<<<< HEAD
                                         "regione": m.get("cliente_regione"),
                                         "fatturato": m.get("cliente_fatturato"),
                                         "dimensione_impresa": m.get("cliente_dimensione_impresa"),
@@ -251,43 +234,6 @@ with tab_dashboard:
                         except Exception as e:
                             st.error(f"Errore vincoli: {e}")
                         # --- FINE BREAKDOWN SCORE ---
-=======
-                                        "descrizione_attivita": m.get(
-                                            "cliente_descrizione_attivita"
-                                        ),
-                                    }
-                                breakdown = get_score_breakdown(payload, cliente_row)
-                                st.caption(
-                                    f"Breakdown — Regione: {breakdown['regione']} | ATECO: {breakdown['ateco']} | Dimensione: {breakdown['dimensione']} | Fatturato: {breakdown['fatturato']}"
-                                )
-                                # If stored score differs from recalculated breakdown, offer recalculation
-                                stored_score = int(m.get("score") or 0)
-                                if stored_score != int(breakdown["total"]):
-                                    st.warning(
-                                        f"Discrepanza punteggio: valore salvato = {stored_score}, ricalcolato = {breakdown['total']}."
-                                    )
-                                    if st.button(
-                                        "Ricalcola matching per questo bando",
-                                        key=f"recalc_{bid}_{cliente_id}",
-                                    ):
-                                        try:
-                                            run_matching_for_bando(bid, conn)
-                                            st.success("Ricalcolo completato.")
-                                            st.rerun()
-                                        except Exception as exc:
-                                            st.error(f"Ricalcolo fallito: {exc}")
-                            except Exception:
-                                pass
-
-                        # warn if bando has no explicit constraints
-                        try:
-                            if not bando_has_constraints(payload):
-                                st.warning(
-                                    "Avviso: il bando non contiene vincoli espliciti (regioni/ATECO/dimensione/contributi). I punteggi potrebbero non essere affidabili."
-                                )
-                        except Exception:
-                            pass
->>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
 
                         st.divider()
                         st.subheader("Bando in 1 minuto")
