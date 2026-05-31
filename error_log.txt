@@ -6,3 +6,47 @@
 [2026-05-26 22:59:17] PDF illeggibile bando_senza_vincoli.pdf: PDF vuoto o non leggibile (estratto 88 caratteri, soglia minima 100)
 >>>>>>> 3351750b8b9fd40dc16dbc1df55121befd7726d7
 [2026-05-29 17:16:38] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:02:27] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:02:42] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:02:56] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:03:11] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:03:25] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:08:12] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:08:26] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:08:41] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:08:55] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:09:10] API OpenRouter non disponibile dopo 3 tentativi: Connection error.
+[2026-05-31 19:10:53] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011Cbb1zvqxCWe6dFFWw8PYz'}
+[2026-05-31 19:10:53] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011Cbb1zxnnKCCZvnNBvLsSm'}
+[2026-05-31 19:10:53] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011Cbb1zz3C5NXw5SmNTm5BV'}
+[2026-05-31 19:10:54] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:10:54] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011Cbb214cmf8B6L8GUTP9aK'}
+[2026-05-31 19:10:55] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20241022'}, 'request_id': 'req_011Cbb216gHygPUzjN6VGfWU'}
+[2026-05-31 19:13:06] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20240620'}, 'request_id': 'req_011Cbb2Am8LczrPTWNyt1WfV'}
+[2026-05-31 19:13:09] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20240620'}, 'request_id': 'req_011Cbb2AnddK5jFUbuxG6h8n'}
+[2026-05-31 19:13:09] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20240620'}, 'request_id': 'req_011Cbb2B21nHgKUaWWv48j5u'}
+[2026-05-31 19:13:10] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:13:11] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20240620'}, 'request_id': 'req_011Cbb2BB5F161494YxZog54'}
+[2026-05-31 19:13:12] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-5-sonnet-20240620'}, 'request_id': 'req_011Cbb2BCyqufCdVpBMh228S'}
+[2026-05-31 19:14:09] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb2FRaypvfy41Cgtp26n'}
+[2026-05-31 19:14:09] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb2FSwatzHu8u5TQhFxN'}
+[2026-05-31 19:14:10] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb2FUCVcQBuDvhn82kkQ'}
+[2026-05-31 19:14:10] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:14:11] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb2FZ1Dd7Ld5YjE5LWAw'}
+[2026-05-31 19:14:11] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb2FaZUd3ECAzbiodJBJ'}
+[2026-05-31 19:37:09] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41AKZCF9haVDpkihvD'}
+[2026-05-31 19:37:10] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41CDAEcmfqbzt1dspj'}
+[2026-05-31 19:37:10] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41DV44yVWvKS59KodE'}
+[2026-05-31 19:37:11] Testo bando troncato da 204782 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:37:11] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41HrEsvDe3Zkjcok83'}
+[2026-05-31 19:37:12] Testo bando troncato da 122907 a 120000 caratteri prima della chiamata API
+[2026-05-31 19:37:12] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41NWmyvpCuHK7XMXen'}
+[2026-05-31 19:37:12] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41Q9FqHae7j22nQP32'}
+[2026-05-31 19:37:13] Errore API non recuperabile: Error code: 404 - {'type': 'error', 'error': {'type': 'not_found_error', 'message': 'model: claude-3-haiku-20240307'}, 'request_id': 'req_011Cbb41RuvJMu3HiaEALS5F'}
+[2026-05-31 19:55:58] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:55:58] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:55:59] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:55:59] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:56:00] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:56:00] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-05-31 19:56:01] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}

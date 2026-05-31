@@ -37,7 +37,7 @@ LIST_STRING_FIELDS: tuple[str, ...] = (
     "spese_ammissibili",
 )
 
-MIN_TEXT_CHARS = 100
+MIN_TEXT_CHARS = 50
 MAX_TEXT_CHARS = 120_000
 
 
