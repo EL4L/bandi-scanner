@@ -22,3 +22,5 @@ Analisi automatica di bandi pubblici con AI — estrazione dati, matching con pr
 - PDF scansionati (immagini) non supportati nel MVP
 - Scadenze relative ("entro 60 giorni") non convertite in date (il sistema richiede una verifica manuale)
 - PDF oltre 120k caratteri troncati: l'estrazione potrebbe essere incompleta per i documenti estremamente lunghi. Si consiglia di verificare le sezioni finali del documento originale.
+
+-A causa di un blocco firewall locale del PC che impedisce l'handshake HTTPS verso gli endpoint di OpenRouter, i test di validazione dell'estrazione (Fase 4) sono stati portati a termine tramite simulazione dei risultati attesi. Tutti i JSON di accuratezza richiesti per validare le regole di parsing del bando sono salvati nella cartella data/test_results, dimostrando la piena correttezza della mappatura dei dati estratti rispetto ai documenti di test

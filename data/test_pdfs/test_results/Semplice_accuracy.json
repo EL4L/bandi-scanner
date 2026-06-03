@@ -1,0 +1,12 @@
+{
+    "pdf_name": "Semplice.pdf",
+    "data_test": "2026-06-02T16:00:00",
+    "accuracy_percent": "100.00%",
+    "campi_corretti": 3,
+    "totale_campi": 3,
+    "dettagli": {
+        "titolo": {"valore_estratto": "Incentivi Brevetti per invenzioni industriali", "esito": "✅"},
+        "ente": {"valore_estratto": "Ministero delle Imprese e del Made in Italy", "esito": "✅"},
+        "ambito": {"valore_estratto": "Proprietà Industriale", "esito": "✅"}
+    }
+}

@@ -25,8 +25,9 @@ BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "percentuale_fondo_perduto": (int, float, type(None)),
     "spese_ammissibili": list,
     "link_fonte_ufficiale": (str, type(None)),
-    "note_esclusioni": (str, type(None)),
+    "note_esclusioni": (dict, str, type(None)), 
 }
+
 
 DATE_FIELDS: tuple[str, ...] = ("data_pubblicazione", "data_scadenza")
 

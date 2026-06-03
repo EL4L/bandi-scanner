@@ -428,6 +428,26 @@ with tab_estrazione:
 
                         st.subheader("Dati bando estratti")
                         st.json(data)
+                        # --- NUOVO: LOGICA ESCLUSIONI E ALERT ---
+                        bando_info = data.get("bando", {})
+                        if bando_info.get("ateco_aperto_a_tutti") is False:
+                            st.warning("⚠️ Bando con limitazioni settoriali")
+                            escl = bando_info.get("note_esclusioni", {})
+                            
+                            if isinstance(escl, dict):
+                                attivita = escl.get("attivita_vietate", [])
+                                sezioni = escl.get("sezioni_ateco_escluse", [])
+                                
+                                if sezioni:
+                                    sezioni_md = "\n".join([f"- {s}" for s in sezioni])
+                                    st.markdown(f"**Sezioni ATECO escluse:**\n{sezioni_md}")
+                                    
+                                if attivita:
+                                    attivita_md = "\n".join([f"- {a}" for a in attivita])
+                                    st.markdown(f"**Attività vietate:**\n{attivita_md}")
+                            else:
+                                st.markdown(f"**Note esclusioni:** {str(escl)}")
+                        # --- FINE LOGICA ESCLUSIONI ---  
 
                         for w in result.get("warnings", []):
                             st.info(w)

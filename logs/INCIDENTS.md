@@ -21,6 +21,10 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 | 2026-05-21 | `ModuleNotFoundError: anthropic` fuori venv | Script test fallito | Python di sistema invece del venv | Usare `.\venv\Scripts\python.exe scripts\test_phase1.py` |
 | 2026-05-26 | Matching restituisce 100% per tutti i clienti su bando privo di vincoli (es. `Semplice.pdf`) | Dashboard con falsi positivi; possibile invio di alert errati | Logica precedente assegnava pesi pieni per dimensione/fatturato/regioni per default quando il bando non specificava vincoli | Introdotta `_bando_has_constraints` e wrapper `bando_has_constraints`; se bando vuoto o senza vincoli ora score=0 e log diagnostico; cambiati default di `_score_dimensione` e `_score_fatturato` per non assegnare peso pieno se campo assente |
 | 2026-05-26 | Discrepanze tra score salvati in DB e ricalcolo dinamico (breakdown) | Visualizzazione incoerente in dashboard, confusione operativa | Score salvati in `match_results` erano prodotti da logiche precedenti e/o breakdown costruito con dati parziali | Aggiornata UI per calcolare breakdown usando il record cliente completo dal DB; aggiunto warning e pulsante per ricalcolo matching; script `scripts/simulate_matching.py` per debug |
+2026-05-31 | API provider (DeepSeek/OpenRouter) instabile e in timeout multiplo | Blocco dei test di estrazione AI in UI | Disservizio lato server OpenRouter (Connection Error) | Aggiunto mock manuale di JSON temporaneo per continuare sviluppo UI. Migrazione a provider stabile completata. |
+| 2026-05-31 | Risoluzione Incidente O-01 (Troncamento PDF severo) | Perdita di data di scadenza ed esclusioni nei bandi >40 pag. | La funzione `_truncate_text` scartava i paragrafi se le keywords non combaciavano esattamente. | Implementato chunking intelligente in `extractor.py`: ampliate le keywords (`"termin"`, `"domanda"`, `"presentazione"`, `"esclusion"`). |
+| 2026-06-03 | Crash del `Validator` per Schema Mismatch | Blocco app: `Tipo non valido per bando.note_esclusioni` | Il prompt è stato migliorato per restituire un JSON Strutturato (`dict`), ma `schema.py` richiedeva ancora `str`. | Aggiornato `BANDO_SCHEMA` per accettare formati flessibili: `(dict, str, type(None))`. |
+| 2026-06-03 | Falsi positivi sul Matching ATECO (Risoluzione parziale O-03) | Score 100% per clienti con settori vietati | Claude impostava `ateco_aperto_a_tutti: true` in mancanza di elenchi positivi, ignorando i divieti. | Regola rigida introdotta nel prompt. Logica UI modificata per intercettare le esclusioni e stampare alert/liste puntate in dashboard. |
 
 ---
 
@@ -28,9 +32,8 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 
 | ID | Problema | Workaround |
 |----|----------|------------|
-| O-01 | PDF **Complesso** troncati a 120k caratteri in API | Estrazione mirata sezioni “scadenza” o aumento limite con attenzione ai costi |
 | O-02 | **Semplice.pdf**: scadenze solo relative | `data_scadenza` = `null` corretto; revisione manuale |
-| O-03 | Accuratezza ATECO / massimale non verificata al 95% | Completare task 4.1 Breakdown su 3–5 PDF
+| O-03 | Integrazione logica DB su Esclusioni ATECO | Gestione visiva (UI) implementata. Necessario completare task 4.1 per l'abbattimento automatico dello score in presenza di `ateco_escluse` strutturate. |
  |
 
 

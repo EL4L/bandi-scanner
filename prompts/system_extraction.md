@@ -31,13 +31,30 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
 
 ## Vincoli
 
-- Estrai SOLO informazioni esplicitamente presenti nel testo
-- Se un'informazione non è presente, usa il valore null — NON inventare
-- Le date devono essere in formato YYYY-MM-DD
-- I codici ATECO devono essere nel formato standard (es. "62.01")
-- Se il bando dice "aperto a tutti i settori", metti ateco_aperto_a_tutti: true e codici_ateco_ammessi: []
-- Se il bando specifica esplicitamente settori ESCLUSI, riportali in note_esclusioni
-- In "attivita_ammesse", elenca le azioni o le tipologie di business che il bando intende finanziare (es. "Turismo sostenibile", "Commercio al dettaglio")
+## Vincoli e Regole di Estrazione
+
+- Estrai SOLO informazioni esplicitamente presenti nel testo.
+- Se un'informazione non è presente, usa il valore `null` — NON inventare.
+- Le date devono essere in formato YYYY-MM-DD.
+- I codici ATECO devono essere nel formato standard (es. "62.01").
+- Se il bando dice "aperto a tutti i settori", metti `ateco_aperto_a_tutti: true` e `codici_ateco_ammessi: []`.
+
+### Regole Rigide per i Campi Complessi:
+
+* "ateco_aperto_a_tutti": (booleano).
+  - Imposta a `true` SOLO se il bando afferma esplicitamente che non vi sono limitazioni di settore.
+  - Imposta a `false` se il bando elenca (anche in minima parte) sezioni ATECO (es. Sezione K, L) o specifiche attività vietate. La presenza di un paragrafo "Attività Escluse" forza questo campo a `false` automaticamente.
+
+* "note_esclusioni": (oggetto JSON). Invece di un testo lungo, crea un oggetto strutturato che contiene:
+  - "lista_testuale": (stringa) il riassunto delle esclusioni. IMPORTANTE: Se il bando è su base nazionale ma menziona "Riserve di fondi" per specifiche aree (es. Riserva PNRR SUD), DEVI segnalarlo all'inizio di questa stringa.
+  - "sezioni_ateco_escluse": (lista di stringhe) es: ["Sez. K", "Sez. L"].
+  - "attivita_vietate": (lista di stringhe) es: ["gioco d'azzardo", "tabacco", "silvicoltura", "pesca"].
+
+* "percentuale_fondo_perduto": (numero).
+  - REGOLE MATEMATICHE: Se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), DEVI calcolare la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso scriverai 40). Usa `null` solo se non ci sono dati matematici sufficienti.
+
+* "dimensione_impresa": (oggetto JSON). Deve contenere le chiavi booleane: "micro", "piccola", "media", "grande".
+  - REGOLE DI DOMINIO: Le agevolazioni di Stato sono destinate alle PMI. A meno che il testo non autorizzi ESPLICITAMENTE la partecipazione delle "Grandi Imprese", devi SEMPRE impostare `"grande": false`.
 
 ## Strategia di analisi
 

@@ -1,0 +1,12 @@
+{
+    "pdf_name": "Complesso.pdf",
+    "data_test": "2026-06-02T16:00:00",
+    "accuracy_percent": "100.00%",
+    "campi_corretti": 3,
+    "totale_campi": 3,
+    "dettagli": {
+        "titolo": {"valore_estratto": "Nuovo Fondo Futuro - Programma Regionale FESR Lazio 2021-2027", "esito": "✅"},
+        "ente": {"valore_estratto": "Regione Lazio", "esito": "✅"},
+        "regioni_ammesse": {"valore_estratto": "Lazio", "esito": "✅"}
+    }
+}

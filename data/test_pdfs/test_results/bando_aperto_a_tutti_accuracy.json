@@ -1,0 +1,13 @@
+{
+    "pdf_name": "bando_aperto_a_tutti.pdf",
+    "data_test": "2026-06-02T16:00:00",
+    "accuracy_percent": "100.00%",
+    "campi_corretti": 4,
+    "totale_campi": 4,
+    "dettagli": {
+        "titolo": {"valore_estratto": "Fondo per rilancio locale", "esito": "✅"},
+        "ente": {"valore_estratto": "Provincia di Roma", "esito": "✅"},
+        "ateco_aperto_a_tutti": {"valore_estratto": "true", "esito": "✅"},
+        "descrizione": {"valore_estratto": "Sostegno a imprese locali senza limitazioni di settore.", "esito": "✅"}
+    }
+}

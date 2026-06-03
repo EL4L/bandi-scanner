@@ -50,3 +50,20 @@
 [2026-05-31 19:56:00] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
 [2026-05-31 19:56:00] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
 [2026-05-31 19:56:01] Errore API: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:26] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:26] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:26] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:28] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:29] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:29] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:47:29] Errore critico durante estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-01 17:48:16] Errore estrazione: Error code: 404 - {'error': {'message': 'No endpoints found for minimax/minimax-m2.5:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}. Contenuto ricevuto: 
+[2026-06-02 17:09:02] Testo bando troncato da 122907 a 120000 caratteri prima della chiamata API
+[2026-06-03 16:43:26] Testo lungo 122907 caratteri. Avvio chunking intelligente per limite 120000...
+[2026-06-03 16:58:34] Testo lungo 122907 caratteri. Avvio chunking intelligente per limite 120000...
