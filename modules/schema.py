@@ -26,6 +26,9 @@ BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "spese_ammissibili": list,
     "link_fonte_ufficiale": (str, type(None)),
     "note_esclusioni": (dict, str, type(None)), 
+    "spesa_minima_ammissibile": (int, float, type(None)),
+    "anzianita_impresa": dict,
+    "forme_giuridiche_ammesse": list,
 }
 
 
@@ -58,6 +61,7 @@ def normalize_response(data: dict) -> dict[str, object]:
     bando: dict[str, object] = {}
     for key in BANDO_SCHEMA:
         val = source.get(key) if isinstance(source, dict) else None
+        
         if key == "dimensione_impresa":
             bando[key] = normalize_dimensione_impresa(val)
         elif key in (
@@ -65,10 +69,37 @@ def normalize_response(data: dict) -> dict[str, object]:
             "attivita_ammesse",
             "regioni_ammesse",
             "spese_ammissibili",
+            "forme_giuridiche_ammesse",  # Nuovo campo lista Fase 5
         ):
             bando[key] = val if isinstance(val, list) else []
         elif key == "ateco_aperto_a_tutti":
             bando[key] = bool(val) if val is not None else False
+        elif key == "anzianita_impresa":
+            if isinstance(val, dict):
+                bando[key] = val
+            else:
+                bando[key] = {
+                    "mesi_minimi_dalla_costituzione": None,
+                    "mesi_massimi_dalla_costituzione": None
+                }
         else:
             bando[key] = val
+            
+    # --- BLOCCO DI SICUREZZA FASE 5 ---
+    # Forza la normalizzazione nel caso i nuovi campi non siano ancora in BANDO_SCHEMA
+    if "spesa_minima_ammissibile" not in bando:
+        bando["spesa_minima_ammissibile"] = source.get("spesa_minima_ammissibile")
+        
+    if "forme_giuridiche_ammesse" not in bando:
+        f = source.get("forme_giuridiche_ammesse")
+        bando["forme_giuridiche_ammesse"] = f if isinstance(f, list) else []
+        
+    if "anzianita_impresa" not in bando:
+        a = source.get("anzianita_impresa")
+        bando["anzianita_impresa"] = a if isinstance(a, dict) else {
+            "mesi_minimi_dalla_costituzione": None,
+            "mesi_massimi_dalla_costituzione": None
+        }
+    # --- FINE BLOCCO DI SICUREZZA ---
+
     return {"bando": bando}

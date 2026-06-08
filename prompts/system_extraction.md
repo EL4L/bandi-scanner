@@ -25,7 +25,17 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
     "percentuale_fondo_perduto": 50,
     "spese_ammissibili": ["Software", "Hardware", "Consulenza ICT"],
     "link_fonte_ufficiale": "https://www.invitalia.it/...",
-    "note_esclusioni": "Escluse ditte individuali senza dipendenti"
+    "spesa_minima_ammissibile": 25000,
+    "anzianita_impresa": {
+      "mesi_minimi_dalla_costituzione": 12,
+      "mesi_massimi_dalla_costituzione": null
+    }
+    "forme_giuridiche_ammesse": ["società di capitali", "società di persone", "ditte individuali"],
+    "note_esclusioni": {
+      "lista_testuale": "Escluse ditte individuali senza dipendenti",
+      "sezioni_ateco_escluse": ["Sez. K", "Sez. L"],
+      "attivita_vietate": ["tabacco", "gioco d'azzardo"]
+    }
   }
 }
 
@@ -55,6 +65,16 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
 
 * "dimensione_impresa": (oggetto JSON). Deve contenere le chiavi booleane: "micro", "piccola", "media", "grande".
   - REGOLE DI DOMINIO: Le agevolazioni di Stato sono destinate alle PMI. A meno che il testo non autorizzi ESPLICITAMENTE la partecipazione delle "Grandi Imprese", devi SEMPRE impostare `"grande": false`.
+
+* "spesa_minima_ammissibile": (numero o null).
+  - Cerca l'investimento minimo o la spesa minima richiesta per partecipare. Se non c'è, restituisci null.
+
+* "anzianita_impresa": (oggetto JSON).
+  - Se il bando richiede che l'impresa sia "costituita da almeno X mesi" o "attiva da X anni", converti in mesi e inserisci in "mesi_minimi_dalla_costituzione".
+  - Se il bando è per "Start-up costituite da non più di X anni", converti in mesi e inserisci in "mesi_massimi_dalla_costituzione".
+
+* "forme_giuridiche_ammesse": (lista di stringhe).
+  - Elenca i tipi di società ammesse (es. "società di capitali", "ditte individuali", "liberi professionisti"). Se il bando non pone limiti societari, lascia la lista vuota [].
 
 ## Strategia di analisi
 

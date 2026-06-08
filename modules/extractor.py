@@ -1,14 +1,13 @@
-﻿"""Estrazione testo PDF e dati bando via API Anthropic."""
+﻿"""Estrazione testo PDF e dati bando via API OpenRouter (DeepSeek)."""
 
 from __future__ import annotations
 
 import json
 import os
-import re
 from pathlib import Path
 import fitz
-from anthropic import (
-    Anthropic,
+from openai import (
+    OpenAI,
     APIConnectionError,
     APIStatusError,
     APITimeoutError,
@@ -18,13 +17,14 @@ from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
 from modules.log_utils import log_error, log_incident
-from modules.schema import MAX_TEXT_CHARS, MIN_TEXT_CHARS, normalize_response
+from modules.schema import MIN_TEXT_CHARS, normalize_response
 
 load_dotenv()
 
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "prompts" / "system_extraction.md"
-CLAUDE_MODEL = "claude-sonnet-4-6"
+# Usiamo il modello DeepSeek reale, senza ":free"
+LLM_MODEL = "deepseek/deepseek-v4-flash"
 RETRY_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = 300
 
@@ -43,20 +43,23 @@ class EmptyPDFException(Exception):
 
 
 class InvalidJSONResponse(Exception):
-    """Risposta Claude non parsabile come JSON."""
+    """Risposta LLM non parsabile come JSON."""
 
 
 class MissingAPIKeyError(Exception):
-    """Variabile ANTHROPIC_API_KEY assente."""
+    """Variabile OPENROUTER_API_KEY assente."""
 
 
-def _get_client() -> Anthropic:
-    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+def _get_client() -> OpenAI:
+    api_key = os.getenv("OPENROUTER_API_KEY", "").strip()
     if not api_key:
         raise MissingAPIKeyError(
-            "ANTHROPIC_API_KEY non configurata. Copia .env.example in .env e inserisci la chiave."
+            "OPENROUTER_API_KEY non configurata. Inserisci la chiave nel file .env."
         )
-    return Anthropic(api_key=api_key)
+    return OpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
+    )
 
 
 def _load_system_prompt(raw_text: str) -> str:
@@ -69,10 +72,15 @@ def _load_system_prompt(raw_text: str) -> str:
 
 
 def _clean_json_response(content: str) -> str:
+    """Pulisce i blocchi di codice Markdown senza usare espressioni regolari."""
     content = content.strip()
     if content.startswith("```"):
-        content = re.sub(r"^```(?:json)?\s*", "", content)
-        content = re.sub(r"\s*```$", "", content)
+        lines = content.split("\n")
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        content = "\n".join(lines)
     return content.strip()
 
 
@@ -94,48 +102,9 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     stripped = text.strip()
     if len(stripped) < MIN_TEXT_CHARS:
         raise EmptyPDFException(
-            f"PDF vuoto o non leggibile (estratto {len(stripped)} caratteri, "
-            f"soglia minima {MIN_TEXT_CHARS})"
+            f"PDF vuoto o non leggibile (estratto {len(stripped)} caratteri)."
         )
     return text
-
-
-def _truncate_text(raw_text: str) -> str:
-    """
-    Risolve l'Incidente O-01: Invece di un taglio brutale, estrae le sezioni
-    rilevanti (Chunking) usando parole chiave, salvando i dati essenziali.
-    """
-    if len(raw_text) <= MAX_TEXT_CHARS:
-        return raw_text
-        
-    log_error(f"Testo lungo {len(raw_text)} caratteri. Avvio chunking intelligente per limite {MAX_TEXT_CHARS}...")
-    
-    # Parole chiave vitali da cercare nei paragrafi
-    keywords = [
-        "beneficiari", "ammissibilit", "spese ammissibili", "scadenza", 
-        "contributo", "ateco", "localizzazione", "dimensione", "esclusion",
-        "termin", "domanda", "presentazione"
-    ]
-    pattern = re.compile(r'|'.join(keywords), re.IGNORECASE)
-    
-    # Divide in paragrafi e tiene solo quelli che contengono le parole chiave
-    paragraphs = raw_text.replace('. \n', '.\n\n').split('\n\n')
-    relevant_paragraphs = []
-    current_length = 0
-    
-    for p in paragraphs:
-        if pattern.search(p):
-            if current_length + len(p) <= MAX_TEXT_CHARS:
-                relevant_paragraphs.append(p)
-                current_length += len(p)
-            else:
-                break # Raggiunto il limite massimo di Claude
-                
-    # Fallback di sicurezza se il filtro è stato troppo severo
-    if not relevant_paragraphs:
-        return raw_text[:MAX_TEXT_CHARS]
-        
-    return '\n\n'.join(relevant_paragraphs)
 
 
 @retry(
@@ -144,42 +113,40 @@ def _truncate_text(raw_text: str) -> str:
     retry=retry_if_exception(_is_retryable_api_error),
     reraise=True,
 )
-def _call_claude_api(prompt: str) -> str:
+def _call_llm_api(prompt: str) -> str:
     client = _get_client()
-    response = client.messages.create(
-        model=CLAUDE_MODEL,
-        max_tokens=4000,
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
         messages=[{"role": "user", "content": prompt}],
     )
-    if not response.content:
+    if not response.choices:
         raise InvalidJSONResponse("Risposta API vuota")
-    return response.content[0].text
+    return response.choices[0].message.content
 
 
 def extract_bando_data(raw_text: str) -> dict:
-    """Carica il prompt, chiama Claude e restituisce {"bando": {...}}."""
-    text = _truncate_text(raw_text)
-    prompt = _load_system_prompt(text)
+    """Carica il prompt, chiama DeepSeek e restituisce il bando normalizzato."""
+    prompt = _load_system_prompt(raw_text)
 
     try:
-        content = _call_claude_api(prompt)
+        content = _call_llm_api(prompt)
     except (APIConnectionError, APITimeoutError, RateLimitError, APIStatusError) as exc:
         if not _is_retryable_api_error(exc):
             log_error(f"Errore API non recuperabile: {exc}")
             raise
-        msg = f"API Anthropic non disponibile dopo {RETRY_ATTEMPTS} tentativi: {exc}"
+        msg = f"API OpenRouter non disponibile dopo {RETRY_ATTEMPTS} tentativi: {exc}"
         log_error(msg)
         log_incident(
-            description="API Anthropic non risponde",
+            description="API OpenRouter non risponde",
             impact="Estrazione bando fallita",
             cause=str(exc),
-            fix=f"Retry automatico ({RETRY_ATTEMPTS}x, attesa {RETRY_WAIT_SECONDS}s)",
+            fix=f"Retry automatico ({RETRY_ATTEMPTS}x)",
         )
         raise
     except MissingAPIKeyError:
         raise
     except Exception as exc:
-        msg = f"Errore imprevisto chiamata Claude: {exc}"
+        msg = f"Errore imprevisto chiamata LLM: {exc}"
         log_error(msg)
         raise
 
@@ -187,10 +154,8 @@ def extract_bando_data(raw_text: str) -> dict:
     try:
         data = json.loads(cleaned)
     except json.JSONDecodeError as exc:
-        log_error(f"JSON non valido da Claude: {exc}")
-        raise InvalidJSONResponse(
-            "Claude non ha restituito JSON valido"
-        ) from exc
+        log_error(f"JSON non valido da LLM: {exc}")
+        raise InvalidJSONResponse("L'LLM non ha restituito JSON valido") from exc
 
     if not isinstance(data, dict):
         raise InvalidJSONResponse("La risposta JSON non è un oggetto")

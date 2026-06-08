@@ -46,17 +46,3 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 - `logs/PROMPT_LOG.md` — versioni prompt e risultati test PDF
 
 ---
-
----
-
-*Aggiornare questa tabella a ogni bug risolto o comportamento anomalo osservato in produzione/test.*
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |
-| 2026-05-31 | API OpenRouter non risponde | Estrazione bando fallita | Connection error. | Retry automatico (3x, attesa 5s) |

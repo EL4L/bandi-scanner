@@ -67,3 +67,9 @@
 [2026-06-02 17:09:02] Testo bando troncato da 122907 a 120000 caratteri prima della chiamata API
 [2026-06-03 16:43:26] Testo lungo 122907 caratteri. Avvio chunking intelligente per limite 120000...
 [2026-06-03 16:58:34] Testo lungo 122907 caratteri. Avvio chunking intelligente per limite 120000...
+[2026-06-06 17:07:14] Errore API non recuperabile: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-06 17:07:14] Estrazione AI fallita per 2_tabelle_spese_ammissibili.pdf: Error code: 404 - {'error': {'message': 'No endpoints found for deepseek/deepseek-v4-flash:free.', 'code': 404}, 'user_id': 'user_39Zd6iXpv4vbbWbabbcSmBn85NC'}
+[2026-06-06 17:18:24] Errore imprevisto chiamata LLM: name 'OPENROUTER_API_KEY' is not defined
+[2026-06-06 17:18:24] Estrazione AI fallita per 2_tabelle_spese_ammissibili.pdf: name 'OPENROUTER_API_KEY' is not defined
+[2026-06-06 17:23:33] Errore imprevisto chiamata LLM: name 'system_prompt' is not defined
+[2026-06-06 17:23:33] Estrazione AI fallita per 2_tabelle_spese_ammissibili.pdf: name 'system_prompt' is not defined
