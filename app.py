@@ -112,15 +112,36 @@ if page == "📊 Dashboard":
         n_bandi = count_bandi(conn)
         rows = load_dashboard_rows(conn)
 
-    st.title("Buongiorno Marco,")
+    st.title("I tuoi bandi")
     st.markdown(f"<span style='color:#64748b; font-size:1.1rem;'>L'AI ha scansionato le fonti. Hai **{n_bandi} bandi** in target.</span>", unsafe_allow_html=True)
     st.write("")
 
-    # KPI in alto
-    kpi1, kpi2, kpi3 = st.columns(3)
-    kpi1.metric("VALORE POTENZIALE", "€ 285K", "+15% da ieri")
-    kpi2.metric("IN SCADENZA", f"{n_bandi} Bandi", "Entro 30 giorni")
-    kpi3.metric("INVESTIMENTI ATTIVI", "€ 45k", "Budget approvato")
+    # --- CALCOLO DEI DATI REALI PER I KPI (CORRETTO) ---
+    totale_contributi = 0
+    totale_abbinamenti = len(rows) if rows else 0
+    bandi_calcolati = set()
+
+    if rows:
+        for r in rows:
+            bid = r["bando_id"]
+            if bid not in bandi_calcolati:
+                try:
+                    payload = json.loads(r["json_completo"])
+                    # CORREZIONE: Entriamo dentro la chiave "bando"
+                    bando_payload = payload.get("bando", {}) if isinstance(payload, dict) else {}
+                    c_max = bando_payload.get("contributo_max", 0)
+                    if isinstance(c_max, (int, float)):
+                        totale_contributi += c_max
+                except:
+                    pass
+                bandi_calcolati.add(bid)
+
+      
+
+    # KPI in alto con tre colonne e dati dinamici reali
+    kpi2, kpi3 = st.columns(2)
+    kpi2.metric("BANDI SCANSIONATI", f"{n_bandi}", "Elaborati dall'AI")
+    kpi3.metric("ABBINAMENTI ATTIVI", f"{totale_abbinamenti}", "Match trovati")
     
     st.divider()
     
@@ -142,7 +163,7 @@ if page == "📊 Dashboard":
     elif not rows:
         st.warning("Ci sono bandi salvati ma nessun match. Aggiungi almeno un profilo cliente.")
     else:
-        # Raggruppa i dati
+        # Raggruppa i dati per bando
         by_bando: dict[int, dict] = {}
         for row in rows:
             bid = row["bando_id"]
@@ -158,7 +179,7 @@ if page == "📊 Dashboard":
             by_bando[bid]["matches"].append(row)
             by_bando[bid]["max_score"] = max(by_bando[bid]["max_score"], row["score"])
 
-        # Stampa le Card dei Bandi
+        # Generazione visiva delle Card dei Bandi
         for bid in sorted(by_bando.keys(), key=lambda x: by_bando[x]["max_score"], reverse=True):
             info = by_bando[bid]
             max_sc = int(info["max_score"])
@@ -167,23 +188,40 @@ if page == "📊 Dashboard":
                 payload = json.loads(info["json_completo"])
             except:
                 payload = {}
-                
-            contributo_max = payload.get("contributo_max", "N/D")
-            if isinstance(contributo_max, (int, float)):
-                contributo_max = f"€ {contributo_max:,.0f}"
+            
+            bando_payload = payload.get("bando", {}) if isinstance(payload, dict) else {}
+            
+            # 1. Contributo Max: se è un numero lo formatta, altrimenti "N/D"
+            valore_contributo = bando_payload.get("contributo_max")
+            if isinstance(valore_contributo, (int, float)):
+                contributo_max = f"€ {valore_contributo:,.0f}"
+            else:
+                contributo_max = "N/D"
 
-            scad_fmt = format_scadenza_italiana(info["data_scadenza"]) or info["data_scadenza"] or "N/D"
+            # 2. Scadenza: se è vuota o c'è scritto "None", scrivi "N/D"
+            scadenza_grezza = info.get("data_scadenza")
+            scad_fmt = format_scadenza_italiana(scadenza_grezza) or scadenza_grezza
+            
+            if not scad_fmt or str(scad_fmt).strip().lower() in ["none", "null", ""]:
+                scad_fmt = "N/D"
 
-            # Costruzione della Card visiva
+           # Costruzione dell'interfaccia a card
             with st.container(border=True):
                 c1, c2 = st.columns([3, 1])
                 with c1:
                     st.markdown(f"### {info['titolo']}")
                     st.markdown(f"<span style='color:#64748b; font-size:1rem;'>{info['ente']}</span>", unsafe_allow_html=True)
                     st.write("")
+                    
+                    # Logica per l'etichetta gialla del Contributo
+                    if contributo_max == "N/D":
+                        contributo_html = "<span style='background:#fef3c7; padding:4px 10px; border-radius:6px; font-weight:600; color:#b45309;'>N/D</span>"
+                    else:
+                        contributo_html = f"<span style='font-size:1.2rem; font-weight:700;'>{contributo_max}</span>"
+
                     c1_a, c1_b = st.columns(2)
-                    c1_a.markdown(f"**Contributo Max**<br><span style='font-size:1.2rem; font-weight:700;'>{contributo_max}</span>", unsafe_allow_html=True)
-                    c1_b.markdown(f"**Scadenza**<br><span style='background:#fef3c7; padding:4px 10px; border-radius:6px; font-weight:600; color:#b45309;'>{scad_fmt}</span>", unsafe_allow_html=True)
+                    c1_a.markdown(f"**Contributo Max**<br><div style='margin-top:5px;'>{contributo_html}</div>", unsafe_allow_html=True)
+                    c1_b.markdown(f"**Scadenza**<br><div style='margin-top:5px;'><span style='background:#fef3c7; padding:4px 10px; border-radius:6px; font-weight:600; color:#b45309;'>{scad_fmt}</span></div>", unsafe_allow_html=True)
                 
                 with c2:
                     color_cls = get_color_class(max_sc)
@@ -213,7 +251,6 @@ if page == "📊 Dashboard":
                                 st.caption("⚠️ Compatibilità settore da verificare")
                         
                         with cl_col2:
-                            # Calcolo Breakdown per il grafico a barre
                             with get_connection() as conn:
                                 cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = ?", (cliente_id,)).fetchone()
                                 if cliente_row_db:
@@ -240,7 +277,6 @@ if page == "📊 Dashboard":
                     st.markdown("**Sintesi Bando**")
                     render_disclaimer(payload)
                     st.markdown(genera_scheda(payload))
-
 
 # ---------------------------------------------------------
 # PAGINA: ESTRAZIONE BANDI
@@ -366,6 +402,7 @@ elif page == "📄 Estrazione bandi":
 # PAGINA: PROFILO CLIENTE
 # ---------------------------------------------------------
 elif page == "🏢 Profilo cliente":
+    import re # Importiamo le librerie per le espressioni regolari
     st.header("Gestione Clienti")
     
     tab_nuovo, tab_gestisci = st.tabs(["➕ Nuovo Cliente", "📋 Archivio Clienti"])
@@ -376,26 +413,61 @@ elif page == "🏢 Profilo cliente":
             with st.form(f"form_cliente_{key_prefix}"):
                 c1, c2 = st.columns(2)
                 ragione_sociale = c1.text_input("Ragione sociale *", value=d.get("ragione_sociale", ""))
-                p_iva = c2.text_input("Partita IVA", value=d.get("p_iva", "") or "")
+                p_iva = c2.text_input("Partita IVA *", value=d.get("p_iva", "") or "", help="Deve contenere esattamente 11 cifre numeriche.")
                 
                 c3, c4 = st.columns(2)
-                codice_ateco = c3.text_input("Codice ATECO", value=d.get("codice_ateco", "") or "", help='Es. "62.01"')
+                codice_ateco = c3.text_input("Codice ATECO *", value=d.get("codice_ateco", "") or "", help="Formato accettato: XX.XX o XX.XX.XX")
                 regione = c4.selectbox("Regione *", options=REGIONI_ITALIANE, index=REGIONI_ITALIANE.index(d["regione"]) if d.get("regione") in REGIONI_ITALIANE else 0)
                 
-                descrizione_attivita = st.text_area("Descrizione attività", value=d.get("descrizione_attivita", "") or "")
+                descrizione_attivita = st.text_area("Descrizione attività (Opzionale)", value=d.get("descrizione_attivita", "") or "")
                 
                 c5, c6 = st.columns(2)
-                fatturato = c5.number_input("Fatturato annuo (€)", min_value=0.0, value=float(d.get("fatturato") or 0.0), step=1000.0)
+                fatturato = c5.number_input("Fatturato annuo (€) *", min_value=1.0, value=float(d.get("fatturato") or 1.0), step=1000.0)
                 dim_default = d.get("dimensione_impresa", DIMENSIONI_IMPRESA[0])
                 dimensione_impresa = c6.selectbox("Dimensione impresa *", options=DIMENSIONI_IMPRESA, index=DIMENSIONI_IMPRESA.index(dim_default) if dim_default in DIMENSIONI_IMPRESA else 0)
                 
                 submitted = st.form_submit_button("Salva Profilo", type="primary")
 
-            if not submitted: return None
-            if not ragione_sociale.strip():
-                st.error("La ragione sociale è obbligatoria.")
+            if not submitted: 
                 return None
-            return {"ragione_sociale": ragione_sociale, "p_iva": p_iva, "codice_ateco": codice_ateco, "descrizione_attivita": descrizione_attivita, "regione": regione, "fatturato": fatturato, "dimensione_impresa": dimensione_impresa}
+            
+            # --- BLOCCO DI VALIDAZIONE STRETTA ---
+            errori = []
+            
+            # Controllo campi vuoti
+            if not ragione_sociale.strip():
+                errori.append("La ragione sociale è obbligatoria.")
+            
+            # Controllo Partita IVA (Esattamente 11 numeri)
+            p_iva = p_iva.strip()
+            if not p_iva:
+                errori.append("La Partita IVA è obbligatoria.")
+            elif not re.fullmatch(r"\d{11}", p_iva):
+                errori.append("La Partita IVA non è valida. Deve contenere esattamente 11 numeri (niente lettere o spazi).")
+                
+            # Controllo Codice ATECO (Formato Numerico con punti)
+            codice_ateco = codice_ateco.strip()
+            if not codice_ateco:
+                errori.append("Il Codice ATECO è obbligatorio.")
+            elif not re.fullmatch(r"\d{2}\.\d{2}(?:\.\d{2})?", codice_ateco):
+                errori.append("Il Codice ATECO non è valido. Usa il formato corretto, es: 62.01 o 62.01.12")
+                
+            # Mostra gli errori e blocca il salvataggio
+            if errori:
+                for err in errori:
+                    st.error(f"❌ {err}")
+                return None
+            
+            # Se passa tutti i controlli, restituisce i dati puliti
+            return {
+                "ragione_sociale": ragione_sociale, 
+                "p_iva": p_iva, 
+                "codice_ateco": codice_ateco, 
+                "descrizione_attivita": descrizione_attivita, 
+                "regione": regione, 
+                "fatturato": fatturato, 
+                "dimensione_impresa": dimensione_impresa
+            }
 
         nuovo = render_cliente_form("nuovo")
         if nuovo:
