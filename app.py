@@ -146,8 +146,54 @@ if page == "📊 Dashboard":
     st.divider()
     
     col_action_left, col_action_right = st.columns([1, 1])
+    
     with col_action_left:
-        st.subheader("LA TUA PIPELINE")
+        # Prepariamo i dati per il CSV ricostruendo i breakdown
+        export_data = []
+        if rows:
+            for r in rows:
+                try:
+                    payload = json.loads(r["json_completo"])
+                except:
+                    payload = {}
+                
+                # Simuliamo la riga cliente per ricavare il breakdown
+                cliente_row = {
+                    "id": r.get("cliente_id"), "ragione_sociale": r.get("cliente_nome"),
+                    "codice_ateco": r.get("cliente_codice_ateco"), "regione": r.get("cliente_regione"),
+                    "fatturato": r.get("cliente_fatturato"), "dimensione_impresa": r.get("cliente_dimensione_impresa"),
+                }
+                
+                try:
+                    bd = get_score_breakdown(payload, cliente_row)
+                except:
+                    bd = {'total': 0, 'ateco': 0, 'regione': 0, 'dimensione': 0, 'fatturato': 0}
+                
+                export_data.append({
+                    "cliente": r.get("cliente_nome", "N/D"),
+                    "bando": r.get("bando_titolo") or f"Bando #{r.get('bando_id')}",
+                    "score_totale": int(r.get("score", 0)),
+                    "score_regione": bd.get("regione", 0),
+                    "score_ateco": bd.get("ateco", 0),
+                    "score_dimensione": bd.get("dimensione", 0),
+                    "score_fatturato": bd.get("fatturato", 0),
+                    "data_estrazione": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M")
+                })
+        
+        if export_data:
+            df_export = pd.DataFrame(export_data)
+            csv_data = df_export.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="📥 Esporta risultati (CSV)",
+                data=csv_data,
+                file_name="matching_bandi.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+        else:
+            # Pulsante disattivato se non ci sono dati
+            st.button("📥 Esporta risultati (CSV)", disabled=True, use_container_width=True)
+
     with col_action_right:
         if st.button("🔄 Ricalcola tutti i match", use_container_width=True):
             try:
@@ -339,35 +385,46 @@ elif page == "📄 Estrazione bandi":
                             st.error("Errori di validazione trovati nell'estrazione:")
                             for err in result["errors"]: st.markdown(f"- {err}")
 
-                        if result["needs_manual_review"]:
-                            st.warning(f"Da revisionare manualmente — molti campi mancanti ({result['null_percentage']:.0f}%).")
-
-                        if not result["errors"] and not result["needs_manual_review"]:
-                            st.success("✅ Validazione completata senza errori")
-
                         if not result["errors"]:
                             try:
                                 bando_id = save_bando_from_json(data)
                                 with get_connection() as conn:
                                     run_matching_for_bando(bando_id, conn)
+                                
+                                bando_payload = data.get("bando", {}) if isinstance(data, dict) else {}
+                                scadenza_estratta = bando_payload.get("data_scadenza")
+
+                                # 1. LOGICA DEL WARNING (Forziamo l'errore se manca la scadenza)
+                                if not scadenza_estratta:
+                                    st.warning("⚠️ Scadenza non trovata - Da revisionare manualmente")
+                                elif result.get("null_percentage", 0) > 50:
+                                    st.warning(f"⚠️ Troppi campi vuoti ({result['null_percentage']:.0f}%) - Da revisionare manualmente")
+                                else:
+                                    st.success("✅ Validazione completata senza errori")
+
                                 st.success(f"Bando salvato (id {bando_id}) e matching completato con i clienti in database.")
 
-                                # Sintesi visiva
-                                bando_payload = data.get("bando", {}) if isinstance(data, dict) else {}
+                                # 2. FIX GRAFICO DEL "NONE" NELLA SINTESI RAPIDA
                                 st.divider()
                                 st.subheader("📋 Sintesi Rapida")
                                 
                                 c1, c2 = st.columns(2)
-                                contributo = bando_payload.get("contributo_max")
-                                c1.markdown(f"**Contributo Max:** {f'{contributo:,.0f} €' if isinstance(contributo, (int, float)) else 'N/D'}")
-                                f_perduto = bando_payload.get("percentuale_fondo_perduto")
-                                c1.markdown(f"**Fondo Perduto:** {f'{f_perduto:.0f}%' if isinstance(f_perduto, (int, float)) else 'N/D'}")
                                 
-                                c2.markdown(f"**Scadenza:** {bando_payload.get('data_scadenza', 'N/D')}")
+                                # Gestione sicura dei valori nulli e formattazione "N/D"
+                                contributo = bando_payload.get('contributo_max')
+                                contributo_display = f"{contributo:,.0f} €" if isinstance(contributo, (int, float)) else "🟡 N/D"
+                                scadenza_display = scadenza_estratta if scadenza_estratta else "🟡 N/D"
+                                f_perduto = bando_payload.get("percentuale_fondo_perduto")
+                                f_perduto_display = f"{f_perduto:.0f}%" if isinstance(f_perduto, (int, float)) else "🟡 N/D"
+                                
+                                c1.markdown(f"**Contributo Max:** {contributo_display}")
+                                c1.markdown(f"**Fondo Perduto:** {f_perduto_display}")
+                                
+                                c2.markdown(f"**Scadenza:** {scadenza_display}")
+                                
                                 dim_impresa = bando_payload.get("dimensione_impresa", {})
                                 dim_attive = [k for k, v in dim_impresa.items() if v] if isinstance(dim_impresa, dict) else []
-                                c2.markdown(f"**Dimensioni:** {', '.join(dim_attive) if dim_attive else 'N/D'}")
-
+                                c2.markdown(f"**Dimensioni:** {', '.join(dim_attive) if dim_attive else '🟡 N/D'}")
                                 # Vincoli Fase 5
                                 spesa_min = bando_payload.get("spesa_minima_ammissibile")
                                 forme_giuridiche = bando_payload.get("forme_giuridiche_ammesse", [])

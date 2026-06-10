@@ -127,3 +127,23 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
 - **Campi null/vuoti:** bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.link_fonte_ufficiale
 - **Note:** Validazione: 0 errori, 33% campi vuoti
+
+### Semplice.pdf — 2026-06-10 11:30:41
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.note_esclusioni, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.link_fonte_ufficiale, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### Semplice.pdf — 2026-06-10 11:37:33
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando_aperto_a_tutti.pdf — 2026-06-10 11:40:44
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.ateco_aperto_a_tutti, bando.note_esclusioni, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### tabelle_spese_ammissibili.pdf — 2026-06-10 11:42:52
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max, bando.spesa_minima_ammissibile
+- **Note:** Validazione OK
