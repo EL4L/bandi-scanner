@@ -59,11 +59,7 @@ custom_css = """
 .circle-red { color: #ef4444; border: 5px solid #fecaca; background: #fef2f2; }
 .match-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
 
-.progress-container { margin-bottom: 12px; }
-.progress-header { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; color: #1e293b; }
-.progress-bg { background: #e2e8f0; border-radius: 6px; height: 10px; width: 100%; overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
-.fill-purple { background: #6366f1; }
+/* Rimosso il vecchio CSS delle barre di progresso, ora è tutto gestito inline nella nuova funzione per la massima compattezza */
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -81,12 +77,18 @@ def get_color_class(score: int) -> str:
     if score >= 40: return "circle-yellow"
     return "circle-red"
 
+# MODIFICA: Funzione aggiornata per barre di progresso orizzontali e ultra-compatte
 def render_progress_bar(label: str, score: int, max_score: int):
     pct = int((score / max_score) * 100) if max_score > 0 else 0
     html = f"""
-    <div class="progress-container">
-        <div class="progress-header"><span>{label}</span><span>{score}/{max_score}</span></div>
-        <div class="progress-bg"><div class="progress-fill fill-purple" style="width: {pct}%;"></div></div>
+    <div style="margin-bottom: 0px; width: 100%; padding: 0 4px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #475569; font-weight: 600; margin-bottom: 4px;">
+            <span>{label}</span>
+            <span>{score}/{max_score}</span>
+        </div>
+        <div style="background: #e2e8f0; border-radius: 4px; height: 6px; width: 100%; overflow: hidden;">
+            <div style="background: #6366f1; height: 100%; border-radius: 4px; width: {pct}%; transition: width 0.4s ease;"></div>
+        </div>
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
@@ -135,8 +137,6 @@ if page == "📊 Dashboard":
                 except:
                     pass
                 bandi_calcolati.add(bid)
-
-      
 
     # KPI in alto con tre colonne e dati dinamici reali
     kpi2, kpi3 = st.columns(2)
@@ -251,7 +251,7 @@ if page == "📊 Dashboard":
             if not scad_fmt or str(scad_fmt).strip().lower() in ["none", "null", ""]:
                 scad_fmt = "N/D"
 
-           # Costruzione dell'interfaccia a card
+            # Costruzione dell'interfaccia a card
             with st.container(border=True):
                 c1, c2 = st.columns([3, 1])
                 with c1:
@@ -288,36 +288,58 @@ if page == "📊 Dashboard":
                         cliente_id = m.get("cliente_id")
                         score_cliente = int(m['score'])
                         
-                        cl_col1, cl_col2 = st.columns([1, 2])
-                        with cl_col1:
-                            st.markdown(f"#### {m['cliente_nome']}")
-                            st.markdown(f"**Score totale:** {score_cliente}/100")
-                            cliente_match = {"codice_ateco": m.get("cliente_codice_ateco"), "descrizione_attivita": m.get("cliente_descrizione_attivita")}
-                            if settore_da_verificare(payload, cliente_match):
-                                st.caption("⚠️ Compatibilità settore da verificare")
-                        
-                        with cl_col2:
-                            with get_connection() as conn:
-                                cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = ?", (cliente_id,)).fetchone()
-                                if cliente_row_db:
-                                    cliente_row = dict(cliente_row_db)
-                                else:
-                                    cliente_row = {
-                                        "id": cliente_id, "ragione_sociale": m.get("cliente_nome"),
-                                        "codice_ateco": m.get("cliente_codice_ateco"), "regione": m.get("cliente_regione"),
-                                        "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
-                                    }
-                            try:
-                                bd = get_score_breakdown(payload, cliente_row)
-                                render_progress_bar("Codice ATECO", bd['ateco'], 40)
-                                render_progress_bar("Regione", bd['regione'], 30)
-                                render_progress_bar("Dimensione Impresa", bd['dimensione'], 20)
-                                render_progress_bar("Fatturato", bd['fatturato'], 10)
+                        # Recupero dati e calcolo breakdown
+                        with get_connection() as conn:
+                            cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = ?", (cliente_id,)).fetchone()
+                            if cliente_row_db:
+                                cliente_row = dict(cliente_row_db)
+                            else:
+                                cliente_row = {
+                                    "id": cliente_id, "ragione_sociale": m.get("cliente_nome"),
+                                    "codice_ateco": m.get("cliente_codice_ateco"), "regione": m.get("cliente_regione"),
+                                    "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
+                                }
+                        try:
+                            bd = get_score_breakdown(payload, cliente_row)
+                        except Exception as e:
+                            bd = {'total': 0, 'ateco': 0, 'regione': 0, 'dimensione': 0, 'fatturato': 0}
+                            st.error(f"Errore caricamento breakdown: {e}")
+
+                        # MODIFICA GRAFICA: Layout strutturato a tabella gerarchica per ogni cliente
+                        with st.container(border=True):
+                            c_info, c_ateco, c_regione, c_dim, c_fat = st.columns([2.5, 1.5, 1.5, 1.5, 1.5], vertical_alignment="center")
+                            
+                            with c_info:
+                                # Colori dinamici per il badge del punteggio totale
+                                bg_color = "#dcfce7" if score_cliente > 70 else ("#fef08a" if score_cliente >= 40 else "#fee2e2")
+                                text_color = "#166534" if score_cliente > 70 else ("#854d0e" if score_cliente >= 40 else "#991b1b")
                                 
-                                if score_cliente != int(bd["total"]):
-                                    st.caption(f"*(Discrepanza: score DB={score_cliente}, calcolato={bd['total']})*")
-                            except Exception as e:
-                                st.error(f"Errore caricamento breakdown: {e}")
+                                st.markdown(f"""
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; min-width: 42px; height: 42px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.3rem;">🏢</div>
+                                    <div style="line-height: 1.2;">
+                                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{m['cliente_nome']}">{m['cliente_nome']}</div>
+                                        <div style="font-size: 0.75rem; font-weight: 700; color: {text_color}; background: {bg_color}; padding: 3px 8px; border-radius: 12px; display: inline-block;">Score totale {score_cliente}/100</div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                                cliente_match = {"codice_ateco": m.get("cliente_codice_ateco"), "descrizione_attivita": m.get("cliente_descrizione_attivita")}
+                                if settore_da_verificare(payload, cliente_match):
+                                    st.caption("⚠️ Compatibilità settore da verificare")
+
+                            # Stampa delle singole metriche in orizzontale
+                            with c_ateco:
+                                render_progress_bar("Codice ATECO", bd['ateco'], 40)
+                            with c_regione:
+                                render_progress_bar("Regione", bd['regione'], 30)
+                            with c_dim:
+                                render_progress_bar("Dimensione", bd['dimensione'], 20)
+                            with c_fat:
+                                render_progress_bar("Fatturato", bd['fatturato'], 10)
+
+                            if score_cliente != int(bd["total"]):
+                                st.caption(f"*(Discrepanza: DB={score_cliente}, Calc={bd['total']})*")
                                 
                     st.divider()
                     st.markdown("**Sintesi Bando**")
