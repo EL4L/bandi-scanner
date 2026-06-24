@@ -1,3 +1,4 @@
+import base64
 import json
 import pandas as pd
 import streamlit as st
@@ -96,6 +97,17 @@ def render_progress_bar(label: str, score: int, max_score: int):
 # ---------------------------------------------------------
 # SIDEBAR (Navigazione)
 # ---------------------------------------------------------
+# NUOVO: Logo e Nome Progetto permanente in alto (Rebranding)
+st.sidebar.markdown(
+    """
+    <div style="text-align: center; margin-bottom: 10px; padding: 10px; border-bottom: 2px solid #f1f5f9;">
+        <h1 style="color: #6366f1; font-size: 1.8rem; margin-bottom: 0;">🎯 BandiMatch AI</h1>
+        <p style="color: #64748b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Matchmaking Predittivo PMI</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.sidebar.markdown("## 🧭 Menu Principale")
 page = st.sidebar.radio(
     "Navigazione",
@@ -104,6 +116,16 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.divider()
+
+# NUOVO: Informativa Chiara GDPR Compliance (richiesta per l'esame)
+st.sidebar.info(
+    "🔒 **GDPR Compliance:**\n\n"
+    "I documenti PDF caricati e i dettagli aziendali inseriti vengono trattati "
+    "esclusivamente in memoria per la durata della sessione. "
+    "Nessun file o dato sensibile viene salvato in modo persistente o trasmesso a terzi "
+    "per finalità di addestramento."
+)
+
 st.sidebar.caption("⚠️ **Disclaimer AI:** I dati estratti sono generati dall'intelligenza artificiale e non hanno valore legale. Verifica sempre i bandi ufficiali degli Enti erogatori.")
 
 # ---------------------------------------------------------
@@ -340,12 +362,18 @@ if page == "📊 Dashboard":
 
                             if score_cliente != int(bd["total"]):
                                 st.caption(f"*(Discrepanza: DB={score_cliente}, Calc={bd['total']})*")
-                                
                     st.divider()
                     st.markdown("**Sintesi Bando**")
                     render_disclaimer(payload)
-                    st.markdown(genera_scheda(payload))
-
+                    
+                    scheda_testo = genera_scheda(payload)
+                    st.markdown(scheda_testo)
+                    
+                    # NUOVO: Link centrato in fondo e nessun st.download_button
+                    b64_scheda = base64.b64encode(scheda_testo.encode('utf-8')).decode()
+                    html_link = f'<div style="text-align: center; margin-top: 20px;"><a href="data:text/markdown;base64,{b64_scheda}" download="Scheda_Bando_{bid}.md" style="font-weight: 600; color: #2563eb; text-decoration: underline; font-size: 1.1rem;">📄 Scarica la scheda del bando</a></div>'
+                    st.markdown(html_link, unsafe_allow_html=True)
+                    
 # ---------------------------------------------------------
 # PAGINA: ESTRAZIONE BANDI
 # ---------------------------------------------------------
@@ -463,10 +491,17 @@ elif page == "📄 Estrazione bandi":
                                         if mesi_min: t_anz += f"Min {mesi_min} mesi. "
                                         if mesi_max: t_anz += f"Max {mesi_max} mesi. "
                                         st.warning(t_anz)
-                                    if forme_giuridiche: st.info(f"🏛️ **Forme Giuridiche:** {', '.join(forme_giuridiche).title()}")
+                                if forme_giuridiche: st.info(f"🏛️ **Forme Giuridiche:** {', '.join(forme_giuridiche).title()}")
 
                                 ok_fields, null_fields = fields_status(data)
                                 log_prompt_run(filename=safe_name, fields_ok=ok_fields, fields_null=null_fields, notes=f"Validazione OK")
+
+                                # NUOVO: Link centrato in fondo e nessun st.download_button
+                                st.write("")
+                                scheda_estratta = genera_scheda(data)
+                                b64_estratta = base64.b64encode(scheda_estratta.encode('utf-8')).decode()
+                                html_link_estraz = f'<div style="text-align: center; margin-top: 20px;"><a href="data:text/markdown;base64,{b64_estratta}" download="Riassunto_{safe_name.replace(".pdf", "")}.md" style="font-weight: 600; color: #2563eb; text-decoration: underline; font-size: 1.1rem;">📄 Scarica il riassunto del bando (.md)</a></div>'
+                                st.markdown(html_link_estraz, unsafe_allow_html=True)
 
                             except Exception as exc:
                                 st.error(f"Salvataggio fallito: {exc}")
@@ -475,7 +510,6 @@ elif page == "📄 Estrazione bandi":
                         st.error(f"Errore durante l'estrazione: {exc}")
         except EmptyPDFException:
             st.error("PDF vuoto o illeggibile (solo immagini o scansioni).")
-
 
 # ---------------------------------------------------------
 # PAGINA: PROFILO CLIENTE

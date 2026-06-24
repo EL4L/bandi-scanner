@@ -147,3 +147,13 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max, bando.spesa_minima_ammissibile
 - **Note:** Validazione OK
+
+### bando_regioni.pdf — 2026-06-24 17:31:45
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.note_esclusioni, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando_ateco_specifico.pdf — 2026-06-24 17:33:34
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
