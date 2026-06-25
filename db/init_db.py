@@ -1,15 +1,14 @@
-"""Inizializzazione schema SQLite (idempotente, non cancella dati esistenti)."""
+"""Inizializzazione schema Postgres/Neon (idempotente, non cancella dati esistenti)."""
 
 from __future__ import annotations
 
-import sqlite3
-from pathlib import Path
+import os
 
-DB_PATH = Path(__file__).resolve().parent / "bandi.db"
+import psycopg2
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS clienti (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     ragione_sociale TEXT NOT NULL,
     p_iva TEXT,
     codice_ateco TEXT,
@@ -17,12 +16,12 @@ CREATE TABLE IF NOT EXISTS clienti (
     regione TEXT,
     fatturato REAL,
     dimensione_impresa TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now')),
-    updated_at TEXT DEFAULT (datetime('now'))
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS bandi (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     titolo TEXT,
     ente TEXT,
     data_scadenza TEXT,
@@ -31,15 +30,15 @@ CREATE TABLE IF NOT EXISTS bandi (
     dimensione TEXT,
     contributo_max REAL,
     json_completo TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS match_results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     cliente_id INTEGER NOT NULL,
     bando_id INTEGER NOT NULL,
     score REAL NOT NULL,
-    data_match TEXT DEFAULT (datetime('now')),
+    data_match TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (cliente_id) REFERENCES clienti(id) ON DELETE CASCADE,
     FOREIGN KEY (bando_id) REFERENCES bandi(id) ON DELETE CASCADE
 );
@@ -49,30 +48,31 @@ CREATE INDEX IF NOT EXISTS idx_match_bando ON match_results(bando_id);
 """
 
 
-def _migrate_schema(conn: sqlite3.Connection) -> None:
+def _migrate_schema(conn) -> None:
     """Aggiunge colonne nuove su DB esistenti senza cancellare dati."""
-    cols = {
-        row[1] for row in conn.execute("PRAGMA table_info(clienti)").fetchall()
-    }
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'clienti'"
+    )
+    cols = {row[0] for row in cur.fetchall()}
     if "descrizione_attivita" not in cols:
-        conn.execute(
-            "ALTER TABLE clienti ADD COLUMN descrizione_attivita TEXT"
-        )
+        cur.execute("ALTER TABLE clienti ADD COLUMN descrizione_attivita TEXT")
 
 
-def init_database(db_path: Path | None = None) -> Path:
-    path = db_path or DB_PATH
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(path) as conn:
-        conn.executescript(SCHEMA_SQL)
+def init_database(database_url: str | None = None) -> None:
+    url = database_url or os.getenv("DATABASE_URL", "").strip()
+    if not url:
+        raise RuntimeError("DATABASE_URL non configurata. Inserisci la connection string Neon nel file .env.")
+    with psycopg2.connect(url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(SCHEMA_SQL)
         _migrate_schema(conn)
         conn.commit()
-    return path
 
 
 def main() -> None:
-    path = init_database()
-    print(f"Database inizializzato: {path}")
+    init_database()
+    print("Database Neon inizializzato.")
 
 
 if __name__ == "__main__":

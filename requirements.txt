@@ -4,3 +4,4 @@ openai
 pymupdf
 python-dotenv
 tenacity
+psycopg2-binary

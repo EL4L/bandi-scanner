@@ -2,7 +2,6 @@
 from __future__ import annotations
 import json
 import re
-import sqlite3
 from datetime import datetime
 from typing import Any
 from modules.log_utils import log_error
@@ -157,7 +156,7 @@ def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dic
     totale = 0 if not bando_has_constraints(payload) else (score_regione + score_ateco + score_dim + score_fat)
     return {"regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat, "total": max(0, min(100, int(totale)))}
 
-def run_matching_for_bando(bando_id: int, conn: sqlite3.Connection) -> None:
+def run_matching_for_bando(bando_id: int, conn: Any) -> None:
     try:
         row = conn.execute("SELECT json_completo FROM bandi WHERE id = ?", (bando_id,)).fetchone()
         if not row: return
@@ -168,12 +167,12 @@ def run_matching_for_bando(bando_id: int, conn: sqlite3.Connection) -> None:
             cliente = dict(cliente_row)
             score = calculate_score(bando_data, cliente)
             existing = conn.execute("SELECT id FROM match_results WHERE cliente_id = ? AND bando_id = ?", (cliente["id"], bando_id)).fetchone()
-            if existing: conn.execute("UPDATE match_results SET score = ?, data_match = datetime('now') WHERE id = ?", (score, existing["id"]))
+            if existing: conn.execute("UPDATE match_results SET score = ?, data_match = NOW() WHERE id = ?", (score, existing["id"]))
             else: conn.execute("INSERT INTO match_results (cliente_id, bando_id, score) VALUES (?, ?, ?)", (cliente["id"], bando_id, score))
         conn.commit()
     except Exception as exc: log_error(f"run_matching_for_bando({bando_id}): {exc}")
 
-def run_matching_for_all_bandi(conn: sqlite3.Connection) -> None:
+def run_matching_for_all_bandi(conn: Any) -> None:
     try:
         for row in conn.execute("SELECT id FROM bandi").fetchall():
             run_matching_for_bando(int(row["id"]), conn)
@@ -237,17 +236,17 @@ def get_fonte_url(bando: dict[str, Any]) -> str | None:
     link = _norm_str(b.get("url_fonte") or b.get("link_fonte_ufficiale") or b.get("link_fonte"))
     return link or None
 
-def load_dashboard_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
     rows = conn.execute(
         '''SELECT mr.bando_id, mr.cliente_id, mr.score, mr.data_match,
         b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo,
         c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
         c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
-        ORDER BY mr.score DESC, b.titolo COLLATE NOCASE'''
+        ORDER BY mr.score DESC, LOWER(b.titolo)'''
     ).fetchall()
     return [dict(r) for r in rows]
 
-def count_bandi(conn: sqlite3.Connection) -> int:
+def count_bandi(conn: Any) -> int:
     row = conn.execute("SELECT COUNT(*) AS n FROM bandi").fetchone()
     return int(row["n"]) if row else 0

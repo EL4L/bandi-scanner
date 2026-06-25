@@ -1,15 +1,15 @@
-"""Accesso SQLite: clienti, bandi, match_results."""
+"""Accesso Postgres (Neon): clienti, bandi, match_results."""
 
 from __future__ import annotations
 
 import json
 import os
-import sqlite3
-from pathlib import Path
 from typing import Any
 
-_DB_PATH_ENV = os.getenv("DB_PATH", "").strip()
-DB_PATH = Path(_DB_PATH_ENV) if _DB_PATH_ENV else Path(__file__).resolve().parents[1] / "db" / "bandi.db"
+import psycopg2
+import psycopg2.extras
+
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 
 REGIONI_ITALIANE: tuple[str, ...] = (
     "Abruzzo",
@@ -37,23 +37,51 @@ REGIONI_ITALIANE: tuple[str, ...] = (
 DIMENSIONI_IMPRESA: tuple[str, ...] = ("micro", "piccola", "media", "grande")
 
 
-def get_connection() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+class _PGConnection:
+    """Adatta psycopg2 all'API usata nel codice esistente (conn.execute con placeholder '?')."""
+
+    def __init__(self, raw_conn):
+        self._conn = raw_conn
+
+    def execute(self, sql: str, params: tuple = ()):
+        cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute(sql.replace("?", "%s"), params)
+        return cur
+
+    def commit(self) -> None:
+        self._conn.commit()
+
+    def __enter__(self) -> "_PGConnection":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> bool:
+        try:
+            if exc_type is None:
+                self._conn.commit()
+            else:
+                self._conn.rollback()
+        finally:
+            self._conn.close()
+        return False
+
+
+def get_connection() -> _PGConnection:
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL non configurata. Inserisci la connection string Neon nel file .env.")
+    raw_conn = psycopg2.connect(DATABASE_URL)
+    return _PGConnection(raw_conn)
 
 
 def ensure_database() -> None:
     import sys
+    from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
     from db.init_db import init_database
 
-    init_database(DB_PATH)
+    init_database()
 
 
 def create_cliente(
@@ -72,6 +100,7 @@ def create_cliente(
                 ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
                 regione, fatturato, dimensione_impresa
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
             """,
             (
                 ragione_sociale.strip(),
@@ -83,8 +112,9 @@ def create_cliente(
                 dimensione_impresa,
             ),
         )
+        new_id = int(cur.fetchone()["id"])
         conn.commit()
-        return int(cur.lastrowid)
+        return new_id
 
 
 def list_clienti() -> list[dict[str, Any]]:
@@ -94,7 +124,7 @@ def list_clienti() -> list[dict[str, Any]]:
             SELECT id, ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
                    regione, fatturato, dimensione_impresa, created_at
             FROM clienti
-            ORDER BY ragione_sociale COLLATE NOCASE
+            ORDER BY LOWER(ragione_sociale)
             """
         ).fetchall()
     return [dict(row) for row in rows]
@@ -129,7 +159,7 @@ def update_cliente(
                 regione = ?,
                 fatturato = ?,
                 dimensione_impresa = ?,
-                updated_at = datetime('now')
+                updated_at = NOW()
             WHERE id = ?
             """,
             (
@@ -143,15 +173,17 @@ def update_cliente(
                 cliente_id,
             ),
         )
+        updated = cur.rowcount > 0
         conn.commit()
-        return cur.rowcount > 0
+        return updated
 
 
 def delete_cliente(cliente_id: int) -> bool:
     with get_connection() as conn:
         cur = conn.execute("DELETE FROM clienti WHERE id = ?", (cliente_id,))
+        deleted = cur.rowcount > 0
         conn.commit()
-        return cur.rowcount > 0
+        return deleted
 
 
 def save_bando_from_json(data: dict[str, Any]) -> int:
@@ -171,6 +203,7 @@ def save_bando_from_json(data: dict[str, Any]) -> int:
                 titolo, ente, data_scadenza, codici_ateco, regioni,
                 dimensione, contributo_max, json_completo
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            RETURNING id
             """,
             (
                 bando.get("titolo"),
@@ -183,5 +216,6 @@ def save_bando_from_json(data: dict[str, Any]) -> int:
                 json.dumps(data, ensure_ascii=False),
             ),
         )
+        new_id = int(cur.fetchone()["id"])
         conn.commit()
-        return int(cur.lastrowid)
+        return new_id
