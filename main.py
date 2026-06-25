@@ -13,8 +13,10 @@ from modules.database import (
     DIMENSIONI_IMPRESA,
     REGIONI_ITALIANE,
     create_cliente,
+    deduplica_bandi,
     delete_cliente,
     ensure_database,
+    find_duplicate_bando,
     get_cliente,
     get_connection,
     list_clienti,
@@ -230,6 +232,18 @@ def api_dashboard():
     return _dashboard_payload()
 
 
+@app.post("/api/bandi/deduplica")
+def api_deduplica_bandi():
+    try:
+        eliminati = deduplica_bandi()
+        if eliminati > 0:
+            with get_connection() as conn:
+                run_matching_for_all_bandi(conn)
+        return {"status": "ok", "eliminati": eliminati}
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)})
+
+
 @app.post("/api/bandi/recalc")
 def api_recalc_matches():
     try:
@@ -363,6 +377,18 @@ def api_estrazione_submit(file: UploadFile = File(...)):
 
         if not validation["errors"]:
             try:
+                existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
+                if existing_id:
+                    return JSONResponse(content={
+                        "status": "duplicato",
+                        "messaggio": "Bando già presente in archivio",
+                        "bando_id": existing_id,
+                        "filename": result["filename"],
+                        "size_kb": result["size_kb"],
+                        "scheda": genera_scheda(data),
+                        "warnings": validation.get("warnings", []),
+                    })
+
                 bando_id = save_bando_from_json(data)
                 with get_connection() as conn:
                     run_matching_for_bando(bando_id, conn)

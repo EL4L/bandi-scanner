@@ -189,6 +189,55 @@ def delete_cliente(cliente_id: int) -> bool:
         return deleted
 
 
+def deduplica_bandi() -> int:
+    """
+    Rimuove duplicati per coppia (titolo, ente), mantenendo il bando con id più alto.
+    Elimina prima i match_results collegati ai duplicati.
+    Restituisce il numero di bandi eliminati.
+    """
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                LOWER(COALESCE(titolo, '')) AS titolo_key,
+                LOWER(COALESCE(ente, ''))   AS ente_key,
+                array_agg(id ORDER BY id DESC) AS ids
+            FROM bandi
+            GROUP BY LOWER(COALESCE(titolo, '')), LOWER(COALESCE(ente, ''))
+            HAVING COUNT(*) > 1
+            """
+        ).fetchall()
+
+        deleted = 0
+        for row in rows:
+            ids_to_delete = list(row["ids"])[1:]  # tieni il primo (id più alto)
+            for did in ids_to_delete:
+                conn.execute("DELETE FROM match_results WHERE bando_id = ?", (did,))
+                conn.execute("DELETE FROM bandi WHERE id = ?", (did,))
+                deleted += 1
+
+        conn.commit()
+    return deleted
+
+
+def find_duplicate_bando(titolo: str | None, ente: str | None) -> int | None:
+    """Restituisce l'id del bando già presente con stesso titolo+ente (case-insensitive), o None."""
+    if not (titolo or "").strip():
+        return None
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT id FROM bandi
+            WHERE LOWER(COALESCE(titolo, '')) = LOWER(COALESCE(?, ''))
+              AND LOWER(COALESCE(ente,   '')) = LOWER(COALESCE(?, ''))
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (titolo or "", ente or ""),
+        ).fetchone()
+    return int(row["id"]) if row else None
+
+
 def save_bando_from_json(data: dict[str, Any]) -> int:
     """Salva estrazione bando (per Fase 3). data = {"bando": {...}}."""
     bando = data.get("bando") if isinstance(data.get("bando"), dict) else {}

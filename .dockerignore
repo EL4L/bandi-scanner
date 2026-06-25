@@ -6,3 +6,5 @@ __pycache__/
 temp/
 .git/
 .streamlit/secrets.toml
+frontend/node_modules/
+frontend/dist/
