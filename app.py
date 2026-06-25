@@ -45,22 +45,115 @@ ROOT = Path(__file__).resolve().parent
 TEMP_DIR = ROOT / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
 
-# 1. Custom CSS per i componenti estetici (Cerchi e Barre di progresso)
+# 1. Design system: tipografia, palette fintech/B2B e componenti riusabili
 custom_css = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --color-bg: #F8FAFC;
+    --color-surface: #FFFFFF;
+    --color-primary: #0F172A;
+    --color-secondary: #334155;
+    --color-accent: #0369A1;
+    --color-accent-soft: #E0F2FE;
+    --color-text: #0F172A;
+    --color-text-muted: #475569;
+    --color-border: #E2E8F0;
+    --color-success: #059669;
+    --color-success-bg: #ECFDF5;
+    --color-warning: #B45309;
+    --color-warning-bg: #FEF3C7;
+    --color-danger: #DC2626;
+    --color-danger-bg: #FEF2F2;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+}
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+}
+
+h1, h2, h3, h4, h5 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+}
+
+/* Card contenitori standard di Streamlit (st.container(border=True)) */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: var(--radius-lg) !important;
+    border: 1px solid var(--color-border) !important;
+    transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    border-color: #CBD5E1 !important;
+}
+
+/* KPI metric cards */
+div[data-testid="stMetric"] {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+}
+div[data-testid="stMetricLabel"] {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+    color: var(--color-text-muted); text-transform: uppercase;
+}
+div[data-testid="stMetricValue"] {
+    color: var(--color-primary); font-weight: 800;
+}
+
+/* Bottoni primari coerenti con l'accent color */
+button[kind="primary"] {
+    background-color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+    transition: background-color 150ms ease;
+}
+button[kind="primary"]:hover { background-color: #075985 !important; }
+
+button[kind="secondary"] {
+    border-radius: var(--radius-md) !important;
+    font-weight: 600 !important;
+}
+
+/* Match circle (score complessivo) */
 .match-circle {
     display: flex; flex-direction: column; align-items: center; justify-content: center; margin: auto;
 }
 .circle-value {
-    font-size: 1.8rem; font-weight: 800; border-radius: 50%; width: 85px; height: 85px; 
-    display: flex; align-items: center; justify-content: center; margin-bottom: 5px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.6rem; font-weight: 800; border-radius: 50%; width: 80px; height: 80px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
+    border: 4px solid transparent;
 }
-.circle-green { color: #10b981; border: 5px solid #d1fae5; background: #ecfdf5; }
-.circle-yellow { color: #eab308; border: 5px solid #fef08a; background: #fefce8; }
-.circle-red { color: #ef4444; border: 5px solid #fecaca; background: #fef2f2; }
-.match-label { font-size: 0.75rem; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
+.circle-green { color: var(--color-success); background: var(--color-success-bg); border-color: #A7F3D0; }
+.circle-yellow { color: var(--color-warning); background: var(--color-warning-bg); border-color: #FDE68A; }
+.circle-red { color: var(--color-danger); background: var(--color-danger-bg); border-color: #FECACA; }
+.match-label {
+    font-size: 0.68rem; font-weight: 700; color: var(--color-text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+}
 
-/* Rimosso il vecchio CSS delle barre di progresso, ora è tutto gestito inline nella nuova funzione per la massima compattezza */
+/* Badge generico (scadenze, importi, stati) */
+.badge {
+    display: inline-block; padding: 4px 10px; border-radius: 6px;
+    font-weight: 600; font-size: 0.85rem;
+}
+.badge-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.badge-success { background: var(--color-success-bg); color: var(--color-success); }
+.badge-neutral { background: #F1F5F9; color: var(--color-secondary); }
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -88,7 +181,7 @@ def render_progress_bar(label: str, score: int, max_score: int):
             <span>{score}/{max_score}</span>
         </div>
         <div style="background: #e2e8f0; border-radius: 4px; height: 6px; width: 100%; overflow: hidden;">
-            <div style="background: #6366f1; height: 100%; border-radius: 4px; width: {pct}%; transition: width 0.4s ease;"></div>
+            <div style="background: #0369A1; height: 100%; border-radius: 4px; width: {pct}%; transition: width 0.3s ease;"></div>
         </div>
     </div>
     """
@@ -100,18 +193,18 @@ def render_progress_bar(label: str, score: int, max_score: int):
 # NUOVO: Logo e Nome Progetto permanente in alto (Rebranding)
 st.sidebar.markdown(
     """
-    <div style="text-align: center; margin-bottom: 10px; padding: 10px; border-bottom: 2px solid #f1f5f9;">
-        <h1 style="color: #6366f1; font-size: 1.8rem; margin-bottom: 0;">🎯 BandiMatch AI</h1>
-        <p style="color: #64748b; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;">Matchmaking Predittivo PMI</p>
+    <div style="text-align: center; margin-bottom: 10px; padding: 16px 4px; border-bottom: 1px solid #E2E8F0;">
+        <h1 style="color: #0369A1; font-size: 1.5rem; margin-bottom: 0; font-weight: 800;">BandiMatch AI</h1>
+        <p style="color: #475569; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px;">Matching Bandi &middot; Clienti</p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-st.sidebar.markdown("## 🧭 Menu Principale")
+st.sidebar.markdown("**MENU PRINCIPALE**")
 page = st.sidebar.radio(
     "Navigazione",
-    ["📊 Dashboard", "📄 Estrazione bandi", "🏢 Profilo cliente"],
+    ["Dashboard", "Estrazione bandi", "Profilo cliente"],
     label_visibility="collapsed"
 )
 
@@ -131,13 +224,13 @@ st.sidebar.caption("⚠️ **Disclaimer AI:** I dati estratti sono generati dall
 # ---------------------------------------------------------
 # PAGINA: DASHBOARD
 # ---------------------------------------------------------
-if page == "📊 Dashboard":
+if page == "Dashboard":
     with get_connection() as conn:
         n_bandi = count_bandi(conn)
         rows = load_dashboard_rows(conn)
 
     st.title("I tuoi bandi")
-    st.markdown(f"<span style='color:#64748b; font-size:1.1rem;'>L'AI ha scansionato le fonti. Hai **{n_bandi} bandi** in target.</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color:var(--color-text-muted); font-size:1.1rem;'>L'AI ha scansionato le fonti. Hai **{n_bandi} bandi** in target.</span>", unsafe_allow_html=True)
     st.write("")
 
     # --- CALCOLO DEI DATI REALI PER I KPI (CORRETTO) ---
@@ -278,18 +371,18 @@ if page == "📊 Dashboard":
                 c1, c2 = st.columns([3, 1])
                 with c1:
                     st.markdown(f"### {info['titolo']}")
-                    st.markdown(f"<span style='color:#64748b; font-size:1rem;'>{info['ente']}</span>", unsafe_allow_html=True)
+                    st.markdown(f"<span style='color:var(--color-text-muted); font-size:1rem;'>{info['ente']}</span>", unsafe_allow_html=True)
                     st.write("")
-                    
+
                     # Logica per l'etichetta gialla del Contributo
                     if contributo_max == "N/D":
-                        contributo_html = "<span style='background:#fef3c7; padding:4px 10px; border-radius:6px; font-weight:600; color:#b45309;'>N/D</span>"
+                        contributo_html = "<span class='badge badge-warning'>N/D</span>"
                     else:
-                        contributo_html = f"<span style='font-size:1.2rem; font-weight:700;'>{contributo_max}</span>"
+                        contributo_html = f"<span style='font-size:1.2rem; font-weight:700; color:var(--color-primary);'>{contributo_max}</span>"
 
                     c1_a, c1_b = st.columns(2)
                     c1_a.markdown(f"**Contributo Max**<br><div style='margin-top:5px;'>{contributo_html}</div>", unsafe_allow_html=True)
-                    c1_b.markdown(f"**Scadenza**<br><div style='margin-top:5px;'><span style='background:#fef3c7; padding:4px 10px; border-radius:6px; font-weight:600; color:#b45309;'>{scad_fmt}</span></div>", unsafe_allow_html=True)
+                    c1_b.markdown(f"**Scadenza**<br><div style='margin-top:5px;'><span class='badge badge-warning'>{scad_fmt}</span></div>", unsafe_allow_html=True)
                 
                 with c2:
                     color_cls = get_color_class(max_sc)
@@ -310,17 +403,13 @@ if page == "📊 Dashboard":
                         cliente_id = m.get("cliente_id")
                         score_cliente = int(m['score'])
                         
-                        # Recupero dati e calcolo breakdown
-                        with get_connection() as conn:
-                            cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = ?", (cliente_id,)).fetchone()
-                            if cliente_row_db:
-                                cliente_row = dict(cliente_row_db)
-                            else:
-                                cliente_row = {
-                                    "id": cliente_id, "ragione_sociale": m.get("cliente_nome"),
-                                    "codice_ateco": m.get("cliente_codice_ateco"), "regione": m.get("cliente_regione"),
-                                    "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
-                                }
+                        # Dati cliente già disponibili dalla JOIN di load_dashboard_rows (no query per-riga)
+                        cliente_row = {
+                            "id": cliente_id, "ragione_sociale": m.get("cliente_nome"),
+                            "codice_ateco": m.get("cliente_codice_ateco"), "regione": m.get("cliente_regione"),
+                            "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
+                            "descrizione_attivita": m.get("cliente_descrizione_attivita"),
+                        }
                         try:
                             bd = get_score_breakdown(payload, cliente_row)
                         except Exception as e:
@@ -377,7 +466,7 @@ if page == "📊 Dashboard":
 # ---------------------------------------------------------
 # PAGINA: ESTRAZIONE BANDI
 # ---------------------------------------------------------
-elif page == "📄 Estrazione bandi":
+elif page == "Estrazione bandi":
     st.header("Estrazione bandi con AI")
     st.write("Carica il PDF ufficiale del bando. L'Intelligenza Artificiale leggerà il documento ed estrarrà automaticamente i vincoli, le scadenze e i massimali.")
     
@@ -514,7 +603,7 @@ elif page == "📄 Estrazione bandi":
 # ---------------------------------------------------------
 # PAGINA: PROFILO CLIENTE
 # ---------------------------------------------------------
-elif page == "🏢 Profilo cliente":
+elif page == "Profilo cliente":
     import re # Importiamo le librerie per le espressioni regolari
     st.header("Gestione Clienti")
     

@@ -1,5 +1,6 @@
 streamlit
 anthropic
+openai
 pymupdf
 python-dotenv
 tenacity

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 from typing import Any
 
-DB_PATH = Path(__file__).resolve().parents[1] / "db" / "bandi.db"
+_DB_PATH_ENV = os.getenv("DB_PATH", "").strip()
+DB_PATH = Path(_DB_PATH_ENV) if _DB_PATH_ENV else Path(__file__).resolve().parents[1] / "db" / "bandi.db"
 
 REGIONI_ITALIANE: tuple[str, ...] = (
     "Abruzzo",

@@ -241,7 +241,8 @@ def load_dashboard_rows(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         '''SELECT mr.bando_id, mr.cliente_id, mr.score, mr.data_match,
         b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo,
-        c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita
+        c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
+        c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
         ORDER BY mr.score DESC, b.titolo COLLATE NOCASE'''
     ).fetchall()

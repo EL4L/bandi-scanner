@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bandi-scanner
+    runtime: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DB_PATH
+        value: /var/data/bandi.db
+    disk:
+      name: bandi-scanner-data
+      mountPath: /var/data
+      sizeGB: 1
