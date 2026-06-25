@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Bandi Scanner AI{% endblock %}
+{% block content %}
+
+<h1>I tuoi bandi</h1>
+<p class="text-muted" style="font-size:1.1rem;">L'AI ha scansionato le fonti. Hai <strong>{{ n_bandi }} bandi</strong> in target.</p>
+
+{% if banner == "ok" %}<div class="alert alert-success">Ricalcolo completato.</div>{% endif %}
+{% if banner == "error" %}<div class="alert alert-danger">Ricalcolo fallito.</div>{% endif %}
+
+<div class="kpi-row">
+    <div class="kpi-card">
+        <div class="kpi-label">Bandi scansionati</div>
+        <div class="kpi-value">{{ n_bandi }}</div>
+        <div class="kpi-delta">Elaborati dall'AI</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Abbinamenti attivi</div>
+        <div class="kpi-value">{{ totale_abbinamenti }}</div>
+        <div class="kpi-delta">Match trovati</div>
+    </div>
+</div>
+
+<hr class="divider">
+
+<div class="actions-row">
+    {% if has_export_data %}
+        <a class="btn btn-secondary btn-full" href="/export/matching.csv">📥 Esporta risultati (CSV)</a>
+    {% else %}
+        <span class="btn btn-secondary btn-full btn-disabled">📥 Esporta risultati (CSV)</span>
+    {% endif %}
+    <form method="post" action="/bandi/recalc" style="margin:0;">
+        <button type="submit" class="btn btn-secondary btn-full">🔄 Ricalcola tutti i match</button>
+    </form>
+</div>
+
+{% if n_bandi == 0 %}
+    <div class="alert alert-info">Nessun bando in archivio. Carica il primo PDF dalla sezione <strong>Estrazione bandi</strong>.</div>
+{% elif not cards %}
+    <div class="alert alert-warning">Ci sono bandi salvati ma nessun match. Aggiungi almeno un profilo cliente.</div>
+{% else %}
+    {% for card in cards %}
+        {% include "partials/_bando_card.html" %}
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

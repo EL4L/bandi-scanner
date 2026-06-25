@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Estrazione bandi — Bandi Scanner AI{% endblock %}
+{% block content %}
+
+<h1>Estrazione bandi con AI</h1>
+<p>Carica il PDF ufficiale del bando. L'Intelligenza Artificiale leggerà il documento ed estrarrà automaticamente i vincoli, le scadenze e i massimali.</p>
+
+<div class="card">
+    <form method="post" action="/estrazione" enctype="multipart/form-data">
+        <div class="field">
+            <label>Carica un bando PDF</label>
+            <input type="file" name="file" accept="application/pdf" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">🚀 Avvia Estrazione AI</button>
+    </form>
+</div>
+
+{% if result %}
+    <div class="alert alert-success">File caricato: {{ result.filename }} ({{ "%.2f"|format(result.size_kb) }} KB)</div>
+
+    {% if result.save_error %}
+        <div class="alert alert-danger">Impossibile salvare il file: {{ result.save_error }}</div>
+    {% elif result.empty_pdf %}
+        <div class="alert alert-danger">PDF vuoto o illeggibile (solo immagini o scansioni).</div>
+    {% else %}
+        {% if result.raw_text_preview %}
+        <details class="expander">
+            <summary>Anteprima testo grezzo PDF</summary>
+            <pre class="json-view">{{ result.raw_text_preview }}</pre>
+        </details>
+        {% endif %}
+
+        {% if result.extraction_error %}
+            <div class="alert alert-danger">Errore durante l'estrazione: {{ result.extraction_error }}</div>
+        {% elif result.data %}
+            <h3>Risultato Estrazione</h3>
+            <details class="expander">
+                <summary>Vedi JSON Grezzo</summary>
+                <pre class="json-view">{{ result.data | tojson(indent=2) }}</pre>
+            </details>
+
+            {% if result.bando_info and result.bando_info.get("ateco_aperto_a_tutti") == false %}
+                <div class="alert alert-warning">⚠️ Bando con limitazioni settoriali</div>
+                {% if result.sezioni_escluse %}
+                    <strong>Sezioni ATECO escluse:</strong>
+                    <ul>{% for s in result.sezioni_escluse %}<li>{{ s }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if result.attivita_vietate %}
+                    <strong>Attività vietate:</strong>
+                    <ul>{% for a in result.attivita_vietate %}<li>{{ a }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if result.note_esclusioni_raw %}
+                    <p><strong>Note esclusioni:</strong> {{ result.note_esclusioni_raw }}</p>
+                {% endif %}
+            {% endif %}
+
+            {% for w in result.warnings %}<div class="alert alert-info">{{ w }}</div>{% endfor %}
+
+            {% if result.errors %}
+                <div class="alert alert-danger">
+                    Errori di validazione trovati nell'estrazione:
+                    <ul>{% for err in result.errors %}<li>{{ err }}</li>{% endfor %}</ul>
+                </div>
+            {% endif %}
+
+            {% if result.save_error %}
+                <div class="alert alert-danger">Salvataggio fallito: {{ result.save_error }}</div>
+            {% elif result.bando_id %}
+                {% if not result.scadenza_estratta %}
+                    <div class="alert alert-warning">⚠️ Scadenza non trovata - Da revisionare manualmente</div>
+                {% elif result.null_percentage > 50 %}
+                    <div class="alert alert-warning">⚠️ Troppi campi vuoti ({{ result.null_percentage | round | int }}%) - Da revisionare manualmente</div>
+                {% else %}
+                    <div class="alert alert-success">✅ Validazione completata senza errori</div>
+                {% endif %}
+
+                <div class="alert alert-success">Bando salvato (id {{ result.bando_id }}) e matching completato con i clienti in database.</div>
+
+                <hr class="divider">
+                <h3>📋 Sintesi Rapida</h3>
+                <div style="display:flex; gap:32px;">
+                    <div>
+                        <p><strong>Contributo Max:</strong>
+                            {% set contributo = result.bando_info.get("contributo_max") %}
+                            {{ "%.0f €"|format(contributo) if contributo is number else "🟡 N/D" }}
+                        </p>
+                        <p><strong>Fondo Perduto:</strong>
+                            {% set f_perduto = result.bando_info.get("percentuale_fondo_perduto") %}
+                            {{ "%.0f%%"|format(f_perduto) if f_perduto is number else "🟡 N/D" }}
+                        </p>
+                    </div>
+                    <div>
+                        <p><strong>Scadenza:</strong> {{ result.scadenza_estratta or "🟡 N/D" }}</p>
+                        {% set dim_impresa = result.bando_info.get("dimensione_impresa", {}) %}
+                        {% set dim_attive = dim_impresa.items() | selectattr("1") | map(attribute="0") | list if dim_impresa is mapping else [] %}
+                        <p><strong>Dimensioni:</strong> {{ dim_attive | join(", ") if dim_attive else "🟡 N/D" }}</p>
+                    </div>
+                </div>
+
+                {% set spesa_min = result.bando_info.get("spesa_minima_ammissibile") %}
+                {% set forme_giuridiche = result.bando_info.get("forme_giuridiche_ammesse", []) %}
+                {% set anzianita = result.bando_info.get("anzianita_impresa", {}) %}
+                {% set mesi_min = anzianita.get("mesi_minimi_dalla_costituzione") if anzianita is mapping else none %}
+                {% set mesi_max = anzianita.get("mesi_massimi_dalla_costituzione") if anzianita is mapping else none %}
+
+                {% if spesa_min or forme_giuridiche or mesi_min or mesi_max %}
+                    <hr class="divider">
+                    <strong>🔒 Vincoli Stringenti Estratti</strong>
+                    {% if spesa_min %}<div class="alert alert-danger">💰 <strong>Investimento Minimo:</strong> {{ "%.0f €"|format(spesa_min) }}</div>{% endif %}
+                    {% if mesi_min or mesi_max %}
+                        <div class="alert alert-warning">
+                            🏢 <strong>Anzianità:</strong>
+                            {% if mesi_min %}Min {{ mesi_min }} mesi. {% endif %}
+                            {% if mesi_max %}Max {{ mesi_max }} mesi. {% endif %}
+                        </div>
+                    {% endif %}
+                {% endif %}
+                {% if forme_giuridiche %}<div class="alert alert-info">🏛️ <strong>Forme Giuridiche:</strong> {{ forme_giuridiche | join(", ") | title }}</div>{% endif %}
+
+                <div style="text-align:center; margin-top:20px;">
+                    <a href="/bandi/{{ result.bando_id }}/scheda.md" download style="font-weight:600; font-size:1.1rem;">📄 Scarica il riassunto del bando (.md)</a>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endif %}
+
+{% endblock %}

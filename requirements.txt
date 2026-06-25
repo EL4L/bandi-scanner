@@ -1,4 +1,7 @@
-streamlit
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
 anthropic
 openai
 pymupdf

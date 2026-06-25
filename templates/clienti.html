@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Profilo cliente — Bandi Scanner AI{% endblock %}
+{% block content %}
+
+<h1>Gestione Clienti</h1>
+
+{% set qp = request.query_params %}
+{% if qp.get("created") %}<div class="alert alert-success">Cliente salvato! (Abbinamenti ricalcolati)</div>{% endif %}
+{% if qp.get("updated") %}<div class="alert alert-success">Cliente aggiornato.</div>{% endif %}
+{% if qp.get("deleted") %}<div class="alert alert-success">Cliente eliminato.</div>{% endif %}
+
+<div class="tabs">
+    <a href="#nuovo" class="{{ 'active' if not cliente_id else '' }}">➕ {{ "Modifica Cliente" if cliente_id else "Nuovo Cliente" }}</a>
+    <a href="#archivio">📋 Archivio Clienti</a>
+</div>
+
+<div id="nuovo" class="card">
+    {% include "partials/_flash.html" %}
+    <form method="post" action="{{ '/clienti/' ~ cliente_id ~ '/edit' if cliente_id else '/clienti' }}">
+        {% include "partials/_cliente_form_fields.html" %}
+        <button type="submit" class="btn btn-primary">Salva Profilo</button>
+    </form>
+</div>
+
+<h2 id="archivio">Archivio Clienti</h2>
+{% if not clienti %}
+    <div class="alert alert-info">Nessun cliente in archivio.</div>
+{% else %}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>Ragione sociale</th><th>P.IVA</th><th>ATECO</th><th>Regione</th><th>Fatturato</th><th>Dimensione</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for c in clienti %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td>{{ c.ragione_sociale }}</td>
+                <td>{{ c.p_iva or "" }}</td>
+                <td>{{ c.codice_ateco or "" }}</td>
+                <td>{{ c.regione }}</td>
+                <td>{{ c.fatturato }}</td>
+                <td>{{ c.dimensione_impresa }}</td>
+                <td style="white-space:nowrap;">
+                    <a class="btn btn-secondary" href="/clienti/{{ c.id }}/edit">Modifica</a>
+                    <form method="post" action="/clienti/{{ c.id }}/delete" style="display:inline; margin:0;">
+                        <button type="submit" class="btn btn-secondary">🗑️ Elimina</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% endblock %}

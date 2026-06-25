@@ -1,0 +1,94 @@
+<div class="card">
+    <div style="display:flex; gap:16px;">
+        <div style="flex:3;">
+            <h3>{{ card.titolo }}</h3>
+            <span class="text-muted">{{ card.ente }}</span>
+            <div style="height:8px;"></div>
+            <div style="display:flex; gap:24px;">
+                <div>
+                    <strong>Contributo Max</strong><br>
+                    <div style="margin-top:5px;">
+                        {% if card.contributo_max == "N/D" %}
+                            <span class="badge badge-warning">N/D</span>
+                        {% else %}
+                            <span style="font-size:1.2rem; font-weight:700; color:var(--color-primary);">{{ card.contributo_max }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <strong>Scadenza</strong><br>
+                    <div style="margin-top:5px;"><span class="badge badge-warning">{{ card.scadenza }}</span></div>
+                </div>
+            </div>
+        </div>
+        <div style="flex:1;">
+            <div class="match-circle">
+                <div class="circle-value {{ card.color_class }}">{{ card.max_score }}%</div>
+                <div class="match-label">MATCH MAX</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="height:8px;"></div>
+    <details class="expander">
+        <summary>Vedi Clienti Compatibili &amp; Dettagli Match</summary>
+
+        {% if not card.has_constraints %}
+            <div class="alert alert-warning">⚠️ Bando senza vincoli espliciti. Lo score potrebbe non essere rilevante.</div>
+        {% endif %}
+
+        {% for m in card.matches %}
+        <div class="card">
+            <div class="match-grid">
+                <div>
+                    <div class="match-client">
+                        <div class="match-client-icon">🏢</div>
+                        <div>
+                            <div class="match-client-name" title="{{ m.nome }}">{{ m.nome }}</div>
+                            <span class="match-score-badge {{ m.score_badge_class }}">Score totale {{ m.score }}/100</span>
+                        </div>
+                    </div>
+                    {% if m.settore_da_verificare %}
+                        <div class="text-muted" style="font-size:0.78rem; margin-top:4px;">⚠️ Compatibilità settore da verificare</div>
+                    {% endif %}
+                    {% if m.breakdown_error %}
+                        <div class="alert alert-danger">Errore caricamento breakdown: {{ m.breakdown_error }}</div>
+                    {% endif %}
+                </div>
+                <div class="progress-row">
+                    <div class="progress-head"><span>Codice ATECO</span><span>{{ m.breakdown.ateco }}/40</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {{ (m.breakdown.ateco / 40 * 100) | round | int }}%;"></div></div>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-head"><span>Regione</span><span>{{ m.breakdown.regione }}/30</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {{ (m.breakdown.regione / 30 * 100) | round | int }}%;"></div></div>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-head"><span>Dimensione</span><span>{{ m.breakdown.dimensione }}/20</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {{ (m.breakdown.dimensione / 20 * 100) | round | int }}%;"></div></div>
+                </div>
+                <div class="progress-row">
+                    <div class="progress-head"><span>Fatturato</span><span>{{ m.breakdown.fatturato }}/10</span></div>
+                    <div class="progress-track"><div class="progress-fill" style="width: {{ (m.breakdown.fatturato / 10 * 100) | round | int }}%;"></div></div>
+                </div>
+            </div>
+            {% if m.discrepanza %}
+                <div class="text-muted" style="font-size:0.78rem; margin-top:6px;"><em>(Discrepanza: DB={{ m.score }}, Calc={{ m.breakdown.total }})</em></div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <hr class="divider">
+        <strong>Sintesi Bando</strong>
+        <div class="alert alert-warning" style="margin-top:8px;">⚠️ Dati estratti tramite AI — verificare sempre sulla fonte ufficiale prima di procedere.</div>
+        {% if card.fonte_url %}
+            <p><a href="{{ card.fonte_url }}" target="_blank" rel="noopener">Apri la fonte ufficiale</a></p>
+        {% endif %}
+
+        <div style="white-space: pre-wrap;">{{ card.scheda }}</div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <a href="/bandi/{{ card.id }}/scheda.md" download style="font-weight:600; font-size:1.1rem;">📄 Scarica la scheda del bando</a>
+        </div>
+    </details>
+</div>

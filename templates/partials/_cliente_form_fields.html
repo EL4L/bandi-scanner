@@ -1,0 +1,44 @@
+<div class="form-row">
+    <div class="field">
+        <label>Ragione sociale *</label>
+        <input type="text" name="ragione_sociale" value="{{ form_values.ragione_sociale }}">
+    </div>
+    <div class="field">
+        <label>Partita IVA *</label>
+        <input type="text" name="p_iva" value="{{ form_values.p_iva }}">
+        <div class="help">Deve contenere esattamente 11 cifre numeriche.</div>
+    </div>
+</div>
+<div class="form-row">
+    <div class="field">
+        <label>Codice ATECO *</label>
+        <input type="text" name="codice_ateco" value="{{ form_values.codice_ateco }}">
+        <div class="help">Formato accettato: XX.XX o XX.XX.XX</div>
+    </div>
+    <div class="field">
+        <label>Regione *</label>
+        <select name="regione">
+            {% for r in regioni %}
+                <option value="{{ r }}" {{ "selected" if r == form_values.regione else "" }}>{{ r }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="field">
+    <label>Descrizione attività (Opzionale)</label>
+    <textarea name="descrizione_attivita">{{ form_values.descrizione_attivita }}</textarea>
+</div>
+<div class="form-row">
+    <div class="field">
+        <label>Fatturato annuo (€) *</label>
+        <input type="number" name="fatturato" min="1" step="1000" value="{{ form_values.fatturato }}">
+    </div>
+    <div class="field">
+        <label>Dimensione impresa *</label>
+        <select name="dimensione_impresa">
+            {% for d in dimensioni %}
+                <option value="{{ d }}" {{ "selected" if d == form_values.dimensione_impresa else "" }}>{{ d }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>

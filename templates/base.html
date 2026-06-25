@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Bandi Scanner AI{% endblock %}</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="layout">
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <h1>BandiMatch AI</h1>
+                <p>Matching Bandi &middot; Clienti</p>
+            </div>
+
+            <div class="sidebar-menu-label">MENU PRINCIPALE</div>
+            <nav class="sidebar-nav">
+                <a href="/" class="{{ 'active' if active_page == 'dashboard' else '' }}">Dashboard</a>
+                <a href="/estrazione" class="{{ 'active' if active_page == 'estrazione' else '' }}">Estrazione bandi</a>
+                <a href="/clienti" class="{{ 'active' if active_page == 'clienti' else '' }}">Profilo cliente</a>
+            </nav>
+
+            <hr class="sidebar-divider">
+
+            <div class="sidebar-info">
+                🔒 <strong>GDPR Compliance:</strong><br><br>
+                I documenti PDF caricati e i dettagli aziendali inseriti vengono trattati
+                esclusivamente in memoria per la durata della sessione.
+                Nessun file o dato sensibile viene salvato in modo persistente o trasmesso a terzi
+                per finalità di addestramento.
+            </div>
+
+            <p class="sidebar-caption">⚠️ <strong>Disclaimer AI:</strong> I dati estratti sono generati dall'intelligenza artificiale e non hanno valore legale. Verifica sempre i bandi ufficiali degli Enti erogatori.</p>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

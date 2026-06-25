@@ -7,6 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-EXPOSE 8501
+EXPOSE 8000
 
-CMD streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT

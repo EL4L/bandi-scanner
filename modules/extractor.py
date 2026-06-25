@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+from datetime import date
 from pathlib import Path
 import fitz
 from openai import (
@@ -17,7 +19,7 @@ from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
 from modules.log_utils import log_error, log_incident
-from modules.schema import MIN_TEXT_CHARS, normalize_response
+from modules.schema import BANDO_SCHEMA, MIN_TEXT_CHARS, normalize_response
 
 load_dotenv()
 
@@ -27,6 +29,7 @@ PROMPT_PATH = ROOT / "prompts" / "system_extraction.md"
 LLM_MODEL = "deepseek/deepseek-v4-flash"
 RETRY_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = 300
+_JSON_BLOCK_RE = re.compile(r'\{[\s\S]*\}')
 
 
 def _is_retryable_api_error(exc: BaseException) -> bool:
@@ -72,7 +75,7 @@ def _load_system_prompt(raw_text: str) -> str:
 
 
 def _clean_json_response(content: str) -> str:
-    """Pulisce i blocchi di codice Markdown senza usare espressioni regolari."""
+    """Rimuove blocchi Markdown e testo prose attorno al JSON."""
     content = content.strip()
     if content.startswith("```"):
         lines = content.split("\n")
@@ -81,7 +84,54 @@ def _clean_json_response(content: str) -> str:
         if lines and lines[-1].startswith("```"):
             lines = lines[:-1]
         content = "\n".join(lines)
+    content = content.strip()
+    # Se c'è del testo prima del JSON (es. "Ecco il risultato: {...}"), estrai solo il blocco
+    if not content.startswith("{"):
+        match = _JSON_BLOCK_RE.search(content)
+        if match:
+            content = match.group(0)
     return content.strip()
+
+
+def calcola_urgenza(data_scadenza: str | None) -> str | None:
+    """Calcola l'urgenza del bando dalla data di scadenza.
+
+    Restituisce "alta" (<30gg), "media" (<90gg), "bassa" (>=90gg),
+    "scaduto" (data passata), None se data_scadenza è assente o non parsabile.
+    """
+    if not data_scadenza or not isinstance(data_scadenza, str):
+        return None
+    try:
+        scadenza = date.fromisoformat(data_scadenza.strip())
+    except ValueError:
+        return None
+    giorni = (scadenza - date.today()).days
+    if giorni < 0:
+        return "scaduto"
+    if giorni < 30:
+        return "alta"
+    if giorni < 90:
+        return "media"
+    return "bassa"
+
+
+def calcola_null_percentage(bando_dict: dict) -> float:
+    """Percentuale di campi null/vuoti rispetto allo schema bando."""
+    if not isinstance(bando_dict, dict):
+        return 100.0
+    total = len(BANDO_SCHEMA)
+    if total == 0:
+        return 0.0
+    vuoti = 0
+    for key in BANDO_SCHEMA:
+        val = bando_dict.get(key)
+        if val is None:
+            vuoti += 1
+        elif isinstance(val, str) and not val.strip():
+            vuoti += 1
+        elif isinstance(val, list) and not val:
+            vuoti += 1
+    return (vuoti / total) * 100.0
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
@@ -160,4 +210,13 @@ def extract_bando_data(raw_text: str) -> dict:
     if not isinstance(data, dict):
         raise InvalidJSONResponse("La risposta JSON non è un oggetto")
 
-    return normalize_response(data)
+    result = normalize_response(data)
+
+    bando = result.get("bando", {})
+    if isinstance(bando, dict):
+        bando["urgenza"] = calcola_urgenza(bando.get("data_scadenza"))
+        null_pct = calcola_null_percentage(bando)
+        if null_pct > 50.0:
+            result["warning"] = "Da revisionare manualmente - troppi campi mancanti"
+
+    return result

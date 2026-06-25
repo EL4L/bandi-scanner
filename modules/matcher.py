@@ -156,7 +156,7 @@ def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dic
     totale = 0 if not bando_has_constraints(payload) else (score_regione + score_ateco + score_dim + score_fat)
     return {"regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat, "total": max(0, min(100, int(totale)))}
 
-def run_matching_for_bando(bando_id: int, conn: Any) -> None:
+def run_matching_for_bando(bando_id: int, conn: Any, soglia_minima: int = 0) -> None:
     try:
         row = conn.execute("SELECT json_completo FROM bandi WHERE id = ?", (bando_id,)).fetchone()
         if not row: return
@@ -166,16 +166,17 @@ def run_matching_for_bando(bando_id: int, conn: Any) -> None:
         for cliente_row in clienti:
             cliente = dict(cliente_row)
             score = calculate_score(bando_data, cliente)
+            if score < soglia_minima: continue
             existing = conn.execute("SELECT id FROM match_results WHERE cliente_id = ? AND bando_id = ?", (cliente["id"], bando_id)).fetchone()
             if existing: conn.execute("UPDATE match_results SET score = ?, data_match = NOW() WHERE id = ?", (score, existing["id"]))
             else: conn.execute("INSERT INTO match_results (cliente_id, bando_id, score) VALUES (?, ?, ?)", (cliente["id"], bando_id, score))
         conn.commit()
     except Exception as exc: log_error(f"run_matching_for_bando({bando_id}): {exc}")
 
-def run_matching_for_all_bandi(conn: Any) -> None:
+def run_matching_for_all_bandi(conn: Any, soglia_minima: int = 0) -> None:
     try:
         for row in conn.execute("SELECT id FROM bandi").fetchall():
-            run_matching_for_bando(int(row["id"]), conn)
+            run_matching_for_bando(int(row["id"]), conn, soglia_minima=soglia_minima)
     except Exception as exc: log_error(f"run_matching_for_all_bandi: {exc}")
 
 def format_scadenza_italiana(raw: str | None) -> str | None:
@@ -186,6 +187,16 @@ def format_scadenza_italiana(raw: str | None) -> str | None:
             return f"{dt.day} {_MESI_IT[dt.month - 1]} {dt.year}"
         except ValueError: continue
     return _norm_str(raw)
+
+def giorni_alla_scadenza(data_scadenza: str | None) -> int | None:
+    """Giorni interi alla scadenza (negativo se già scaduto), None se data assente o non parsabile."""
+    if not data_scadenza or not _norm_str(data_scadenza): return None
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+        try:
+            dt = datetime.strptime(_norm_str(data_scadenza), fmt)
+            return (dt.date() - datetime.today().date()).days
+        except ValueError: continue
+    return None
 
 def _format_euro(value: Any) -> str | None:
     if value is None: return None
@@ -231,6 +242,67 @@ def genera_scheda(bando: dict[str, Any]) -> str:
     if link: lines.append(f"## Fonte ufficiale\n\n[{link}]({link})")
     return "\n\n".join(lines) if lines else "*Scheda non disponibile — dati bando insufficienti.*"
 
+def genera_spiegazione_score(
+    bando: dict[str, Any],
+    cliente: dict[str, Any],
+    score_dettaglio: dict[str, int],
+) -> str:
+    """Stringa leggibile che spiega il punteggio per ogni dimensione.
+
+    Usa ✅ per criteri soddisfatti pienamente, ⚠️ per parziali, ❌ per non soddisfatti.
+    """
+    b = _unwrap_bando(bando if isinstance(bando, dict) else {})
+    c = cliente if isinstance(cliente, dict) else {}
+    parts: list[str] = []
+
+    # Regione
+    regioni = _regioni_bando(b)
+    score_reg = score_dettaglio.get("regione", 0)
+    if not regioni or any(r.lower() in ("tutte", "tutta italia") for r in regioni):
+        parts.append("✅ Regione: nessun vincolo")
+    elif score_reg == WEIGHT_REGIONE:
+        parts.append(f"✅ Regione compatibile ({_norm_str(c.get('regione'))})")
+    else:
+        parts.append(f"❌ Regione non compatibile ({_norm_str(c.get('regione')) or 'N/D'})")
+
+    # ATECO
+    score_ateco_val = score_dettaglio.get("ateco", 0)
+    codice_cliente = _norm_str(c.get("codice_ateco") or c.get("ateco"))
+    if b.get("ateco_aperto_a_tutti") is True:
+        parts.append("✅ Settore: aperto a tutti")
+    elif score_ateco_val == WEIGHT_ATECO:
+        parts.append(f"✅ Settore ammesso ({codice_cliente})")
+    elif score_ateco_val > 0:
+        parts.append(f"⚠️ Settore parzialmente compatibile ({codice_cliente})")
+    else:
+        parts.append(f"❌ Settore non ammesso ({codice_cliente or 'N/D'})")
+
+    # Dimensione
+    score_dim = score_dettaglio.get("dimensione", 0)
+    ammesse = _dimensioni_ammesse(b)
+    dim_cliente = _norm_str(c.get("dimensione_impresa") or c.get("dimensione"))
+    if not ammesse:
+        parts.append("✅ Dimensione: nessun vincolo")
+    elif score_dim == WEIGHT_DIMENSIONE:
+        parts.append(f"✅ Dimensione compatibile ({dim_cliente})")
+    else:
+        parts.append(f"❌ Dimensione non compatibile ({dim_cliente or 'N/D'})")
+
+    # Fatturato
+    score_fat = score_dettaglio.get("fatturato", 0)
+    has_fat_constraint = b.get("fatturato_max") is not None or b.get("contributo_max") is not None
+    if not has_fat_constraint:
+        parts.append("✅ Fatturato: nessun vincolo")
+    elif score_fat == WEIGHT_FATTURATO:
+        parts.append("✅ Fatturato entro i limiti")
+    elif score_fat > 0:
+        parts.append("⚠️ Fatturato al limite")
+    else:
+        parts.append("❌ Fatturato fuori dai limiti")
+
+    return " · ".join(parts)
+
+
 def get_fonte_url(bando: dict[str, Any]) -> str | None:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     link = _norm_str(b.get("url_fonte") or b.get("link_fonte_ufficiale") or b.get("link_fonte"))
@@ -245,7 +317,12 @@ def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
         ORDER BY mr.score DESC, LOWER(b.titolo)'''
     ).fetchall()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["giorni_alla_scadenza"] = giorni_alla_scadenza(d.get("data_scadenza"))
+        result.append(d)
+    return result
 
 def count_bandi(conn: Any) -> int:
     row = conn.execute("SELECT COUNT(*) AS n FROM bandi").fetchone()
