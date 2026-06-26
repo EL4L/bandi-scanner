@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { toast } from '../toast'
 
 interface Bando {
   id: number
@@ -229,6 +230,8 @@ export default function Bandi() {
       const res = await fetch(`/api/bandi/${bando.id}/scheda`)
       const d = await res.json()
       setOpenScheda({ id: bando.id, titolo: bando.titolo ?? `Bando #${bando.id}`, scheda: d.scheda ?? '' })
+    } catch {
+      toast.error('Impossibile caricare la scheda del bando.')
     } finally {
       setSchedaLoading(null)
     }

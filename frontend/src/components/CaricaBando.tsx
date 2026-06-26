@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { toast } from '../toast'
 
 interface ExtractionResult {
   filename: string
@@ -122,6 +123,7 @@ export default function CaricaBando() {
   const handleFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
       setNetworkError('Formato non supportato. Carica un file PDF.')
+      toast.error('Formato non supportato. Carica un file PDF.')
       return
     }
     setSelectedFile(file)
@@ -154,8 +156,18 @@ export default function CaricaBando() {
       const res = await fetch('/api/estrazione', { method: 'POST', body: fd })
       const data: ExtractionResult = await res.json()
       setResult(data)
+      if (data.status === 'duplicato') {
+        toast.info('Bando già presente in archivio.')
+      } else if (data.bando_id && !data.errors?.length) {
+        toast.success('Bando salvato con successo.')
+      } else if (data.empty_pdf) {
+        toast.error('PDF vuoto o non leggibile.')
+      } else if (data.errors?.length) {
+        toast.error('Estrazione completata con errori di validazione.')
+      }
     } catch {
       setNetworkError('Errore di rete durante il caricamento. Verifica la connessione.')
+      toast.error('Errore di rete durante il caricamento.')
     } finally {
       setUploading(false)
     }

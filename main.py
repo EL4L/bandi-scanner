@@ -232,14 +232,18 @@ def api_dashboard():
     return _dashboard_payload()
 
 
+class DeduplicaRequest(BaseModel):
+    strict: bool = True
+
+
 @app.post("/api/bandi/deduplica")
-def api_deduplica_bandi():
+def api_deduplica_bandi(body: DeduplicaRequest = DeduplicaRequest()):
     try:
-        eliminati = deduplica_bandi()
+        eliminati = deduplica_bandi(strict=body.strict)
         if eliminati > 0:
             with get_connection() as conn:
                 run_matching_for_all_bandi(conn)
-        return {"status": "ok", "eliminati": eliminati}
+        return {"status": "ok", "eliminati": eliminati, "strict": body.strict}
     except Exception as exc:
         return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)})
 

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
+import { toast } from '../toast'
 
 interface Breakdown {
   total: number
@@ -195,16 +196,25 @@ function BandoCardItem({
   onScheda: () => void
 }) {
   const giorni = giorniText(card.giorni_alla_scadenza)
+  const expired = isExpiredCard(card)
+  const urgencyRail = expired
+    ? 'bando-card--scaduto'
+    : card.urgenza && !isBlank(card.urgenza)
+      ? `bando-card--${card.urgenza}`
+      : ''
 
   return (
-    <div className="bando-card">
+    <div className={`bando-card ${urgencyRail}`.trimEnd()}>
       <div className="bando-card-top">
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="bando-card-title">{card.titolo || `Bando #${card.id}`}</p>
           {card.ente && <p className="bando-card-ente">{card.ente}</p>}
         </div>
-        <div className={`score-circle ${scoreClass(card.color_class)}`}>
-          {card.max_score > 0 ? `${card.max_score}%` : '—'}
+        <div
+          className={`score-circle ${scoreClass(card.color_class)}`}
+          style={{ '--score': card.max_score } as React.CSSProperties}
+        >
+          <span>{card.max_score > 0 ? `${card.max_score}%` : '—'}</span>
         </div>
       </div>
 
@@ -291,7 +301,6 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [recalcLoading, setRecalcLoading] = useState(false)
   const [deduplicaLoading, setDeduplicaLoading] = useState(false)
-  const [deduplicaMsg, setDeduplicaMsg] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [showExpiredSection, setShowExpiredSection] = useState(false)
@@ -338,6 +347,9 @@ export default function Dashboard() {
     try {
       await fetch('/api/bandi/recalc', { method: 'POST' })
       await fetchDashboard()
+      toast.success('Match ricalcolati.')
+    } catch {
+      toast.error('Ricalcolo non riuscito. Riprova.')
     } finally {
       setRecalcLoading(false)
     }
@@ -345,12 +357,17 @@ export default function Dashboard() {
 
   const handleDeduplica = async () => {
     setDeduplicaLoading(true)
-    setDeduplicaMsg(null)
     try {
       const res = await fetch('/api/bandi/deduplica', { method: 'POST' })
       const d = await res.json()
-      setDeduplicaMsg(d.eliminati > 0 ? `${d.eliminati} duplicat${d.eliminati === 1 ? 'o eliminato' : 'i eliminati'}.` : 'Nessun duplicato trovato.')
-      if (d.eliminati > 0) await fetchDashboard()
+      if (d.eliminati > 0) {
+        toast.success(`${d.eliminati} duplicat${d.eliminati === 1 ? 'o eliminato' : 'i eliminati'}.`)
+        await fetchDashboard()
+      } else {
+        toast.info('Nessun duplicato trovato.')
+      }
+    } catch {
+      toast.error('Deduplica non riuscita. Riprova.')
     } finally {
       setDeduplicaLoading(false)
     }
@@ -424,10 +441,6 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
-
-      {deduplicaMsg && (
-        <div className="alert alert-info" style={{ marginBottom: 20 }}>{deduplicaMsg}</div>
-      )}
 
       <div className="kpi-row">
         <div className="kpi-card">

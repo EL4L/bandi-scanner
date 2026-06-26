@@ -189,24 +189,41 @@ def delete_cliente(cliente_id: int) -> bool:
         return deleted
 
 
-def deduplica_bandi() -> int:
+def deduplica_bandi(strict: bool = True) -> int:
     """
-    Rimuove duplicati per coppia (titolo, ente), mantenendo il bando con id più alto.
+    Rimuove duplicati mantenendo il bando con id più alto.
     Elimina prima i match_results collegati ai duplicati.
+
+    strict=True  → duplicato = stesso titolo + stesso ente (case-insensitive)
+    strict=False → duplicato = stesso titolo (case-insensitive, spazi rimossi),
+                   indipendentemente dall'ente
+
     Restituisce il numero di bandi eliminati.
     """
     with get_connection() as conn:
-        rows = conn.execute(
-            """
-            SELECT
-                LOWER(COALESCE(titolo, '')) AS titolo_key,
-                LOWER(COALESCE(ente, ''))   AS ente_key,
-                array_agg(id ORDER BY id DESC) AS ids
-            FROM bandi
-            GROUP BY LOWER(COALESCE(titolo, '')), LOWER(COALESCE(ente, ''))
-            HAVING COUNT(*) > 1
-            """
-        ).fetchall()
+        if strict:
+            rows = conn.execute(
+                """
+                SELECT
+                    LOWER(COALESCE(titolo, '')) AS titolo_key,
+                    LOWER(COALESCE(ente, ''))   AS ente_key,
+                    array_agg(id ORDER BY id DESC) AS ids
+                FROM bandi
+                GROUP BY LOWER(COALESCE(titolo, '')), LOWER(COALESCE(ente, ''))
+                HAVING COUNT(*) > 1
+                """
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                """
+                SELECT
+                    LOWER(TRIM(COALESCE(titolo, ''))) AS titolo_key,
+                    array_agg(id ORDER BY id DESC) AS ids
+                FROM bandi
+                GROUP BY LOWER(TRIM(COALESCE(titolo, '')))
+                HAVING COUNT(*) > 1
+                """
+            ).fetchall()
 
         deleted = 0
         for row in rows:
@@ -220,21 +237,41 @@ def deduplica_bandi() -> int:
     return deleted
 
 
-def find_duplicate_bando(titolo: str | None, ente: str | None) -> int | None:
-    """Restituisce l'id del bando già presente con stesso titolo+ente (case-insensitive), o None."""
+def find_duplicate_bando(
+    titolo: str | None,
+    ente: str | None,
+    strict: bool = True,
+) -> int | None:
+    """
+    Restituisce l'id del bando già presente, o None.
+
+    strict=True  → controlla titolo + ente (case-insensitive)
+    strict=False → controlla solo titolo (case-insensitive, spazi rimossi)
+    """
     if not (titolo or "").strip():
         return None
     with get_connection() as conn:
-        row = conn.execute(
-            """
-            SELECT id FROM bandi
-            WHERE LOWER(COALESCE(titolo, '')) = LOWER(COALESCE(?, ''))
-              AND LOWER(COALESCE(ente,   '')) = LOWER(COALESCE(?, ''))
-            ORDER BY id DESC
-            LIMIT 1
-            """,
-            (titolo or "", ente or ""),
-        ).fetchone()
+        if strict:
+            row = conn.execute(
+                """
+                SELECT id FROM bandi
+                WHERE LOWER(COALESCE(titolo, '')) = LOWER(COALESCE(?, ''))
+                  AND LOWER(COALESCE(ente,   '')) = LOWER(COALESCE(?, ''))
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (titolo or "", ente or ""),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                """
+                SELECT id FROM bandi
+                WHERE LOWER(TRIM(COALESCE(titolo, ''))) = LOWER(TRIM(COALESCE(?, '')))
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (titolo or "",),
+            ).fetchone()
     return int(row["id"]) if row else None
 
 

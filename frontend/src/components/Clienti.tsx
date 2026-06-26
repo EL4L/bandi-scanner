@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { toast } from '../toast'
 
 interface Cliente {
   id: number
@@ -158,8 +159,10 @@ export default function Clienti() {
       if (!res.ok) {
         setFormErrors(d.errors ?? ['Errore sconosciuto.'])
       } else {
+        const wasEdit = editId !== null
         closeModal()
         await fetchClienti()
+        toast.success(wasEdit ? 'Cliente aggiornato.' : 'Cliente aggiunto.')
       }
     } catch {
       setFormErrors(['Errore di rete. Riprova.'])
@@ -174,6 +177,9 @@ export default function Clienti() {
       await fetch(`/api/clienti/${id}`, { method: 'DELETE' })
       setDeleteConfirm(null)
       await fetchClienti()
+      toast.success('Cliente eliminato.')
+    } catch {
+      toast.error('Eliminazione non riuscita. Riprova.')
     } finally {
       setDeleting(false)
     }

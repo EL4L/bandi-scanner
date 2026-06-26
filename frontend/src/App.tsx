@@ -3,6 +3,7 @@ import Dashboard from './components/Dashboard'
 import Bandi from './components/Bandi'
 import Clienti from './components/Clienti'
 import CaricaBando from './components/CaricaBando'
+import ToastHost from './components/ToastHost'
 
 function IconScan() {
   return (
@@ -112,6 +113,7 @@ export default function App() {
             <Route path="/carica" element={<CaricaBando />} />
           </Routes>
         </main>
+        <ToastHost />
       </div>
     </BrowserRouter>
   )

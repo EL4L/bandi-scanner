@@ -100,7 +100,8 @@ def _score_ateco(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
         if len(pref_cliente) >= 2 and any(_ateco_prefix_two(cod) == pref_cliente for cod in codici): return WEIGHT_ATECO // 2
         return 0
     if attivita: return _score_attivita_ammesse(bando, cliente)
-    return WEIGHT_ATECO
+    # Nessun dato settoriale estratto: ambiguo, punteggio parziale invece di pieno
+    return WEIGHT_ATECO // 2
 
 def _score_dimensione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     ammesse = _dimensioni_ammesse(bando)
@@ -110,22 +111,16 @@ def _score_dimensione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     return WEIGHT_DIMENSIONE if dim_cliente.lower() in {d.lower() for d in ammesse} else 0
 
 def _score_fatturato(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
-    contributo_max = bando.get("contributo_max")
     fatturato_max = bando.get("fatturato_max")
-    fatturato_cliente = cliente.get("fatturato")
-    if contributo_max is None and fatturato_max is None: return WEIGHT_FATTURATO
-    try: fat_cli = float(fatturato_cliente) if fatturato_cliente is not None else 0.0
-    except (TypeError, ValueError): fat_cli = 0.0
-    if fatturato_max is not None:
-        try:
-            if fat_cli <= float(fatturato_max): return WEIGHT_FATTURATO
-        except (TypeError, ValueError): return WEIGHT_FATTURATO
-    if contributo_max is not None:
-        try:
-            if fat_cli <= float(contributo_max) * 10: return WEIGHT_FATTURATO
-        except (TypeError, ValueError): pass
-        return WEIGHT_FATTURATO // 2
-    return WEIGHT_FATTURATO
+    if fatturato_max is None:
+        return WEIGHT_FATTURATO
+    try:
+        fat_cli = float(cliente.get("fatturato") or 0)
+        if fat_cli <= float(fatturato_max):
+            return WEIGHT_FATTURATO
+    except (TypeError, ValueError):
+        return WEIGHT_FATTURATO
+    return 0
 
 def bando_has_constraints(payload: dict[str, Any]) -> bool:
     bando = _unwrap_bando(payload)
