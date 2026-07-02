@@ -32,6 +32,7 @@ from modules.database import (
 )
 from modules.matcher import (
     bando_has_constraints,
+    check_ammissibilita,
     count_bandi,
     format_scadenza_italiana,
     genera_scheda,
@@ -185,6 +186,8 @@ def _dashboard_payload() -> dict:
                 "codice_ateco": m.get("cliente_codice_ateco"), "regione": m.get("cliente_regione"),
                 "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
                 "descrizione_attivita": m.get("cliente_descrizione_attivita"),
+                "data_costituzione": m.get("cliente_data_costituzione"),
+                "forma_giuridica": m.get("cliente_forma_giuridica"),
             }
             try:
                 bd = get_score_breakdown(payload, cliente_row)
@@ -199,6 +202,11 @@ def _dashboard_payload() -> dict:
             except Exception:
                 spiegazione = None
 
+            try:
+                ammissibilita = check_ammissibilita(payload, cliente_row)
+            except Exception:
+                ammissibilita = {"ammissibile": True, "motivi_esclusione": [], "criteri_verificati": []}
+
             matches.append({
                 "nome": m["cliente_nome"],
                 "score": score_cliente,
@@ -208,6 +216,7 @@ def _dashboard_payload() -> dict:
                 "settore_da_verificare": settore_da_verificare(payload, cliente_match),
                 "discrepanza": score_cliente != int(bd["total"]),
                 "spiegazione_score": spiegazione,
+                "ammissibilita": ammissibilita,
             })
 
         scadenza_grezza_card = info.get("data_scadenza")

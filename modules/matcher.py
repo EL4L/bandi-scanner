@@ -151,9 +151,94 @@ def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dic
     totale = 0 if not bando_has_constraints(payload) else (score_regione + score_ateco + score_dim + score_fat)
     return {"regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat, "total": max(0, min(100, int(totale)))}
 
+def _norm_fg(s: str | None) -> str:
+    if not s: return ""
+    return re.sub(r"[\s.]", "", _norm_str(s)).lower()
+
+def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any]:
+    """Controlla criteri binari di esclusione: anzianità, forma giuridica, spesa minima."""
+    b = _unwrap_bando(bando_json if isinstance(bando_json, dict) else {})
+    c = cliente if isinstance(cliente, dict) else {}
+
+    ammissibile = True
+    motivi_esclusione: list[str] = []
+    criteri_verificati: list[str] = []
+
+    # Helper: calcola mesi dalla data_costituzione
+    data_cost_str = _norm_str(c.get("data_costituzione"))
+    mesi_dalla_cost: int | None = None
+    if data_cost_str:
+        try:
+            dt_cost = datetime.strptime(data_cost_str, "%Y-%m-%d").date()
+            today = datetime.today().date()
+            mesi_dalla_cost = (today.year - dt_cost.year) * 12 + (today.month - dt_cost.month)
+        except (ValueError, TypeError):
+            pass
+
+    # Criterio 1: Anzianità minima
+    anz_info = b.get("anzianita_impresa") or {}
+    mesi_min = anz_info.get("mesi_minimi_dalla_costituzione")
+    if mesi_min is not None and mesi_min > 0:
+        if mesi_dalla_cost is None:
+            criteri_verificati.append("Anzianità minima: non verificabile")
+        elif mesi_dalla_cost < mesi_min:
+            ammissibile = False
+            motivi_esclusione.append(f"Azienda costituita da {mesi_dalla_cost} mesi, richiesti almeno {mesi_min}")
+        else:
+            criteri_verificati.append(f"Anzianità minima: OK ({mesi_dalla_cost} mesi su {mesi_min} richiesti)")
+
+    # Criterio 2: Anzianità massima
+    mesi_max = anz_info.get("mesi_massimi_dalla_costituzione")
+    if mesi_max is not None and mesi_max > 0:
+        if mesi_dalla_cost is None:
+            criteri_verificati.append("Anzianità massima: non verificabile")
+        elif mesi_dalla_cost > mesi_max:
+            ammissibile = False
+            motivi_esclusione.append(f"Azienda costituita da {mesi_dalla_cost} mesi, limite massimo {mesi_max}")
+        else:
+            criteri_verificati.append(f"Anzianità massima: OK ({mesi_dalla_cost} mesi, limite {mesi_max})")
+
+    # Criterio 3: Forma giuridica
+    forme_ammesse = _norm_list(b.get("forme_giuridiche_ammesse"))
+    if forme_ammesse:
+        forma_cliente = _norm_str(c.get("forma_giuridica"))
+        if not forma_cliente:
+            criteri_verificati.append("Forma giuridica: non verificabile")
+        else:
+            forma_norm = _norm_fg(forma_cliente)
+            forme_norm = {_norm_fg(f) for f in forme_ammesse}
+            if forma_norm not in forme_norm:
+                ammissibile = False
+                motivi_esclusione.append(f"Forma giuridica '{forma_cliente}' non inclusa tra le ammesse: {', '.join(forme_ammesse)}")
+            else:
+                criteri_verificati.append(f"Forma giuridica: OK ({forma_cliente})")
+
+    # Criterio 4: Spesa minima
+    spesa_min = b.get("spesa_minima_ammissibile")
+    if spesa_min is not None and spesa_min > 0:
+        fatturato = c.get("fatturato")
+        try:
+            fat_num = float(fatturato) if fatturato else 0
+        except (TypeError, ValueError):
+            fat_num = 0
+
+        if fat_num == 0:
+            criteri_verificati.append("Spesa minima: non verificabile")
+        elif fat_num < spesa_min:
+            ammissibile = False
+            motivi_esclusione.append(f"Fatturato € {fat_num:,.0f} potrebbe non coprire la spesa minima richiesta di € {spesa_min:,.0f}")
+        else:
+            criteri_verificati.append(f"Spesa minima: OK (€ {fat_num:,.0f} >= € {spesa_min:,.0f})")
+
+    return {
+        "ammissibile": ammissibile,
+        "motivi_esclusione": motivi_esclusione,
+        "criteri_verificati": criteri_verificati,
+    }
+
 def run_matching_for_bando(bando_id: int, conn: Any, soglia_minima: int = 0) -> None:
     try:
-        row = conn.execute("SELECT json_completo FROM bandi WHERE id = ?", (bando_id,)).fetchone()
+        row = conn.execute("SELECT json_completo FROM bandi WHERE id = %s", (bando_id,)).fetchone()
         if not row: return
         payload = json.loads(row["json_completo"])
         bando_data = payload if isinstance(payload, dict) else {}
@@ -162,9 +247,9 @@ def run_matching_for_bando(bando_id: int, conn: Any, soglia_minima: int = 0) -> 
             cliente = dict(cliente_row)
             score = calculate_score(bando_data, cliente)
             if score < soglia_minima: continue
-            existing = conn.execute("SELECT id FROM match_results WHERE cliente_id = ? AND bando_id = ?", (cliente["id"], bando_id)).fetchone()
-            if existing: conn.execute("UPDATE match_results SET score = ?, data_match = NOW() WHERE id = ?", (score, existing["id"]))
-            else: conn.execute("INSERT INTO match_results (cliente_id, bando_id, score) VALUES (?, ?, ?)", (cliente["id"], bando_id, score))
+            existing = conn.execute("SELECT id FROM match_results WHERE cliente_id = %s AND bando_id = %s", (cliente["id"], bando_id)).fetchone()
+            if existing: conn.execute("UPDATE match_results SET score = %s, data_match = NOW() WHERE id = %s", (score, existing["id"]))
+            else: conn.execute("INSERT INTO match_results (cliente_id, bando_id, score) VALUES (%s, %s, %s)", (cliente["id"], bando_id, score))
         conn.commit()
     except Exception as exc: log_error(f"run_matching_for_bando({bando_id}): {exc}")
 
@@ -306,9 +391,10 @@ def get_fonte_url(bando: dict[str, Any]) -> str | None:
 def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
     rows = conn.execute(
         '''SELECT mr.bando_id, mr.cliente_id, mr.score, mr.data_match,
-        b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo,
+        b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo, b.scheda_cached,
         c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
-        c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa
+        c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa,
+        c.data_costituzione AS cliente_data_costituzione, c.forma_giuridica AS cliente_forma_giuridica
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
         ORDER BY mr.score DESC, LOWER(b.titolo)'''
     ).fetchall()
