@@ -48,7 +48,7 @@ class _PGConnection:
 
     def execute(self, sql: str, params: tuple = ()):
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(sql.replace("?", "%s"), params)
+        cur.execute(sql, params)
         return cur
 
     def commit(self) -> None:
@@ -95,14 +95,18 @@ def create_cliente(
     fatturato: float,
     dimensione_impresa: str,
     descrizione_attivita: str = "",
+    data_costituzione: str | None = None,
+    numero_dipendenti: int | None = None,
+    forma_giuridica: str | None = None,
 ) -> int:
     with get_connection() as conn:
         cur = conn.execute(
             """
             INSERT INTO clienti (
                 ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
-                regione, fatturato, dimensione_impresa
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                regione, fatturato, dimensione_impresa, data_costituzione,
+                numero_dipendenti, forma_giuridica
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -113,6 +117,9 @@ def create_cliente(
                 regione.strip(),
                 fatturato,
                 dimensione_impresa,
+                data_costituzione or None,
+                numero_dipendenti or None,
+                forma_giuridica.strip() if forma_giuridica else None,
             ),
         )
         new_id = int(cur.fetchone()["id"])
@@ -124,10 +131,18 @@ def list_clienti() -> list[dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
             """
-            SELECT id, ragione_sociale, p_iva, codice_ateco, descrizione_attivita,
-                   regione, fatturato, dimensione_impresa, created_at
-            FROM clienti
-            ORDER BY LOWER(ragione_sociale)
+            SELECT c.id, c.ragione_sociale, c.p_iva, c.codice_ateco, c.descrizione_attivita,
+                   c.regione, c.fatturato, c.dimensione_impresa, c.created_at,
+                   c.data_costituzione, c.numero_dipendenti, c.forma_giuridica,
+                   COALESCE(m.match_count, 0) AS match_count
+            FROM clienti c
+            LEFT JOIN (
+                SELECT cliente_id, COUNT(*) AS match_count
+                FROM match_results
+                WHERE score > 0
+                GROUP BY cliente_id
+            ) m ON m.cliente_id = c.id
+            ORDER BY LOWER(c.ragione_sociale)
             """
         ).fetchall()
     return [dict(row) for row in rows]
@@ -136,7 +151,7 @@ def list_clienti() -> list[dict[str, Any]]:
 def get_cliente(cliente_id: int) -> dict[str, Any] | None:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM clienti WHERE id = ?", (cliente_id,)
+            "SELECT * FROM clienti WHERE id = %s", (cliente_id,)
         ).fetchone()
     return dict(row) if row else None
 
@@ -150,20 +165,26 @@ def update_cliente(
     fatturato: float,
     dimensione_impresa: str,
     descrizione_attivita: str = "",
+    data_costituzione: str | None = None,
+    numero_dipendenti: int | None = None,
+    forma_giuridica: str | None = None,
 ) -> bool:
     with get_connection() as conn:
         cur = conn.execute(
             """
             UPDATE clienti SET
-                ragione_sociale = ?,
-                p_iva = ?,
-                codice_ateco = ?,
-                descrizione_attivita = ?,
-                regione = ?,
-                fatturato = ?,
-                dimensione_impresa = ?,
+                ragione_sociale = %s,
+                p_iva = %s,
+                codice_ateco = %s,
+                descrizione_attivita = %s,
+                regione = %s,
+                fatturato = %s,
+                dimensione_impresa = %s,
+                data_costituzione = %s,
+                numero_dipendenti = %s,
+                forma_giuridica = %s,
                 updated_at = NOW()
-            WHERE id = ?
+            WHERE id = %s
             """,
             (
                 ragione_sociale.strip(),
@@ -173,6 +194,9 @@ def update_cliente(
                 regione.strip(),
                 fatturato,
                 dimensione_impresa,
+                data_costituzione or None,
+                numero_dipendenti or None,
+                forma_giuridica.strip() if forma_giuridica else None,
                 cliente_id,
             ),
         )
@@ -183,7 +207,16 @@ def update_cliente(
 
 def delete_cliente(cliente_id: int) -> bool:
     with get_connection() as conn:
-        cur = conn.execute("DELETE FROM clienti WHERE id = ?", (cliente_id,))
+        cur = conn.execute("DELETE FROM clienti WHERE id = %s", (cliente_id,))
+        deleted = cur.rowcount > 0
+        conn.commit()
+        return deleted
+
+
+def delete_bando(bando_id: int) -> bool:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM match_results WHERE bando_id = %s", (bando_id,))
+        cur = conn.execute("DELETE FROM bandi WHERE id = %s", (bando_id,))
         deleted = cur.rowcount > 0
         conn.commit()
         return deleted
@@ -229,8 +262,8 @@ def deduplica_bandi(strict: bool = True) -> int:
         for row in rows:
             ids_to_delete = list(row["ids"])[1:]  # tieni il primo (id più alto)
             for did in ids_to_delete:
-                conn.execute("DELETE FROM match_results WHERE bando_id = ?", (did,))
-                conn.execute("DELETE FROM bandi WHERE id = ?", (did,))
+                conn.execute("DELETE FROM match_results WHERE bando_id = %s", (did,))
+                conn.execute("DELETE FROM bandi WHERE id = %s", (did,))
                 deleted += 1
 
         conn.commit()
@@ -255,8 +288,8 @@ def find_duplicate_bando(
             row = conn.execute(
                 """
                 SELECT id FROM bandi
-                WHERE LOWER(COALESCE(titolo, '')) = LOWER(COALESCE(?, ''))
-                  AND LOWER(COALESCE(ente,   '')) = LOWER(COALESCE(?, ''))
+                WHERE LOWER(COALESCE(titolo, '')) = LOWER(COALESCE(%s, ''))
+                  AND LOWER(COALESCE(ente,   '')) = LOWER(COALESCE(%s, ''))
                 ORDER BY id DESC
                 LIMIT 1
                 """,
@@ -266,7 +299,7 @@ def find_duplicate_bando(
             row = conn.execute(
                 """
                 SELECT id FROM bandi
-                WHERE LOWER(TRIM(COALESCE(titolo, ''))) = LOWER(TRIM(COALESCE(?, '')))
+                WHERE LOWER(TRIM(COALESCE(titolo, ''))) = LOWER(TRIM(COALESCE(%s, '')))
                 ORDER BY id DESC
                 LIMIT 1
                 """,
@@ -275,8 +308,8 @@ def find_duplicate_bando(
     return int(row["id"]) if row else None
 
 
-def save_bando_from_json(data: dict[str, Any]) -> int:
-    """Salva estrazione bando (per Fase 3). data = {"bando": {...}}."""
+def save_bando_from_json(data: dict[str, Any], scheda: str | None = None) -> int:
+    """Salva estrazione bando. data = {"bando": {...}}. scheda = markdown pre-calcolato."""
     bando = data.get("bando") if isinstance(data.get("bando"), dict) else {}
     dim = bando.get("dimensione_impresa")
     if isinstance(dim, dict):
@@ -290,8 +323,8 @@ def save_bando_from_json(data: dict[str, Any]) -> int:
             """
             INSERT INTO bandi (
                 titolo, ente, data_scadenza, codici_ateco, regioni,
-                dimensione, contributo_max, json_completo
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                dimensione, contributo_max, json_completo, scheda_cached
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -303,6 +336,7 @@ def save_bando_from_json(data: dict[str, Any]) -> int:
                 dimensione_str,
                 bando.get("contributo_max"),
                 json.dumps(data, ensure_ascii=False),
+                scheda,
             ),
         )
         new_id = int(cur.fetchone()["id"])

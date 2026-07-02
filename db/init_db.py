@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS clienti (
     regione TEXT,
     fatturato REAL,
     dimensione_impresa TEXT NOT NULL,
+    data_costituzione DATE,
+    numero_dipendenti INTEGER,
+    forma_giuridica TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -30,6 +33,7 @@ CREATE TABLE IF NOT EXISTS bandi (
     dimensione TEXT,
     contributo_max REAL,
     json_completo TEXT NOT NULL,
+    scheda_cached TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -57,6 +61,19 @@ def _migrate_schema(conn) -> None:
     cols = {row[0] for row in cur.fetchall()}
     if "descrizione_attivita" not in cols:
         cur.execute("ALTER TABLE clienti ADD COLUMN descrizione_attivita TEXT")
+    if "data_costituzione" not in cols:
+        cur.execute("ALTER TABLE clienti ADD COLUMN data_costituzione DATE")
+    if "numero_dipendenti" not in cols:
+        cur.execute("ALTER TABLE clienti ADD COLUMN numero_dipendenti INTEGER")
+    if "forma_giuridica" not in cols:
+        cur.execute("ALTER TABLE clienti ADD COLUMN forma_giuridica TEXT")
+
+    cur.execute(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'bandi'"
+    )
+    bandi_cols = {row[0] for row in cur.fetchall()}
+    if "scheda_cached" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN scheda_cached TEXT")
 
 
 def init_database(database_url: str | None = None) -> None:

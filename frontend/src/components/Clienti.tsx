@@ -10,6 +10,10 @@ interface Cliente {
   fatturato: number
   dimensione_impresa: string
   descrizione_attivita: string
+  data_costituzione?: string | null
+  numero_dipendenti?: number | null
+  forma_giuridica?: string | null
+  match_count: number
 }
 
 interface ClienteForm {
@@ -20,6 +24,25 @@ interface ClienteForm {
   fatturato: string
   dimensione_impresa: string
   descrizione_attivita: string
+  data_costituzione: string
+  numero_dipendenti: string
+  forma_giuridica: string
+}
+
+interface BandoMatch {
+  bando_id: number
+  titolo: string | null
+  ente: string | null
+  score: number
+  breakdown: {
+    regione: number
+    ateco: number
+    dimensione: number
+    fatturato: number
+    total: number
+  }
+  scadenza: string | null
+  giorni_alla_scadenza: number | null
 }
 
 const EMPTY_FORM: ClienteForm = {
@@ -30,10 +53,37 @@ const EMPTY_FORM: ClienteForm = {
   fatturato: '',
   dimensione_impresa: '',
   descrizione_attivita: '',
+  data_costituzione: '',
+  numero_dipendenti: '',
+  forma_giuridica: '',
 }
 
 function formatEuro(val: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
+}
+
+function matchCountBadgeClass(count: number): string {
+  if (count > 5) return 'badge-success'
+  if (count > 0) return 'badge-warning'
+  return 'badge-neutral'
+}
+
+function pillClass(score: number, max: number): string {
+  if (score === max) return 'breakdown-pill-full'
+  if (score >= max / 2) return 'breakdown-pill-partial'
+  return 'breakdown-pill-zero'
+}
+
+function scoreCircleClass(score: number): string {
+  if (score > 70) return 'score-green'
+  if (score >= 40) return 'score-yellow'
+  return 'score-red'
+}
+
+function giorniColorClass(giorni: number): string {
+  if (giorni < 30) return 'scadenza-giorni-red'
+  if (giorni <= 90) return 'scadenza-giorni-orange'
+  return 'scadenza-giorni-green'
 }
 
 function IconPlus() {
@@ -85,6 +135,10 @@ export default function Clienti() {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  const [detailCliente, setDetailCliente] = useState<Cliente | null>(null)
+  const [detailBandi, setDetailBandi] = useState<BandoMatch[]>([])
+  const [detailLoading, setDetailLoading] = useState(false)
+
   const fetchClienti = async () => {
     try {
       const res = await fetch('/api/clienti')
@@ -108,6 +162,13 @@ export default function Clienti() {
     return () => document.removeEventListener('keydown', h)
   }, [modalOpen])
 
+  useEffect(() => {
+    if (!detailCliente) return
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDetail() }
+    document.addEventListener('keydown', h)
+    return () => document.removeEventListener('keydown', h)
+  }, [detailCliente])
+
   const openAdd = () => {
     setEditId(null)
     setForm(EMPTY_FORM)
@@ -125,12 +186,32 @@ export default function Clienti() {
       fatturato: String(c.fatturato ?? ''),
       dimensione_impresa: c.dimensione_impresa,
       descrizione_attivita: c.descrizione_attivita ?? '',
+      data_costituzione: c.data_costituzione ?? '',
+      numero_dipendenti: c.numero_dipendenti ? String(c.numero_dipendenti) : '',
+      forma_giuridica: c.forma_giuridica ?? '',
     })
     setFormErrors([])
     setModalOpen(true)
   }
 
   const closeModal = () => { setModalOpen(false); setFormErrors([]) }
+
+  const openDetail = async (c: Cliente) => {
+    setDetailCliente(c)
+    setDetailBandi([])
+    setDetailLoading(true)
+    try {
+      const res = await fetch(`/api/clienti/${c.id}/bandi`)
+      const d = await res.json()
+      setDetailBandi(d.bandi ?? [])
+    } catch {
+      toast.error('Impossibile caricare i bandi del cliente.')
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
+  const closeDetail = () => { setDetailCliente(null); setDetailBandi([]) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -145,6 +226,9 @@ export default function Clienti() {
       fatturato: parseFloat(form.fatturato) || 0,
       dimensione_impresa: form.dimensione_impresa,
       descrizione_attivita: form.descrizione_attivita.trim(),
+      data_costituzione: form.data_costituzione.trim() || null,
+      numero_dipendenti: form.numero_dipendenti.trim() ? parseInt(form.numero_dipendenti) : null,
+      forma_giuridica: form.forma_giuridica.trim() || null,
     }
 
     try {
@@ -231,6 +315,7 @@ export default function Clienti() {
                 <th>Regione</th>
                 <th>Fatturato</th>
                 <th>Dimensione</th>
+                <th>Bandi compatibili</th>
                 <th>Azioni</th>
               </tr>
             </thead>
@@ -238,7 +323,9 @@ export default function Clienti() {
               {clienti.map(c => (
                 <tr key={c.id}>
                   <td>
-                    <span className="td-title">{c.ragione_sociale}</span>
+                    <button className="cliente-name-btn" onClick={() => openDetail(c)}>
+                      {c.ragione_sociale}
+                    </button>
                     {c.descrizione_attivita && (
                       <p className="td-muted" style={{ marginTop: 2, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.descrizione_attivita}
@@ -255,6 +342,11 @@ export default function Clienti() {
                   <td>{c.fatturato ? formatEuro(c.fatturato) : '—'}</td>
                   <td>
                     <span className="badge badge-neutral">{c.dimensione_impresa}</span>
+                  </td>
+                  <td>
+                    <span className={`badge ${matchCountBadgeClass(c.match_count)}`}>
+                      {c.match_count}
+                    </span>
                   </td>
                   <td>
                     {deleteConfirm === c.id ? (
@@ -289,6 +381,88 @@ export default function Clienti() {
         </div>
       )}
 
+      {/* ── Detail modal ── */}
+      {detailCliente && (
+        <div className="modal-backdrop" onClick={closeDetail}>
+          <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <p className="modal-title">{detailCliente.ragione_sociale}</p>
+                <p className="modal-subtitle">Bandi compatibili</p>
+              </div>
+              <button className="modal-close" onClick={closeDetail} aria-label="Chiudi">
+                <IconClose />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="cliente-detail-info">
+                <span className="badge badge-blue">{detailCliente.codice_ateco}</span>
+                <span className="badge badge-neutral">{detailCliente.dimensione_impresa}</span>
+                <span className="td-muted text-sm">{detailCliente.regione}</span>
+                {detailCliente.fatturato ? (
+                  <span className="text-sm">{formatEuro(detailCliente.fatturato)}</span>
+                ) : null}
+                {detailCliente.descrizione_attivita && (
+                  <span className="td-muted text-sm" style={{ gridColumn: '1 / -1' }}>
+                    {detailCliente.descrizione_attivita}
+                  </span>
+                )}
+              </div>
+
+              <hr className="divider" />
+
+              <p className="result-section-title" style={{ marginBottom: 10 }}>
+                {detailLoading ? 'Caricamento…' : `${detailBandi.length} bando${detailBandi.length !== 1 ? 'i' : ''} compatibil${detailBandi.length !== 1 ? 'i' : 'e'}`}
+              </p>
+
+              {detailLoading ? (
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+                  <div className="spinner" />
+                </div>
+              ) : detailBandi.length === 0 ? (
+                <p className="text-muted text-sm">Nessun bando compatibile trovato per questo cliente.</p>
+              ) : (
+                <div className="cliente-bandi-list">
+                  {detailBandi.map(b => (
+                    <div key={b.bando_id} className="cliente-bando-row">
+                      <div className="cliente-bando-info">
+                        <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
+                        {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
+                        <div className="breakdown-pills" style={{ marginTop: 7 }}>
+                          <span className={`breakdown-pill ${pillClass(b.breakdown.regione, 30)}`}>Regione {b.breakdown.regione}/30</span>
+                          <span className={`breakdown-pill ${pillClass(b.breakdown.ateco, 40)}`}>ATECO {b.breakdown.ateco}/40</span>
+                          <span className={`breakdown-pill ${pillClass(b.breakdown.dimensione, 20)}`}>Dimensione {b.breakdown.dimensione}/20</span>
+                          <span className={`breakdown-pill ${pillClass(b.breakdown.fatturato, 10)}`}>Fatturato {b.breakdown.fatturato}/10</span>
+                        </div>
+                      </div>
+                      <div className="cliente-bando-right">
+                        <div
+                          className={`score-circle ${scoreCircleClass(b.score)}`}
+                          style={{ '--score': b.score } as React.CSSProperties}
+                        >
+                          <span>{b.score}%</span>
+                        </div>
+                        {b.scadenza && (
+                          <div style={{ textAlign: 'center', marginTop: 6 }}>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
+                            {b.giorni_alla_scadenza !== null && (
+                              <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
+                                {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit / create form modal (unchanged) ── */}
       {modalOpen && (
         <div className="modal-backdrop" onClick={closeModal}>
           <div className="modal" onClick={e => e.stopPropagation()}>
@@ -389,6 +563,40 @@ export default function Clienti() {
                       onChange={e => setField('fatturato', e.target.value)}
                       placeholder="Es. 500000"
                       required
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="data_costituzione">Data di costituzione</label>
+                    <input
+                      id="data_costituzione"
+                      type="date"
+                      value={form.data_costituzione}
+                      onChange={e => setField('data_costituzione', e.target.value)}
+                    />
+                    <p className="help">Per calcolo anzianità impresa (opzionale)</p>
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="numero_dipendenti">Numero dipendenti</label>
+                    <input
+                      id="numero_dipendenti"
+                      type="number"
+                      min="0"
+                      value={form.numero_dipendenti}
+                      onChange={e => setField('numero_dipendenti', e.target.value)}
+                      placeholder="Es. 25"
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label htmlFor="forma_giuridica">Forma giuridica</label>
+                    <input
+                      id="forma_giuridica"
+                      type="text"
+                      value={form.forma_giuridica}
+                      onChange={e => setField('forma_giuridica', e.target.value)}
+                      placeholder="Es. s.r.l., s.p.a., ditta individuale"
                     />
                   </div>
 

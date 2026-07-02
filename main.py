@@ -1,8 +1,14 @@
 import csv
 import io
 import json
+import logging
 import re
 from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
 
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -14,6 +20,7 @@ from modules.database import (
     REGIONI_ITALIANE,
     create_cliente,
     deduplica_bandi,
+    delete_bando,
     delete_cliente,
     ensure_database,
     find_duplicate_bando,
@@ -145,6 +152,7 @@ def _dashboard_payload() -> dict:
                 "ente": row["bando_ente"],
                 "data_scadenza": row["data_scadenza"],
                 "json_completo": row["json_completo"],
+                "scheda_cached": row.get("scheda_cached"),
                 "matches": [],
                 "max_score": row["score"],
             }
@@ -215,7 +223,7 @@ def _dashboard_payload() -> dict:
             "color_class": get_color_class(max_sc),
             "has_constraints": bando_has_constraints(payload),
             "matches": matches,
-            "scheda": genera_scheda(payload),
+            "scheda": info.get("scheda_cached") or genera_scheda(payload),
             "fonte_url": get_fonte_url(payload),
         })
 
@@ -262,7 +270,7 @@ def api_recalc_matches():
 def api_bandi_list():
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT id, titolo, ente, data_scadenza, contributo_max FROM bandi ORDER BY id DESC"
+            "SELECT id, titolo, ente, data_scadenza, contributo_max, regioni FROM bandi ORDER BY id DESC"
         ).fetchall()
     result = []
     for row in rows:
@@ -307,22 +315,29 @@ def api_export_csv():
     )
 
 
+@app.delete("/api/bandi/{bando_id}")
+def api_bando_delete(bando_id: int):
+    deleted = delete_bando(bando_id)
+    if not deleted:
+        return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
+    return {"status": "ok"}
+
+
 @app.get("/api/bandi/{bando_id}/scheda")
 def api_bando_scheda_json(bando_id: int):
     with get_connection() as conn:
-        row = conn.execute("SELECT json_completo FROM bandi WHERE id = ?", (bando_id,)).fetchone()
+        row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
     if not row:
         return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
-    payload = json.loads(row["json_completo"])
-    return {"bando_id": bando_id, "scheda": genera_scheda(payload)}
+    scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+    return {"bando_id": bando_id, "scheda": scheda}
 
 
 @app.get("/api/bandi/{bando_id}/scheda.md")
 def api_download_scheda(bando_id: int):
     with get_connection() as conn:
-        row = conn.execute("SELECT json_completo FROM bandi WHERE id = ?", (bando_id,)).fetchone()
-    payload = json.loads(row["json_completo"]) if row else {}
-    scheda = genera_scheda(payload)
+        row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
+    scheda = (row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))) if row else genera_scheda({})
     return Response(
         content=scheda,
         media_type="text/markdown",
@@ -353,65 +368,69 @@ def api_estrazione_submit(file: UploadFile = File(...)):
         return result
 
     try:
-        text = extract_text_from_pdf(str(file_path))
-    except EmptyPDFException:
-        result["empty_pdf"] = True
+        try:
+            text = extract_text_from_pdf(str(file_path))
+        except EmptyPDFException:
+            result["empty_pdf"] = True
+            return result
+
+        result["raw_text_preview"] = text[:1000]
+
+        try:
+            raw_data = extract_bando_data(text)
+            validation = validate_bando(raw_data, raw_text=text)
+            data = validation["data"]
+            bando_info = data.get("bando", {})
+
+            result["data"] = data
+            result["bando_info"] = bando_info
+            result["warnings"] = validation.get("warnings", [])
+            result["errors"] = validation.get("errors", [])
+
+            if bando_info.get("ateco_aperto_a_tutti") is False:
+                escl = bando_info.get("note_esclusioni", {})
+                if isinstance(escl, dict):
+                    result["sezioni_escluse"] = escl.get("sezioni_ateco_escluse", [])
+                    result["attivita_vietate"] = escl.get("attivita_vietate", [])
+                else:
+                    result["note_esclusioni_raw"] = str(escl)
+
+            if not validation["errors"]:
+                try:
+                    existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
+                    if existing_id:
+                        return JSONResponse(content={
+                            "status": "duplicato",
+                            "messaggio": "Bando già presente in archivio",
+                            "bando_id": existing_id,
+                            "filename": result["filename"],
+                            "size_kb": result["size_kb"],
+                            "scheda": genera_scheda(data),
+                            "warnings": validation.get("warnings", []),
+                        })
+
+                    scheda = genera_scheda(data)
+                    bando_id = save_bando_from_json(data, scheda=scheda)
+                    with get_connection() as conn:
+                        run_matching_for_bando(bando_id, conn)
+
+                    scadenza_estratta = bando_info.get("data_scadenza")
+                    result["bando_id"] = bando_id
+                    result["scadenza_estratta"] = scadenza_estratta
+                    result["null_percentage"] = validation.get("null_percentage", 0)
+
+                    ok_fields, null_fields = fields_status(data)
+                    log_prompt_run(filename=safe_name, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
+
+                    result["scheda"] = scheda
+                except Exception as exc:
+                    result["save_error"] = str(exc)
+        except Exception as exc:
+            result["extraction_error"] = str(exc)
+
         return result
-
-    result["raw_text_preview"] = text[:1000]
-
-    try:
-        raw_data = extract_bando_data(text)
-        validation = validate_bando(raw_data, raw_text=text)
-        data = validation["data"]
-        bando_info = data.get("bando", {})
-
-        result["data"] = data
-        result["bando_info"] = bando_info
-        result["warnings"] = validation.get("warnings", [])
-        result["errors"] = validation.get("errors", [])
-
-        if bando_info.get("ateco_aperto_a_tutti") is False:
-            escl = bando_info.get("note_esclusioni", {})
-            if isinstance(escl, dict):
-                result["sezioni_escluse"] = escl.get("sezioni_ateco_escluse", [])
-                result["attivita_vietate"] = escl.get("attivita_vietate", [])
-            else:
-                result["note_esclusioni_raw"] = str(escl)
-
-        if not validation["errors"]:
-            try:
-                existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
-                if existing_id:
-                    return JSONResponse(content={
-                        "status": "duplicato",
-                        "messaggio": "Bando già presente in archivio",
-                        "bando_id": existing_id,
-                        "filename": result["filename"],
-                        "size_kb": result["size_kb"],
-                        "scheda": genera_scheda(data),
-                        "warnings": validation.get("warnings", []),
-                    })
-
-                bando_id = save_bando_from_json(data)
-                with get_connection() as conn:
-                    run_matching_for_bando(bando_id, conn)
-
-                scadenza_estratta = bando_info.get("data_scadenza")
-                result["bando_id"] = bando_id
-                result["scadenza_estratta"] = scadenza_estratta
-                result["null_percentage"] = validation.get("null_percentage", 0)
-
-                ok_fields, null_fields = fields_status(data)
-                log_prompt_run(filename=safe_name, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
-
-                result["scheda"] = genera_scheda(data)
-            except Exception as exc:
-                result["save_error"] = str(exc)
-    except Exception as exc:
-        result["extraction_error"] = str(exc)
-
-    return result
+    finally:
+        file_path.unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------
@@ -426,6 +445,9 @@ class ClienteIn(BaseModel):
     descrizione_attivita: str = ""
     fatturato: float
     dimensione_impresa: str
+    data_costituzione: str | None = None
+    numero_dipendenti: int | None = None
+    forma_giuridica: str | None = None
 
 
 @app.get("/api/clienti")
@@ -445,6 +467,42 @@ def api_cliente_get(cliente_id: int):
     return cliente
 
 
+@app.get("/api/clienti/{cliente_id}/bandi")
+def api_cliente_bandi(cliente_id: int):
+    cliente = get_cliente(cliente_id)
+    if not cliente:
+        return JSONResponse(status_code=404, content={"detail": "Cliente non trovato"})
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT mr.score, b.id AS bando_id, b.titolo, b.ente, b.data_scadenza, b.json_completo
+            FROM match_results mr
+            JOIN bandi b ON b.id = mr.bando_id
+            WHERE mr.cliente_id = %s AND mr.score > 0
+            ORDER BY mr.score DESC
+            """,
+            (cliente_id,),
+        ).fetchall()
+    result = []
+    for row in rows:
+        d = dict(row)
+        try:
+            payload = json.loads(d["json_completo"])
+        except Exception:
+            payload = {}
+        bd = get_score_breakdown(payload, cliente)
+        result.append({
+            "bando_id": d["bando_id"],
+            "titolo": d["titolo"],
+            "ente": d["ente"],
+            "score": int(d["score"]),
+            "breakdown": bd,
+            "scadenza": format_scadenza_italiana(d.get("data_scadenza")),
+            "giorni_alla_scadenza": giorni_alla_scadenza(d.get("data_scadenza")),
+        })
+    return {"cliente_id": cliente_id, "bandi": result}
+
+
 @app.post("/api/clienti")
 def api_clienti_create(payload: ClienteIn):
     form_values = payload.model_dump()
@@ -459,6 +517,9 @@ def api_clienti_create(payload: ClienteIn):
             codice_ateco=payload.codice_ateco.strip(), regione=payload.regione,
             fatturato=payload.fatturato, dimensione_impresa=payload.dimensione_impresa,
             descrizione_attivita=payload.descrizione_attivita,
+            data_costituzione=payload.data_costituzione,
+            numero_dipendenti=payload.numero_dipendenti,
+            forma_giuridica=payload.forma_giuridica,
         )
         with get_connection() as conn:
             run_matching_for_all_bandi(conn)
@@ -482,6 +543,9 @@ def api_clienti_update(cliente_id: int, payload: ClienteIn):
             codice_ateco=payload.codice_ateco.strip(), regione=payload.regione,
             fatturato=payload.fatturato, dimensione_impresa=payload.dimensione_impresa,
             descrizione_attivita=payload.descrizione_attivita,
+            data_costituzione=payload.data_costituzione,
+            numero_dipendenti=payload.numero_dipendenti,
+            forma_giuridica=payload.forma_giuridica,
         )
         with get_connection() as conn:
             run_matching_for_all_bandi(conn)
@@ -495,6 +559,21 @@ def api_clienti_update(cliente_id: int, payload: ClienteIn):
 def api_clienti_delete(cliente_id: int):
     delete_cliente(cliente_id)
     return {"status": "ok"}
+
+
+@app.get("/api/health")
+def api_health():
+    try:
+        with get_connection() as conn:
+            conn.execute("SELECT 1")
+        db_ok = True
+    except Exception:
+        db_ok = False
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db": "ok" if db_ok else "error",
+        "version": "3.2",
+    }
 
 
 # ---------------------------------------------------------
