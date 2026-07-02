@@ -343,6 +343,78 @@ a { color: var(--color-accent); }
 }
 .match-row-right { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
 
+.match-row--open { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.match-row-name--clickable { cursor: pointer; }
+.match-row-name--clickable:hover { color: var(--color-accent); }
+
+.match-breakdown {
+  padding: 8px 10px;
+  background: #f1f5f9;
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+.breakdown-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.breakdown-pill {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 12px;
+  font-size: 0.68rem; font-weight: 700;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.breakdown-pill-full    { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.breakdown-pill-partial { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
+.breakdown-pill-zero    { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.breakdown-spiegazione  { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+
+/* ── AMMISSIBILITÀ ─────────────────────────────────────────── */
+.match-excluded { opacity: 0.6; }
+
+.badge-escluso {
+  background: var(--color-danger-bg); color: var(--color-danger);
+  border-color: var(--color-danger-border); font-size: 0.65rem;
+}
+
+.match-badge-excluded { background: #f1f5f9; color: var(--color-text-muted); }
+
+.ammissibilita-box {
+  background: var(--color-danger-bg); border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-sm); padding: 6px 10px; margin-bottom: 8px;
+  font-size: 0.72rem; color: var(--color-danger); line-height: 1.5;
+}
+.ammissibilita-box-title { font-weight: 600; margin-bottom: 3px; }
+.ammissibilita-box ul { margin: 0; padding-left: 16px; }
+
+.criteri-list {
+  list-style: none; margin: 7px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.criteri-list li { font-size: 0.7rem; color: var(--color-text-muted); line-height: 1.4; }
+
+/* ── SCADENZA DATE CELL ───────────────────────────────────── */
+.scadenza-giorni { font-size: 0.72rem; font-weight: 600; margin-top: 2px; }
+.scadenza-giorni-green  { color: var(--color-success); }
+.scadenza-giorni-orange { color: var(--color-warning); }
+.scadenza-giorni-red    { color: var(--color-danger); }
+
+/* ── FILTER BAR ───────────────────────────────────────────── */
+.filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.filter-select {
+  padding: 5px 11px; border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-family: inherit; font-size: 0.8rem; font-weight: 600;
+  color: var(--color-text); background: var(--color-surface);
+  cursor: pointer; outline: none;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.filter-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* ── TABLE ────────────────────────────────────────────────── */
 .table-wrapper {
     background: var(--color-surface);
@@ -699,6 +771,35 @@ a { color: var(--color-accent); }
 @keyframes toast-out {
     from { opacity: 1; transform: translateX(0); }
     to   { opacity: 0; transform: translateX(24px); }
+}
+
+/* ── MODAL XL ─────────────────────────────────────────────── */
+.modal-xl { max-width: 960px; }
+
+/* ── CLIENTE DETAIL MODAL ─────────────────────────────────── */
+.cliente-name-btn {
+  background: transparent; border: none; padding: 0; cursor: pointer;
+  font-family: inherit; font-size: inherit; text-align: left;
+  font-weight: 700; color: var(--color-text); transition: color 150ms;
+}
+.cliente-name-btn:hover { color: var(--color-accent); text-decoration: underline; }
+
+.cliente-detail-info {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-bottom: 4px;
+}
+
+.cliente-bandi-list { display: flex; flex-direction: column; gap: 10px; }
+
+.cliente-bando-row {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 12px 14px; background: #f8fafc;
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+}
+.cliente-bando-info { flex: 1; min-width: 0; }
+.cliente-bando-right {
+  display: flex; flex-direction: column; align-items: center;
+  flex-shrink: 0; min-width: 60px; margin-left: auto;
 }
 
 /* ── REDUCED MOTION ───────────────────────────────────────── */

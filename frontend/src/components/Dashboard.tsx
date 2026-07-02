@@ -9,6 +9,12 @@ interface Breakdown {
   fatturato: number
 }
 
+interface Ammissibilita {
+  ammissibile: boolean
+  motivi_esclusione: string[]
+  criteri_verificati: string[]
+}
+
 interface Match {
   nome: string
   score: number
@@ -16,6 +22,7 @@ interface Match {
   breakdown: Breakdown
   settore_da_verificare: boolean
   spiegazione_score: string | null
+  ammissibilita?: Ammissibilita
 }
 
 interface BandoCard {
@@ -71,6 +78,18 @@ function matchBadgeClass(cls: string): string {
   if (cls === 'match-score-high') return 'match-badge match-badge-high'
   if (cls === 'match-score-mid') return 'match-badge match-badge-mid'
   return 'match-badge match-badge-low'
+}
+
+function criterioIcon(s: string): string {
+  if (s.includes('non verificabile')) return '⚠️'
+  if (s.includes('OK')) return '✅'
+  return '•'
+}
+
+function pillClass(score: number, max: number): string {
+  if (score >= max) return 'breakdown-pill-full'
+  if (score > 0) return 'breakdown-pill-partial'
+  return 'breakdown-pill-zero'
 }
 
 function giorniText(giorni: number | null): string {
@@ -195,6 +214,15 @@ function BandoCardItem({
   onToggle: () => void
   onScheda: () => void
 }) {
+  const [expandedMatches, setExpandedMatches] = useState<Set<number>>(new Set())
+  const toggleMatch = (i: number) => {
+    setExpandedMatches(prev => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i); else next.add(i)
+      return next
+    })
+  }
+
   const giorni = giorniText(card.giorni_alla_scadenza)
   const expired = isExpiredCard(card)
   const urgencyRail = expired
@@ -243,17 +271,65 @@ function BandoCardItem({
           </button>
           {expanded && (
             <div className="match-list">
-              {card.matches.slice(0, 5).map((m, i) => (
-                <div key={i} className="match-row">
-                  <span className="match-row-name">{m.nome}</span>
-                  <div className="match-row-right">
-                    {m.settore_da_verificare && (
-                      <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Settore da verificare</span>
+              {card.matches.slice(0, 5).map((m, i) => {
+                const escluso = m.ammissibilita?.ammissibile === false
+                return (
+                  <div key={i}>
+                    <div className={`match-row${expandedMatches.has(i) ? ' match-row--open' : ''}${escluso ? ' match-excluded' : ''}`}>
+                      <span
+                        className="match-row-name match-row-name--clickable"
+                        onClick={() => toggleMatch(i)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleMatch(i) }}
+                      >
+                        {m.nome}
+                      </span>
+                      <div className="match-row-right">
+                        {escluso && (
+                          <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                        )}
+                        {m.settore_da_verificare && (
+                          <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Settore da verificare</span>
+                        )}
+                        <span className={escluso ? 'match-badge match-badge-excluded' : matchBadgeClass(m.score_badge_class)}>
+                          {m.score}%
+                        </span>
+                      </div>
+                    </div>
+                    {expandedMatches.has(i) && (
+                      <div className="match-breakdown">
+                        {escluso && m.ammissibilita!.motivi_esclusione.length > 0 && (
+                          <div className="ammissibilita-box">
+                            <p className="ammissibilita-box-title">⛔ Questo cliente non soddisfa i requisiti minimi del bando</p>
+                            <ul>
+                              {m.ammissibilita!.motivi_esclusione.map((motivo, j) => (
+                                <li key={j}>{motivo}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <div className="breakdown-pills">
+                          <span className={`breakdown-pill ${pillClass(m.breakdown.regione, 30)}`}>Regione {m.breakdown.regione}/30</span>
+                          <span className={`breakdown-pill ${pillClass(m.breakdown.ateco, 40)}`}>ATECO {m.breakdown.ateco}/40</span>
+                          <span className={`breakdown-pill ${pillClass(m.breakdown.dimensione, 20)}`}>Dimensione {m.breakdown.dimensione}/20</span>
+                          <span className={`breakdown-pill ${pillClass(m.breakdown.fatturato, 10)}`}>Fatturato {m.breakdown.fatturato}/10</span>
+                        </div>
+                        {m.spiegazione_score && (
+                          <p className="breakdown-spiegazione">{m.spiegazione_score}</p>
+                        )}
+                        {m.ammissibilita && m.ammissibilita.criteri_verificati.length > 0 && (
+                          <ul className="criteri-list">
+                            {m.ammissibilita.criteri_verificati.map((c, j) => (
+                              <li key={j}>{criterioIcon(c)} {c}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
                     )}
-                    <span className={matchBadgeClass(m.score_badge_class)}>{m.score}%</span>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>
