@@ -32,14 +32,22 @@ def mock_db(mock_conn):
             yield mock_conn
 
 
+TEST_API_KEY = "test-api-key"
+
+
 @pytest.fixture
 def client(mock_db):
-    from main import app
+    """TestClient già autenticato: invia sempre l'header X-API-Key atteso da
+    main.verify_api_key (vedi audit D-3). Per testare i casi 401/senza chiave
+    usare un TestClient separato, senza questo header di default."""
+    import main
     from fastapi.testclient import TestClient
 
     with patch("main.ensure_database"):
-        with TestClient(app) as c:
-            yield c
+        with patch.object(main, "APP_API_KEY", TEST_API_KEY):
+            with TestClient(main.app) as c:
+                c.headers.update({"X-API-Key": TEST_API_KEY})
+                yield c
 
 
 # ---------------------------------------------------------------------------

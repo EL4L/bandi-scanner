@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
+import { apiHref, withApiKey } from '../apiKey'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Breakdown {
@@ -180,7 +181,7 @@ function BandoCardItem({
             Scheda
           </button>
           <a
-            href={`/api/bandi/${card.id}/scheda.md`}
+            href={apiHref(`/api/bandi/${card.id}/scheda.md`)}
             download
             className="btn btn-sm"
             title="Scarica scheda .md"
@@ -232,7 +233,7 @@ export default function Dashboard() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/dashboard')
+      const res = await fetch('/api/dashboard', withApiKey())
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setData(await res.json())
     } catch {
@@ -254,7 +255,7 @@ export default function Dashboard() {
   const handleRecalc = async () => {
     setRecalcLoading(true)
     try {
-      await fetch('/api/bandi/recalc', { method: 'POST' })
+      await fetch('/api/bandi/recalc', withApiKey({ method: 'POST' }))
       await fetchDashboard()
       toast.success('Match ricalcolati.')
     } catch {
@@ -267,7 +268,7 @@ export default function Dashboard() {
   const handleDeduplica = async () => {
     setDeduplicaLoading(true)
     try {
-      const res = await fetch('/api/bandi/deduplica', { method: 'POST' })
+      const res = await fetch('/api/bandi/deduplica', withApiKey({ method: 'POST' }))
       const d = await res.json()
       if (d.eliminati > 0) {
         toast.success(`${d.eliminati} duplicat${d.eliminati === 1 ? 'o eliminato' : 'i eliminati'}.`)
@@ -313,7 +314,7 @@ export default function Dashboard() {
         </div>
         <div className="topbar-actions">
           {d.has_export_data && (
-            <a href="/api/export/matching.csv" download className="btn">
+            <a href={apiHref('/api/export/matching.csv')} download className="btn">
               <IconDownload /> Esporta CSV
             </a>
           )}

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { apiHref } from '../apiKey'
 
 export interface SchedaModalData {
   id: number
@@ -76,7 +77,7 @@ export function ModalScheda({ data, onClose }: Props) {
             <p className="modal-subtitle">Scheda di sintesi</p>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-            <a href={`/api/bandi/${data.id}/scheda.md`} download className="btn btn-sm">
+            <a href={apiHref(`/api/bandi/${data.id}/scheda.md`)} download className="btn btn-sm">
               <IconDownload /> Scarica
             </a>
             {data.fonte_url && (

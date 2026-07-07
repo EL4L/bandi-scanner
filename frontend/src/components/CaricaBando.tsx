@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { toast } from '../toast'
+import { apiHref, withApiKey } from '../apiKey'
 
 interface ExtractionResult {
   filename: string
@@ -217,7 +218,7 @@ export default function CaricaBando() {
     fd.append('file', selectedFile)
 
     try {
-      const res = await fetch('/api/estrazione', { method: 'POST', body: fd })
+      const res = await fetch('/api/estrazione', withApiKey({ method: 'POST', body: fd }))
       const data: ExtractionResult = await res.json()
       setResult(data)
       if (data.status === 'duplicato') {
@@ -393,7 +394,7 @@ export default function CaricaBando() {
                 </p>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <a
-                    href={`/api/bandi/${result.bando_id}/scheda.md`}
+                    href={apiHref(`/api/bandi/${result.bando_id}/scheda.md`)}
                     download
                     className="btn btn-sm"
                   >

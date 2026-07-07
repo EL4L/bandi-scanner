@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { toast } from '../toast'
+import { withApiKey } from '../apiKey'
 
 interface Cliente {
   id: number
@@ -148,7 +149,7 @@ export default function Clienti() {
 
   const fetchClienti = async () => {
     try {
-      const res = await fetch('/api/clienti')
+      const res = await fetch('/api/clienti', withApiKey())
       const d = await res.json()
       setClienti(d.clienti ?? [])
       setRegioni(d.regioni ?? [])
@@ -208,7 +209,7 @@ export default function Clienti() {
     setDetailBandi([])
     setDetailLoading(true)
     try {
-      const res = await fetch(`/api/clienti/${c.id}/bandi`)
+      const res = await fetch(`/api/clienti/${c.id}/bandi`, withApiKey())
       const d = await res.json()
       setDetailBandi(d.bandi ?? [])
     } catch {
@@ -254,11 +255,11 @@ export default function Clienti() {
     try {
       const url = editId ? `/api/clienti/${editId}` : '/api/clienti'
       const method = editId ? 'PUT' : 'POST'
-      const res = await fetch(url, {
+      const res = await fetch(url, withApiKey({
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      })
+      }))
       const d = await res.json()
       if (!res.ok) {
         setFormErrors(d.errors ?? ['Errore sconosciuto.'])
@@ -278,7 +279,7 @@ export default function Clienti() {
   const handleDelete = async (id: number) => {
     setDeleting(true)
     try {
-      await fetch(`/api/clienti/${id}`, { method: 'DELETE' })
+      await fetch(`/api/clienti/${id}`, withApiKey({ method: 'DELETE' }))
       setDeleteConfirm(null)
       await fetchClienti()
       toast.success('Cliente eliminato.')

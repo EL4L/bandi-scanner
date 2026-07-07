@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
+import { apiHref, withApiKey } from '../apiKey'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Bando {
@@ -134,7 +135,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
                 ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                 : 'Scheda'}
             </button>
-            <a href={`/api/bandi/${b.id}/scheda.md`} download className="btn btn-sm" title="Scarica .md">
+            <a href={apiHref(`/api/bandi/${b.id}/scheda.md`)} download className="btn btn-sm" title="Scarica .md">
               <IconDownload />
             </a>
             <button
@@ -220,7 +221,7 @@ export default function Bandi() {
 
   useEffect(() => {
     setLoading(true)
-    fetch('/api/bandi')
+    fetch('/api/bandi', withApiKey())
       .then(r => r.json())
       .then(d => { setBandi(d.bandi ?? []); setLoading(false) })
       .catch(() => { setError('Errore nel caricamento dei bandi.'); setLoading(false) })
@@ -234,7 +235,7 @@ export default function Bandi() {
   const handleScheda = async (bando: Bando) => {
     setSchedaLoading(bando.id)
     try {
-      const res = await fetch(`/api/bandi/${bando.id}/scheda`)
+      const res = await fetch(`/api/bandi/${bando.id}/scheda`, withApiKey())
       const d = await res.json()
       setOpenScheda({ id: bando.id, titolo: bando.titolo ?? `Bando #${bando.id}`, scheda: d.scheda ?? '' })
     } catch {
@@ -304,7 +305,7 @@ export default function Bandi() {
   const handleDeleteConfirm = useCallback(async (id: number) => {
     setDeleting(id)
     try {
-      const res = await fetch(`/api/bandi/${id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/bandi/${id}`, withApiKey({ method: 'DELETE' }))
       if (!res.ok) throw new Error()
       setBandi(prev => prev.filter(b => b.id !== id))
       setConfirmDeleteId(null)

@@ -2,7 +2,11 @@ import csv
 import io
 import json
 import logging
+import os
 import re
+import threading
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 
 logging.basicConfig(
@@ -10,7 +14,7 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -67,6 +71,55 @@ app = FastAPI(title="Bandi Scanner AI")
 @app.on_event("startup")
 def on_startup() -> None:
     ensure_database()
+
+
+# ---------------------------------------------------------------------------
+# Autenticazione (API key statica) e rate limiting — audit D-3
+# ---------------------------------------------------------------------------
+# App ad uso interno senza login: una singola chiave condivisa via env,
+# verificata su tutte le rotte /api/* (tranne /api/health, usato per il
+# monitoraggio uptime). Non sostituisce un'autenticazione vera per-utente
+# (vedi Fase 4 della roadmap): ferma l'abuso casuale di chi trova l'URL
+# pubblico, non un attaccante che ispeziona il bundle JS del frontend, dove
+# la chiave è necessariamente presente per poter chiamare le API.
+APP_API_KEY = os.environ.get("APP_API_KEY", "").strip()
+
+
+def verify_api_key(
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+    api_key_qs: str | None = Query(default=None, alias="api_key"),
+) -> None:
+    """Verifica la API key statica. Accetta sia l'header X-API-Key (chiamate
+    fetch) sia il parametro ?api_key= in query string, necessario per i link
+    di download diretti (<a href download>), su cui il browser non allega
+    header custom."""
+    if not APP_API_KEY:
+        raise HTTPException(status_code=500, detail="Server non configurato: APP_API_KEY mancante.")
+    fornita = x_api_key or api_key_qs
+    if fornita != APP_API_KEY:
+        raise HTTPException(status_code=401, detail="Non autorizzato: API key mancante o non valida.")
+
+
+# Rate limit in-process (per IP) sulle chiamate di estrazione, per contenere
+# l'uso di credito LLM in caso di abuso automatizzato. Contatore in memoria:
+# si azzera ad ogni riavvio/redeploy e non è condiviso tra più worker o
+# istanze — adeguato alla scala attuale (un solo processo su Render free).
+ESTRAZIONE_RATE_LIMIT_MAX = int(os.environ.get("ESTRAZIONE_RATE_LIMIT_MAX", "10"))
+ESTRAZIONE_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("ESTRAZIONE_RATE_LIMIT_WINDOW_SECONDS", "3600"))
+_rate_limit_lock = threading.Lock()
+_rate_limit_hits: dict[str, deque] = defaultdict(deque)
+
+
+def rate_limit_estrazione(request: Request) -> None:
+    ip = request.client.host if request.client else "sconosciuto"
+    now = time.time()
+    with _rate_limit_lock:
+        hits = _rate_limit_hits[ip]
+        while hits and now - hits[0] > ESTRAZIONE_RATE_LIMIT_WINDOW_SECONDS:
+            hits.popleft()
+        if len(hits) >= ESTRAZIONE_RATE_LIMIT_MAX:
+            raise HTTPException(status_code=429, detail="Troppe richieste di estrazione. Riprova più tardi.")
+        hits.append(now)
 
 
 def get_color_class(score: int) -> str:
@@ -252,7 +305,7 @@ def _dashboard_payload() -> dict:
     }
 
 
-@app.get("/api/dashboard")
+@app.get("/api/dashboard", dependencies=[Depends(verify_api_key)])
 def api_dashboard():
     return _dashboard_payload()
 
@@ -261,7 +314,7 @@ class DeduplicaRequest(BaseModel):
     strict: bool = True
 
 
-@app.post("/api/bandi/deduplica")
+@app.post("/api/bandi/deduplica", dependencies=[Depends(verify_api_key)])
 def api_deduplica_bandi(body: DeduplicaRequest = DeduplicaRequest()):
     try:
         eliminati = deduplica_bandi(strict=body.strict)
@@ -274,7 +327,7 @@ def api_deduplica_bandi(body: DeduplicaRequest = DeduplicaRequest()):
         return JSONResponse(status_code=500, content={"status": "error", "detail": "Deduplica non riuscita. Riprova."})
 
 
-@app.post("/api/bandi/recalc")
+@app.post("/api/bandi/recalc", dependencies=[Depends(verify_api_key)])
 def api_recalc_matches():
     try:
         with get_connection() as conn:
@@ -285,7 +338,7 @@ def api_recalc_matches():
         return JSONResponse(status_code=500, content={"status": "error", "detail": "Ricalcolo dei match non riuscito. Riprova."})
 
 
-@app.get("/api/bandi")
+@app.get("/api/bandi", dependencies=[Depends(verify_api_key)])
 def api_bandi_list():
     with get_connection() as conn:
         rows = conn.execute(
@@ -304,7 +357,7 @@ class MatchRunRequest(BaseModel):
     soglia_minima: int = 0
 
 
-@app.post("/api/match/run")
+@app.post("/api/match/run", dependencies=[Depends(verify_api_key)])
 def api_match_run(payload: MatchRunRequest = None):
     soglia = payload.soglia_minima if payload else 0
     try:
@@ -316,7 +369,7 @@ def api_match_run(payload: MatchRunRequest = None):
         return JSONResponse(status_code=500, content={"status": "error", "detail": "Matching non riuscito. Riprova."})
 
 
-@app.get("/api/export/matching.csv")
+@app.get("/api/export/matching.csv", dependencies=[Depends(verify_api_key)])
 def api_export_csv():
     with get_connection() as conn:
         rows = load_dashboard_rows(conn)
@@ -335,7 +388,7 @@ def api_export_csv():
     )
 
 
-@app.delete("/api/bandi/{bando_id}")
+@app.delete("/api/bandi/{bando_id}", dependencies=[Depends(verify_api_key)])
 def api_bando_delete(bando_id: int):
     deleted = delete_bando(bando_id)
     if not deleted:
@@ -343,7 +396,7 @@ def api_bando_delete(bando_id: int):
     return {"status": "ok"}
 
 
-@app.get("/api/bandi/{bando_id}/scheda")
+@app.get("/api/bandi/{bando_id}/scheda", dependencies=[Depends(verify_api_key)])
 def api_bando_scheda_json(bando_id: int):
     with get_connection() as conn:
         row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
@@ -353,7 +406,7 @@ def api_bando_scheda_json(bando_id: int):
     return {"bando_id": bando_id, "scheda": scheda}
 
 
-@app.post("/api/bandi/{bando_id}/rigenera-scheda")
+@app.post("/api/bandi/{bando_id}/rigenera-scheda", dependencies=[Depends(verify_api_key)])
 def api_rigenera_scheda(bando_id: int):
     with get_connection() as conn:
         row = conn.execute("SELECT json_completo FROM bandi WHERE id = %s", (bando_id,)).fetchone()
@@ -369,7 +422,7 @@ def api_rigenera_scheda(bando_id: int):
     return {"bando_id": bando_id, "scheda": scheda}
 
 
-@app.get("/api/bandi/{bando_id}/scheda.md")
+@app.get("/api/bandi/{bando_id}/scheda.md", dependencies=[Depends(verify_api_key)])
 def api_download_scheda(bando_id: int):
     with get_connection() as conn:
         row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
@@ -388,7 +441,7 @@ def api_download_scheda(bando_id: int):
 PDF_MAGIC = b"%PDF"
 
 
-@app.post("/api/estrazione")
+@app.post("/api/estrazione", dependencies=[Depends(verify_api_key), Depends(rate_limit_estrazione)])
 def api_estrazione_submit(file: UploadFile = File(...)):
     safe_name = Path(file.filename).name
     file_path = TEMP_DIR / safe_name
@@ -512,7 +565,7 @@ class ClienteIn(BaseModel):
     forma_giuridica: str | None = None
 
 
-@app.get("/api/clienti")
+@app.get("/api/clienti", dependencies=[Depends(verify_api_key)])
 def api_clienti_list():
     return {
         "clienti": list_clienti(),
@@ -521,7 +574,7 @@ def api_clienti_list():
     }
 
 
-@app.get("/api/clienti/{cliente_id}")
+@app.get("/api/clienti/{cliente_id}", dependencies=[Depends(verify_api_key)])
 def api_cliente_get(cliente_id: int):
     cliente = get_cliente(cliente_id)
     if not cliente:
@@ -529,7 +582,7 @@ def api_cliente_get(cliente_id: int):
     return cliente
 
 
-@app.get("/api/clienti/{cliente_id}/bandi")
+@app.get("/api/clienti/{cliente_id}/bandi", dependencies=[Depends(verify_api_key)])
 def api_cliente_bandi(cliente_id: int):
     cliente = get_cliente(cliente_id)
     if not cliente:
@@ -565,7 +618,7 @@ def api_cliente_bandi(cliente_id: int):
     return {"cliente_id": cliente_id, "bandi": result}
 
 
-@app.post("/api/clienti")
+@app.post("/api/clienti", dependencies=[Depends(verify_api_key)])
 def api_clienti_create(payload: ClienteIn):
     form_values = payload.model_dump()
     form_values["fatturato"] = str(form_values["fatturato"])
@@ -592,7 +645,7 @@ def api_clienti_create(payload: ClienteIn):
     return JSONResponse(status_code=201, content={"id": new_id})
 
 
-@app.put("/api/clienti/{cliente_id}")
+@app.put("/api/clienti/{cliente_id}", dependencies=[Depends(verify_api_key)])
 def api_clienti_update(cliente_id: int, payload: ClienteIn):
     form_values = payload.model_dump()
     form_values["fatturato"] = str(form_values["fatturato"])
@@ -619,7 +672,7 @@ def api_clienti_update(cliente_id: int, payload: ClienteIn):
     return {"id": cliente_id}
 
 
-@app.delete("/api/clienti/{cliente_id}")
+@app.delete("/api/clienti/{cliente_id}", dependencies=[Depends(verify_api_key)])
 def api_clienti_delete(cliente_id: int):
     delete_cliente(cliente_id)
     return {"status": "ok"}

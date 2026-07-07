@@ -9,3 +9,12 @@ services:
         sync: false
       - key: DATABASE_URL
         sync: false
+      - key: APP_API_KEY
+        sync: false
+      # NOTA: deve avere lo STESSO valore di APP_API_KEY sopra. Render espone
+      # le env vars configurate anche come build arg Docker per gli ARG
+      # dichiarati nel Dockerfile — da verificare nel pannello Render dopo il
+      # primo deploy: se il frontend non si autentica, impostare VITE_APP_API_KEY
+      # esplicitamente come build arg nelle impostazioni del servizio.
+      - key: VITE_APP_API_KEY
+        sync: false

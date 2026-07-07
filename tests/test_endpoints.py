@@ -1,6 +1,7 @@
 """Test di integrazione degli endpoint FastAPI via TestClient.
 Usa le fixture client e mock_db da conftest.py.
 """
+from collections import defaultdict, deque
 from unittest.mock import patch
 
 import pytest
@@ -187,3 +188,101 @@ def test_post_estrazione_pdf_corrotto_messaggio_pulito(client):
     testo_completo = " ".join(errors)
     assert "Traceback" not in testo_completo
     assert "Exception" not in testo_completo
+
+
+# ---------------------------------------------------------------------------
+# Autenticazione API key statica (D-3) — TestClient SENZA header di default,
+# a differenza della fixture `client` che lo invia sempre.
+# ---------------------------------------------------------------------------
+
+def _client_senza_header(mock_db, api_key="test-api-key"):
+    import main
+    from fastapi.testclient import TestClient
+
+    ctx = patch("main.ensure_database")
+    ctx.start()
+    key_ctx = patch.object(main, "APP_API_KEY", api_key)
+    key_ctx.start()
+    return TestClient(main.app), (ctx, key_ctx)
+
+
+def test_get_dashboard_senza_api_key_e_401(mock_db):
+    tc, ctxs = _client_senza_header(mock_db)
+    try:
+        response = tc.get("/api/dashboard")
+        assert response.status_code == 401
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+def test_get_dashboard_con_api_key_sbagliata_e_401(mock_db):
+    tc, ctxs = _client_senza_header(mock_db)
+    try:
+        response = tc.get("/api/dashboard", headers={"X-API-Key": "chiave-sbagliata"})
+        assert response.status_code == 401
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+def test_get_dashboard_con_api_key_corretta_su_query_string(mock_db):
+    """Necessario per i link <a href download> che il browser naviga senza header custom."""
+    tc, ctxs = _client_senza_header(mock_db)
+    try:
+        response = tc.get("/api/dashboard?api_key=test-api-key")
+        assert response.status_code == 200
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+def test_get_health_resta_pubblico_senza_api_key(mock_db):
+    tc, ctxs = _client_senza_header(mock_db)
+    try:
+        response = tc.get("/api/health")
+        assert response.status_code == 200
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+def test_delete_cliente_senza_api_key_e_401(mock_db):
+    """Le rotte mutanti sono protette quanto quelle di lettura."""
+    tc, ctxs = _client_senza_header(mock_db)
+    try:
+        response = tc.delete("/api/clienti/1")
+        assert response.status_code == 401
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+def test_post_estrazione_senza_apikey_configurata_ritorna_500(mock_db):
+    """Se APP_API_KEY non è configurata sul server, l'endpoint fallisce in modo
+    esplicito (fail-closed) invece di lasciar passare tutti."""
+    tc, ctxs = _client_senza_header(mock_db, api_key="")
+    try:
+        response = tc.get("/api/dashboard", headers={"X-API-Key": "qualsiasi"})
+        assert response.status_code == 500
+    finally:
+        for c in ctxs:
+            c.stop()
+
+
+# ---------------------------------------------------------------------------
+# Rate limit /api/estrazione (D-3)
+# ---------------------------------------------------------------------------
+
+def test_estrazione_rate_limit_oltre_soglia_ritorna_429(client):
+    import main
+
+    with patch.object(main, "ESTRAZIONE_RATE_LIMIT_MAX", 2), \
+         patch.object(main, "_rate_limit_hits", defaultdict(deque)):
+        file_non_pdf = {"file": ("finto.pdf", b"non un pdf", "application/pdf")}
+        r1 = client.post("/api/estrazione", files=file_non_pdf)
+        r2 = client.post("/api/estrazione", files=file_non_pdf)
+        r3 = client.post("/api/estrazione", files=file_non_pdf)
+        assert r1.status_code == 400  # rifiutato per magic bytes, ma conta ai fini del rate limit
+        assert r2.status_code == 400
+        assert r3.status_code == 429

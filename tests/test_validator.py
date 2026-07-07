@@ -59,14 +59,19 @@ def test_validate_format_data_non_iso(bando_minimo):
 # ---------------------------------------------------------------------------
 
 def test_validate_logical_data_passata(bando_minimo):
+    """Una data_scadenza nel passato non è più un errore bloccante, ma un
+    warning (verificare se il bando è ancora attivo)."""
     bando = bando_minimo(data_scadenza="2020-01-01")
-    errors = validate_logical_fields(bando)
-    assert len(errors) > 0
+    errors, warnings = validate_logical_fields(bando)
+    assert errors == []
+    assert len(warnings) > 0
 
 
 def test_validate_logical_data_futura(bando_minimo):
     bando = bando_minimo(data_scadenza="2099-12-31")
-    assert validate_logical_fields(bando) == []
+    errors, warnings = validate_logical_fields(bando)
+    assert errors == []
+    assert warnings == []
 
 
 # ---------------------------------------------------------------------------
