@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 
 from modules.log_utils import log_error, log_incident
-from modules.schema import BANDO_SCHEMA, MIN_TEXT_CHARS, normalize_response
+from modules.schema import BANDO_SCHEMA, MAX_TEXT_CHARS, MIN_TEXT_CHARS, normalize_response
 
 load_dotenv()
 
@@ -27,7 +27,12 @@ ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "prompts" / "system_extraction.md"
 # Usiamo il modello DeepSeek reale, senza ":free"
 LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek/deepseek-v4-flash")
-LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "claude-haiku-4-5-20251001")
+# ATTENZIONE — TODO: verificare su openrouter.ai/models il nome ESATTO dello slug
+# per Claude Haiku 4.5 prima di affidarsi a questo fallback in produzione. Gli ID
+# OpenRouter richiedono sempre il prefisso vendor (es. "anthropic/..."); un ID senza
+# prefisso (come in una versione precedente di questa costante) causa 404 silenziosi
+# su ogni tentativo di fallback (vedi audit D-2 / error_log.txt storico).
+LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "anthropic/claude-haiku-4.5")
 RETRY_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_SECONDS", "60"))
 _JSON_BLOCK_RE = re.compile(r'\{[\s\S]*\}')
@@ -73,6 +78,19 @@ def _load_system_prompt(raw_text: str) -> str:
     if "{raw_text}" not in template:
         return f"{template.strip()}\n\nTesto del bando:\n{raw_text}"
     return template.replace("{raw_text}", raw_text)
+
+
+def _tronca_testo(raw_text: str) -> str:
+    """Limita il testo del bando a MAX_TEXT_CHARS prima di costruire il prompt.
+
+    Senza questo limite un PDF molto lungo viene inviato per intero al LLM:
+    costo per token non limitato e rischio di superare la finestra di
+    contesto del modello (vedi audit D-1).
+    """
+    if len(raw_text) <= MAX_TEXT_CHARS:
+        return raw_text
+    log_error(f"Testo bando troncato da {len(raw_text)} a {MAX_TEXT_CHARS} caratteri prima della chiamata API")
+    return raw_text[:MAX_TEXT_CHARS]
 
 
 def _clean_json_response(content: str) -> str:
@@ -177,6 +195,7 @@ def _call_llm_api(prompt: str, model: str = LLM_MODEL) -> str:
 
 def extract_bando_data(raw_text: str) -> dict:
     """Carica il prompt, chiama DeepSeek e restituisce il bando normalizzato."""
+    raw_text = _tronca_testo(raw_text)
     prompt = _load_system_prompt(raw_text)
 
     try:
