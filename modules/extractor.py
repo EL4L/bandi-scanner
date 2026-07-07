@@ -35,6 +35,8 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek/deepseek-v4-flash")
 LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "anthropic/claude-haiku-4.5")
 RETRY_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_SECONDS", "60"))
+# Limite pagine per evitare PDF abnormi/malformati che saturano CPU/RAM in parsing
+MAX_PDF_PAGES = int(os.environ.get("MAX_PDF_PAGES", "300"))
 _JSON_BLOCK_RE = re.compile(r'\{[\s\S]*\}')
 
 
@@ -49,6 +51,14 @@ def _is_retryable_api_error(exc: BaseException) -> bool:
 
 class EmptyPDFException(Exception):
     """PDF senza testo sufficiente o illeggibile."""
+
+
+class PDFInvalidoException(Exception):
+    """PDF non apribile, corrotto o malformato (fallito il parsing PyMuPDF)."""
+
+
+class PDFTroppoGrandeException(Exception):
+    """PDF con un numero di pagine oltre il limite consentito."""
 
 
 class InvalidJSONResponse(Exception):
@@ -154,16 +164,30 @@ def calcola_null_percentage(bando_dict: dict) -> float:
 
 
 def extract_text_from_pdf(pdf_path: str) -> str:
-    """Estrae testo grezzo da tutte le pagine del PDF."""
+    """Estrae testo grezzo da tutte le pagine del PDF.
+
+    Valida che il file sia un PDF apribile e non ecceda il limite di pagine
+    prima di leggerne il contenuto, per non esporre il parser a file
+    corrotti o abnormemente grandi (vedi audit D-4).
+    """
     path = Path(pdf_path)
     if not path.is_file():
         raise FileNotFoundError(f"PDF non trovato: {pdf_path}")
 
-    doc = fitz.open(pdf_path)
     try:
-        parts: list[str] = []
-        for page in doc:
-            parts.append(page.get_text())
+        doc = fitz.open(pdf_path)
+    except Exception as exc:
+        raise PDFInvalidoException(f"PDF non apribile o corrotto: {exc}") from exc
+
+    try:
+        if doc.page_count > MAX_PDF_PAGES:
+            raise PDFTroppoGrandeException(
+                f"PDF con {doc.page_count} pagine, limite massimo {MAX_PDF_PAGES}."
+            )
+        try:
+            parts: list[str] = [page.get_text() for page in doc]
+        except Exception as exc:
+            raise PDFInvalidoException(f"Errore durante la lettura del PDF: {exc}") from exc
         text = "\n".join(parts)
     finally:
         doc.close()

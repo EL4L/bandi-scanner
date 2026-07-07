@@ -45,8 +45,15 @@ from modules.matcher import (
     run_matching_for_bando,
     settore_da_verificare,
 )
-from modules.extractor import EmptyPDFException, calcola_urgenza, extract_bando_data, extract_text_from_pdf
-from modules.log_utils import log_prompt_run
+from modules.extractor import (
+    EmptyPDFException,
+    PDFInvalidoException,
+    PDFTroppoGrandeException,
+    calcola_urgenza,
+    extract_bando_data,
+    extract_text_from_pdf,
+)
+from modules.log_utils import log_error, log_prompt_run
 from modules.validator import fields_status, validate_bando
 
 ROOT = Path(__file__).resolve().parent
@@ -263,7 +270,8 @@ def api_deduplica_bandi(body: DeduplicaRequest = DeduplicaRequest()):
                 run_matching_for_all_bandi(conn)
         return {"status": "ok", "eliminati": eliminati, "strict": body.strict}
     except Exception as exc:
-        return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)})
+        log_error(f"api_deduplica_bandi: {exc}")
+        return JSONResponse(status_code=500, content={"status": "error", "detail": "Deduplica non riuscita. Riprova."})
 
 
 @app.post("/api/bandi/recalc")
@@ -273,7 +281,8 @@ def api_recalc_matches():
             run_matching_for_all_bandi(conn)
         return {"status": "ok"}
     except Exception as exc:
-        return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)})
+        log_error(f"api_recalc_matches: {exc}")
+        return JSONResponse(status_code=500, content={"status": "error", "detail": "Ricalcolo dei match non riuscito. Riprova."})
 
 
 @app.get("/api/bandi")
@@ -303,7 +312,8 @@ def api_match_run(payload: MatchRunRequest = None):
             run_matching_for_all_bandi(conn, soglia_minima=soglia)
         return {"status": "ok", "soglia_minima": soglia}
     except Exception as exc:
-        return JSONResponse(status_code=500, content={"status": "error", "detail": str(exc)})
+        log_error(f"api_match_run: {exc}")
+        return JSONResponse(status_code=500, content={"status": "error", "detail": "Matching non riuscito. Riprova."})
 
 
 @app.get("/api/export/matching.csv")
@@ -375,6 +385,9 @@ def api_download_scheda(bando_id: int):
 # ESTRAZIONE BANDI
 # ---------------------------------------------------------
 
+PDF_MAGIC = b"%PDF"
+
+
 @app.post("/api/estrazione")
 def api_estrazione_submit(file: UploadFile = File(...)):
     safe_name = Path(file.filename).name
@@ -391,11 +404,17 @@ def api_estrazione_submit(file: UploadFile = File(...)):
             "errors": [f"File troppo grande ({result['size_kb']:.0f} KB). Limite massimo: 10 MB."]
         })
 
+    if not file_bytes.startswith(PDF_MAGIC):
+        return JSONResponse(status_code=400, content={
+            "errors": ["Il file non è un PDF valido (intestazione mancante). Verifica il formato e riprova."]
+        })
+
     try:
         with open(file_path, "wb") as f:
             f.write(file_bytes)
     except OSError as exc:
-        result["save_error"] = str(exc)
+        log_error(f"api_estrazione_submit: scrittura file temporaneo '{safe_name}' fallita: {exc}")
+        result["save_error"] = "Impossibile salvare il file temporaneo. Riprova."
         return result
 
     try:
@@ -404,6 +423,16 @@ def api_estrazione_submit(file: UploadFile = File(...)):
         except EmptyPDFException:
             result["empty_pdf"] = True
             return result
+        except PDFTroppoGrandeException as exc:
+            log_error(f"api_estrazione_submit: '{safe_name}' rifiutato, troppo esteso: {exc}")
+            return JSONResponse(status_code=400, content={
+                "errors": ["Il PDF ha troppe pagine. Riduci il documento (o dividilo) e riprova."]
+            })
+        except PDFInvalidoException as exc:
+            log_error(f"api_estrazione_submit: '{safe_name}' corrotto/non leggibile: {exc}")
+            return JSONResponse(status_code=400, content={
+                "errors": ["Il PDF risulta corrotto o non leggibile. Verifica il file e riprova."]
+            })
 
         result["raw_text_preview"] = text[:1000]
 
@@ -455,9 +484,11 @@ def api_estrazione_submit(file: UploadFile = File(...)):
 
                     result["scheda"] = scheda
                 except Exception as exc:
-                    result["save_error"] = str(exc)
+                    log_error(f"api_estrazione_submit: salvataggio bando '{safe_name}' fallito: {exc}")
+                    result["save_error"] = "Impossibile salvare il bando estratto. Riprova."
         except Exception as exc:
-            result["extraction_error"] = str(exc)
+            log_error(f"api_estrazione_submit: estrazione/validazione '{safe_name}' fallita: {exc}")
+            result["extraction_error"] = "Errore durante l'estrazione dei dati dal PDF. Riprova o contatta l'assistenza."
 
         return result
     finally:
@@ -555,7 +586,8 @@ def api_clienti_create(payload: ClienteIn):
         with get_connection() as conn:
             run_matching_for_all_bandi(conn)
     except Exception as exc:
-        return JSONResponse(status_code=400, content={"errors": [f"Errore salvataggio: {exc}"]})
+        log_error(f"api_clienti_create: {exc}")
+        return JSONResponse(status_code=400, content={"errors": ["Errore durante il salvataggio del cliente. Verifica i dati e riprova."]})
 
     return JSONResponse(status_code=201, content={"id": new_id})
 
@@ -581,7 +613,8 @@ def api_clienti_update(cliente_id: int, payload: ClienteIn):
         with get_connection() as conn:
             run_matching_for_all_bandi(conn)
     except Exception as exc:
-        return JSONResponse(status_code=400, content={"errors": [f"Errore salvataggio: {exc}"]})
+        log_error(f"api_clienti_update({cliente_id}): {exc}")
+        return JSONResponse(status_code=400, content={"errors": ["Errore durante il salvataggio del cliente. Verifica i dati e riprova."]})
 
     return {"id": cliente_id}
 

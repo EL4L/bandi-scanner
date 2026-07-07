@@ -1,6 +1,8 @@
 """Test di integrazione degli endpoint FastAPI via TestClient.
 Usa le fixture client e mock_db da conftest.py.
 """
+from unittest.mock import patch
+
 import pytest
 
 
@@ -134,3 +136,54 @@ def test_post_deduplica_ok(client):
     data = response.json()
     assert "eliminati" in data
     assert data["status"] == "ok"
+
+
+def test_post_deduplica_errore_non_espone_dettaglio(client):
+    """D-6: un'eccezione interna non deve mai raggiungere il client come testo grezzo."""
+    with patch("main.deduplica_bandi", side_effect=RuntimeError("dettaglio interno sensibile")):
+        response = client.post("/api/bandi/deduplica", json={"strict": True})
+    assert response.status_code == 500
+    detail = response.json()["detail"]
+    assert "dettaglio interno sensibile" not in detail
+
+
+# ---------------------------------------------------------------------------
+# POST /api/estrazione — validazione upload (D-4) e sanificazione errori (D-6)
+# ---------------------------------------------------------------------------
+
+def test_post_estrazione_rifiuta_file_senza_intestazione_pdf(client):
+    """D-4: il controllo dei magic bytes rifiuta un file che non è un vero PDF,
+    anche se estensione e content-type dichiarano application/pdf."""
+    response = client.post(
+        "/api/estrazione",
+        files={"file": ("finto.pdf", b"questo non e un pdf", "application/pdf")},
+    )
+    assert response.status_code == 400
+    assert "errors" in response.json()
+
+
+def test_post_estrazione_rifiuta_file_troppo_grande(client):
+    contenuto = b"%PDF-1.4\n" + b"0" * (10_000_001 - 9)
+    response = client.post(
+        "/api/estrazione",
+        files={"file": ("grande.pdf", contenuto, "application/pdf")},
+    )
+    assert response.status_code == 400
+    assert "errors" in response.json()
+
+
+def test_post_estrazione_pdf_corrotto_messaggio_pulito(client):
+    """D-4/D-6: un PDF con intestazione valida ma corrotto viene rifiutato con
+    un messaggio pulito in italiano, senza dettagli tecnici del parser PyMuPDF."""
+    corrotto = b"%PDF-1.4\n" + b"contenuto non valido" * 5
+    response = client.post(
+        "/api/estrazione",
+        files={"file": ("corrotto.pdf", corrotto, "application/pdf")},
+    )
+    assert response.status_code == 400
+    errors = response.json()["errors"]
+    assert any("corrotto" in e.lower() or "leggibile" in e.lower() for e in errors)
+    # Nessun dettaglio tecnico (traceback, percorso file, nome eccezione Python) esposto
+    testo_completo = " ".join(errors)
+    assert "Traceback" not in testo_completo
+    assert "Exception" not in testo_completo
