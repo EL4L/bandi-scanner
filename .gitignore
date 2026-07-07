@@ -4,3 +4,10 @@ __pycache__/
 *.pyc
 *.db
 temp/
+
+# Log e artefatti runtime locali (non versionare: causano conflitti di merge
+# e possono contenere percorsi/informazioni della macchina locale)
+error_log.txt
+*.log
+.coverage
+struttura_progetto.txt
