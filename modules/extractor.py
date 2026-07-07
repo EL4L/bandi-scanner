@@ -27,14 +27,18 @@ ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "prompts" / "system_extraction.md"
 # Usiamo il modello DeepSeek reale, senza ":free"
 LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek/deepseek-v4-flash")
-# ATTENZIONE — TODO: verificare su openrouter.ai/models il nome ESATTO dello slug
-# per Claude Haiku 4.5 prima di affidarsi a questo fallback in produzione. Gli ID
-# OpenRouter richiedono sempre il prefisso vendor (es. "anthropic/..."); un ID senza
-# prefisso (come in una versione precedente di questa costante) causa 404 silenziosi
-# su ogni tentativo di fallback (vedi audit D-2 / error_log.txt storico).
+# Slug OpenRouter verificato su openrouter.ai/anthropic/claude-haiku-4.5 (2026-07-08).
+# Gli ID OpenRouter richiedono sempre il prefisso vendor (es. "anthropic/...");
+# un ID senza prefisso (come in una versione precedente di questa costante)
+# causava 404 silenziosi su ogni tentativo di fallback (audit D-2 / error_log.txt storico).
 LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "anthropic/claude-haiku-4.5")
 RETRY_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_SECONDS", "60"))
+# Senza un limite esplicito il client richiede il massimo output del modello
+# (es. 64.000 token su Claude Haiku 4.5): con saldo OpenRouter basso questo
+# fa fallire con 402 anche chiamate legittime. Il JSON di un bando estratto
+# non supera mai poche migliaia di token.
+LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "4000"))
 # Limite pagine per evitare PDF abnormi/malformati che saturano CPU/RAM in parsing
 MAX_PDF_PAGES = int(os.environ.get("MAX_PDF_PAGES", "300"))
 _JSON_BLOCK_RE = re.compile(r'\{[\s\S]*\}')
@@ -211,6 +215,7 @@ def _call_llm_api(prompt: str, model: str = LLM_MODEL) -> str:
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
+        max_tokens=LLM_MAX_TOKENS,
     )
     if not response.choices:
         raise InvalidJSONResponse("Risposta API vuota")
