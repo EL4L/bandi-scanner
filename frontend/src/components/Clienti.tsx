@@ -63,9 +63,16 @@ function formatEuro(val: number) {
 }
 
 function matchCountBadgeClass(count: number): string {
-  if (count > 5) return 'badge-success'
-  if (count > 0) return 'badge-warning'
-  return 'badge-neutral'
+  if (count > 5) return 'count-badge-high'
+  if (count > 0) return 'count-badge-mid'
+  return 'count-badge-low'
+}
+
+function stripColorByGiorni(giorni: number | null): string {
+  if (giorni === null || giorni < 0) return '#D1D5DB'
+  if (giorni < 30) return '#EF4444'
+  if (giorni <= 90) return '#F59E0B'
+  return '#10B981'
 }
 
 function pillClass(score: number, max: number): string {
@@ -215,8 +222,21 @@ export default function Clienti() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
     setFormErrors([])
+
+    const clientErrors: string[] = []
+    if (!/^\d{11}$/.test(form.p_iva.trim())) {
+      clientErrors.push('Partita IVA non valida: deve contenere esattamente 11 cifre numeriche.')
+    }
+    if (!/^\d{2}\.\d{2}(\.\d{2})?$/.test(form.codice_ateco.trim())) {
+      clientErrors.push('Codice ATECO non valido: usa il formato XX.XX o XX.XX.XX (es. 62.01).')
+    }
+    if (clientErrors.length > 0) {
+      setFormErrors(clientErrors)
+      return
+    }
+
+    setSaving(true)
 
     const payload = {
       ragione_sociale: form.ragione_sociale.trim(),
@@ -344,7 +364,7 @@ export default function Clienti() {
                     <span className="badge badge-neutral">{c.dimensione_impresa}</span>
                   </td>
                   <td>
-                    <span className={`badge ${matchCountBadgeClass(c.match_count)}`}>
+                    <span className={`count-badge ${matchCountBadgeClass(c.match_count)}`}>
                       {c.match_count}
                     </span>
                   </td>
@@ -425,33 +445,36 @@ export default function Clienti() {
                 <div className="cliente-bandi-list">
                   {detailBandi.map(b => (
                     <div key={b.bando_id} className="cliente-bando-row">
-                      <div className="cliente-bando-info">
-                        <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
-                        {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
-                        <div className="breakdown-pills" style={{ marginTop: 7 }}>
-                          <span className={`breakdown-pill ${pillClass(b.breakdown.regione, 30)}`}>Regione {b.breakdown.regione}/30</span>
-                          <span className={`breakdown-pill ${pillClass(b.breakdown.ateco, 40)}`}>ATECO {b.breakdown.ateco}/40</span>
-                          <span className={`breakdown-pill ${pillClass(b.breakdown.dimensione, 20)}`}>Dimensione {b.breakdown.dimensione}/20</span>
-                          <span className={`breakdown-pill ${pillClass(b.breakdown.fatturato, 10)}`}>Fatturato {b.breakdown.fatturato}/10</span>
-                        </div>
-                      </div>
-                      <div className="cliente-bando-right">
-                        <div
-                          className={`score-circle ${scoreCircleClass(b.score)}`}
-                          style={{ '--score': b.score } as React.CSSProperties}
-                        >
-                          <span>{b.score}%</span>
-                        </div>
-                        {b.scadenza && (
-                          <div style={{ textAlign: 'center', marginTop: 6 }}>
-                            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
-                            {b.giorni_alla_scadenza !== null && (
-                              <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
-                                {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
-                              </p>
-                            )}
+                      <div className="deadline-strip" style={{ '--deadline-color': stripColorByGiorni(b.giorni_alla_scadenza) } as React.CSSProperties} />
+                      <div className="cliente-bando-row-inner">
+                        <div className="cliente-bando-info">
+                          <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
+                          {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
+                          <div className="breakdown-pills" style={{ marginTop: 7 }}>
+                            <span className={`breakdown-pill ${pillClass(b.breakdown.regione, 30)}`}>Regione {b.breakdown.regione}/30</span>
+                            <span className={`breakdown-pill ${pillClass(b.breakdown.ateco, 40)}`}>ATECO {b.breakdown.ateco}/40</span>
+                            <span className={`breakdown-pill ${pillClass(b.breakdown.dimensione, 20)}`}>Dimensione {b.breakdown.dimensione}/20</span>
+                            <span className={`breakdown-pill ${pillClass(b.breakdown.fatturato, 10)}`}>Fatturato {b.breakdown.fatturato}/10</span>
                           </div>
-                        )}
+                        </div>
+                        <div className="cliente-bando-right">
+                          <div
+                            className={`score-circle ${scoreCircleClass(b.score)}`}
+                            style={{ '--score': b.score } as React.CSSProperties}
+                          >
+                            <span>{b.score}%</span>
+                          </div>
+                          {b.scadenza && (
+                            <div style={{ textAlign: 'center', marginTop: 6 }}>
+                              <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
+                              {b.giorni_alla_scadenza !== null && (
+                                <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
+                                  {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

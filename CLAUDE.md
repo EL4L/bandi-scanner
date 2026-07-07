@@ -316,4 +316,4 @@ python db/init_db.py
 
 ## Riferimenti esterni
 
-- **`PROJECT_IMPROVEMENT_ROADMAP.md`** — documento di roadmap e backlog; leggerlo per capire le priorità di sviluppo prima di proporre o iniziare qualsiasi nuova feature.
+- **`PROJECT_EVOLUTION_PIPELINE.md`** — documento di roadmap e backlog; leggerlo per capire le priorità di sviluppo prima di proporre o iniziare qualsiasi nuova feature.

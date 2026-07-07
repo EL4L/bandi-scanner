@@ -17,6 +17,73 @@ SCORE_ATECO_ATTIVITA_BUONO = 30
 _TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 _MESI_IT = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre")
 
+# ── Mappatura forme giuridiche specifiche → categoria generica ──────────────
+# Usata da check_ammissibilita() per confrontare la forma giuridica del cliente
+# (es. "S.r.l.") con le categorie generiche che il bando può ammettere
+# (es. "società di capitali"), invece di un fragile confronto di stringa 1:1.
+# Le chiavi sono già normalizzate (vedi _norm_fg): senza spazi/punti/trattini/slash,
+# senza accenti, minuscolo. Alcune voci sono forme specifiche (es. "srl"),
+# altre sono le categorie stesse già scritte per esteso (es. "societadicapitali"),
+# perché il bando può indicare l'una o l'altra indifferentemente.
+CAT_SOCIETA_CAPITALI = "società di capitali"
+CAT_SOCIETA_PERSONE = "società di persone"
+CAT_DITTE_INDIVIDUALI = "ditte individuali"
+CAT_COOPERATIVE = "cooperative"
+CAT_NOPROFIT = "associazioni ed enti no-profit"
+CAT_PROFESSIONISTI = "liberi professionisti"
+
+FORMA_GIURIDICA_CATEGORIE: dict[str, str] = {
+    # Società di capitali
+    "srls": CAT_SOCIETA_CAPITALI,
+    "srl": CAT_SOCIETA_CAPITALI,
+    "spa": CAT_SOCIETA_CAPITALI,
+    "sapa": CAT_SOCIETA_CAPITALI,
+    "responsabilitalimitata": CAT_SOCIETA_CAPITALI,  # copre "società (a/di) responsabilità limitata"
+    "perazioni": CAT_SOCIETA_CAPITALI,               # copre "società per azioni"
+    "societadicapitali": CAT_SOCIETA_CAPITALI,       # categoria già scritta per esteso dal bando
+    # Società di persone
+    "snc": CAT_SOCIETA_PERSONE,
+    "sas": CAT_SOCIETA_PERSONE,
+    "ss": CAT_SOCIETA_PERSONE,
+    "societasemplice": CAT_SOCIETA_PERSONE,
+    "societadipersone": CAT_SOCIETA_PERSONE,
+    # Ditte individuali / imprenditori individuali
+    "dittaindividuale": CAT_DITTE_INDIVIDUALI,
+    "imprenditoreindividuale": CAT_DITTE_INDIVIDUALI,
+    "impresaindividuale": CAT_DITTE_INDIVIDUALI,
+    "ditteindividuali": CAT_DITTE_INDIVIDUALI,
+    "imprenditoriindividuali": CAT_DITTE_INDIVIDUALI,
+    "impreseindividuali": CAT_DITTE_INDIVIDUALI,
+    # Cooperative
+    "societacooperativa": CAT_COOPERATIVE,
+    "cooperativa": CAT_COOPERATIVE,
+    "cooperative": CAT_COOPERATIVE,
+    "coop": CAT_COOPERATIVE,
+    "scarl": CAT_COOPERATIVE,
+    "scrl": CAT_COOPERATIVE,
+    "scpa": CAT_COOPERATIVE,
+    # Associazioni / enti no-profit
+    "associazione": CAT_NOPROFIT,
+    "fondazione": CAT_NOPROFIT,
+    "onlus": CAT_NOPROFIT,
+    "ets": CAT_NOPROFIT,
+    "aps": CAT_NOPROFIT,
+    "odv": CAT_NOPROFIT,
+    "associazionientinoprofit": CAT_NOPROFIT,
+    # Liberi professionisti
+    "liberoprofessionista": CAT_PROFESSIONISTI,
+    "studioprofessionale": CAT_PROFESSIONISTI,
+    "studioassociato": CAT_PROFESSIONISTI,
+    "liberiprofessionisti": CAT_PROFESSIONISTI,
+}
+# Chiavi ordinate per lunghezza decrescente: usate per il matching "by containment"
+# (es. "srlunipersonale" contiene "srl"), provando prima le chiavi più specifiche.
+_FORMA_GIURIDICA_CHIAVI_ORDINATE = sorted(FORMA_GIURIDICA_CATEGORIE, key=len, reverse=True)
+# Marcatore per riconoscere bandi che ammettono esplicitamente "tutte le forme
+# giuridiche iscritte al Registro Imprese" (nessun vincolo reale di forma)
+_REGISTRO_IMPRESE_MARKER = "registroimprese"
+
+
 def _unwrap_bando(bando: dict[str, Any]) -> dict[str, Any]:
     inner = bando.get("bando")
     return inner if isinstance(inner, dict) else bando
@@ -138,7 +205,9 @@ def bando_has_constraints(payload: dict[str, Any]) -> bool:
 def calculate_score(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     c = cliente if isinstance(cliente, dict) else {}
-    if not bando_has_constraints(bando): return 0
+    # Bando vuoto/ambiguo (nessun vincolo e non dichiarato aperto a tutti) → score 0
+    if not bando_has_constraints(bando) and not b.get("ateco_aperto_a_tutti"):
+        return 0
     total = _score_regione(b, c) + _score_ateco(b, c) + _score_dimensione(b, c) + _score_fatturato(b, c)
     return max(0, min(100, int(total)))
 
@@ -148,12 +217,34 @@ def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dic
     score_ateco = _score_ateco(bando, cliente)
     score_dim = _score_dimensione(bando, cliente)
     score_fat = _score_fatturato(bando, cliente)
-    totale = 0 if not bando_has_constraints(payload) else (score_regione + score_ateco + score_dim + score_fat)
+    ambiguo = not bando_has_constraints(payload) and not bando.get("ateco_aperto_a_tutti")
+    totale = 0 if ambiguo else (score_regione + score_ateco + score_dim + score_fat)
     return {"regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat, "total": max(0, min(100, int(totale)))}
 
+_ACCENTI_TRANS = str.maketrans("àèéìòùÀÈÉÌÒÙ", "aeeiouAEEIOU")
+
 def _norm_fg(s: str | None) -> str:
+    """Normalizza una forma giuridica per il confronto: rimuove spazi/punti/trattini/slash, accenti, minuscolo."""
     if not s: return ""
-    return re.sub(r"[\s.]", "", _norm_str(s)).lower()
+    senza_separatori = re.sub(r"[\s./\-]", "", _norm_str(s))
+    return senza_separatori.translate(_ACCENTI_TRANS).lower()
+
+def _categoria_forma(forma_norm: str) -> str | None:
+    """Deduce la categoria generica di una forma giuridica già normalizzata.
+
+    Prova prima l'uguaglianza esatta, poi il contenimento (chiavi più lunghe
+    prima) per coprire varianti non standard come "srl unipersonale".
+    Ritorna None se la forma non è riconosciuta.
+    """
+    if not forma_norm:
+        return None
+    diretto = FORMA_GIURIDICA_CATEGORIE.get(forma_norm)
+    if diretto:
+        return diretto
+    for chiave in _FORMA_GIURIDICA_CHIAVI_ORDINATE:
+        if chiave in forma_norm:
+            return FORMA_GIURIDICA_CATEGORIE[chiave]
+    return None
 
 def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any]:
     """Controlla criteri binari di esclusione: anzianità, forma giuridica, spesa minima."""
@@ -199,6 +290,10 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
             criteri_verificati.append(f"Anzianità massima: OK ({mesi_dalla_cost} mesi, limite {mesi_max})")
 
     # Criterio 3: Forma giuridica
+    # Confronto per categoria generica (es. "S.r.l." → "società di capitali"),
+    # non per uguaglianza letterale: il bando spesso ammette categorie ampie
+    # mentre il cliente ha una forma specifica, e le due stringhe non
+    # coincidono mai a livello di puro testo.
     forme_ammesse = _norm_list(b.get("forme_giuridiche_ammesse"))
     if forme_ammesse:
         forma_cliente = _norm_str(c.get("forma_giuridica"))
@@ -206,12 +301,47 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
             criteri_verificati.append("Forma giuridica: non verificabile")
         else:
             forma_norm = _norm_fg(forma_cliente)
-            forme_norm = {_norm_fg(f) for f in forme_ammesse}
-            if forma_norm not in forme_norm:
-                ammissibile = False
-                motivi_esclusione.append(f"Forma giuridica '{forma_cliente}' non inclusa tra le ammesse: {', '.join(forme_ammesse)}")
+            categoria_cliente = _categoria_forma(forma_norm)
+
+            # Caso speciale: il bando ammette esplicitamente "tutte le forme
+            # giuridiche iscritte al Registro Imprese" → nessun vincolo reale
+            apre_a_tutti = any(_REGISTRO_IMPRESE_MARKER in _norm_fg(voce) for voce in forme_ammesse)
+
+            if apre_a_tutti:
+                criteri_verificati.append(f"Forma giuridica: OK ({forma_cliente}, bando aperto a tutte le forme iscritte al Registro Imprese)")
             else:
-                criteri_verificati.append(f"Forma giuridica: OK ({forma_cliente})")
+                # Deduce la categoria (o, in fallback, il testo normalizzato)
+                # di ogni voce ammessa dal bando: può essere già una forma
+                # specifica ("S.r.l.") o una categoria scritta per esteso
+                # ("società di capitali").
+                categorie_bando: set[str] = set()
+                fallback_testuale_bando: set[str] = set()
+                for voce in forme_ammesse:
+                    voce_norm = _norm_fg(voce)
+                    categoria_voce = _categoria_forma(voce_norm)
+                    if categoria_voce:
+                        categorie_bando.add(categoria_voce)
+                    else:
+                        fallback_testuale_bando.add(voce_norm)
+
+                if categoria_cliente is not None:
+                    match = categoria_cliente in categorie_bando
+                else:
+                    # Forma cliente non mappata: ultima possibilità, identità
+                    # testuale diretta con una voce non mappabile del bando
+                    match = forma_norm in fallback_testuale_bando
+
+                if match:
+                    criteri_verificati.append(f"Forma giuridica: OK ({forma_cliente})")
+                elif categoria_cliente is None:
+                    # Non escludere una forma che non sappiamo classificare:
+                    # serve verifica manuale, non un'esclusione automatica
+                    criteri_verificati.append(f"Verifica forma giuridica: '{forma_cliente}' non riconosciuta, controlla manualmente")
+                else:
+                    ammissibile = False
+                    motivi_esclusione.append(
+                        f"Forma giuridica '{forma_cliente}' ({categoria_cliente}) non inclusa tra le ammesse: {', '.join(forme_ammesse)}"
+                    )
 
     # Criterio 4: Spesa minima
     spesa_min = b.get("spesa_minima_ammissibile")
@@ -308,6 +438,26 @@ def genera_scheda(bando: dict[str, Any]) -> str:
     if scadenza: lines.append(f"**Scadenza:** {scadenza}")
     accesso = _chi_puo_accedere(b)
     if accesso: lines.append("## Chi può accedere\n\n" + accesso)
+    anz_info = b.get("anzianita_impresa") or {}
+    requisiti = []
+    spesa_min = b.get("spesa_minima_ammissibile")
+    spesa_max = b.get("spesa_massima_ammissibile")
+    mesi_min = anz_info.get("mesi_minimi_dalla_costituzione")
+    mesi_max = anz_info.get("mesi_massimi_dalla_costituzione")
+    forme = _norm_list(b.get("forme_giuridiche_ammesse"))
+    if spesa_min is not None:
+        try: requisiti.append(f"**Investimento minimo:** {_format_euro(spesa_min)}")
+        except Exception: pass
+    if spesa_max is not None:
+        try: requisiti.append(f"**Investimento massimo:** {_format_euro(spesa_max)}")
+        except Exception: pass
+    if mesi_min is not None and int(mesi_min) > 0:
+        requisiti.append(f"**Anzianità minima:** {int(mesi_min)} mesi")
+    if mesi_max is not None and int(mesi_max) > 0:
+        requisiti.append(f"**Anzianità massima:** {int(mesi_max)} mesi")
+    if forme:
+        requisiti.append(f"**Forme giuridiche:** {', '.join(forme)}")
+    if requisiti: lines.append("## Requisiti di accesso\n\n" + "\n\n".join(requisiti))
     contributo = _format_euro(b.get("contributo_max"))
     pct = b.get("percentuale_fondo_perduto")
     econ_parts = []
@@ -394,7 +544,7 @@ def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
         b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo, b.scheda_cached,
         c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
         c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa,
-        c.data_costituzione AS cliente_data_costituzione, c.forma_giuridica AS cliente_forma_giuridica
+        c.data_costituzione AS cliente_data_costituzione, c.numero_dipendenti AS cliente_numero_dipendenti, c.forma_giuridica AS cliente_forma_giuridica
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
         ORDER BY mr.score DESC, LOWER(b.titolo)'''
     ).fetchall()

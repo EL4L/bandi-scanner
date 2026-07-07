@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
+import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Bando {
   id: number
@@ -7,78 +8,44 @@ interface Bando {
   ente: string | null
   data_scadenza: string | null
   contributo_max: number | null
-  urgenza: string | null
   giorni_alla_scadenza: number | null
+  regioni: string | null
 }
 
 type QuickFilter = 'tutti' | 'attivi' | 'scaduti'
-type SortKey = 'urgenza' | 'scadenza' | 'titolo' | 'contributo'
+type SortKey = 'scadenza' | 'titolo' | 'contributo'
 type SortDir = 'asc' | 'desc'
 
-interface SchedaModal { id: number; titolo: string; scheda: string }
+type SchedaModal = SchedaModalData
 
 function isExpired(b: Bando): boolean {
   return b.giorni_alla_scadenza !== null && b.giorni_alla_scadenza < 0
 }
 
-function urgencyLabel(u: string) {
-  if (u === 'alta') return 'Urgente'
-  if (u === 'media') return 'In scadenza'
-  if (u === 'bassa') return 'Regolare'
-  return u
-}
-function urgencyClass(u: string) {
-  if (u === 'alta') return 'badge-alta'
-  if (u === 'media') return 'badge-media'
-  if (u === 'bassa') return 'badge-bassa'
-  return 'badge-neutral'
-}
-function urgencyOrder(u: string | null) {
-  if (u === 'alta') return 0
-  if (u === 'media') return 1
-  if (u === 'bassa') return 2
-  return 3
+const MESI_SHORT = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
+
+function formatDateIT(d: string | null): string | null {
+  if (!d) return null
+  const parts = d.split('T')[0].split('-')
+  if (parts.length === 3) {
+    const day = parseInt(parts[2], 10)
+    const month = parseInt(parts[1], 10) - 1
+    const year = parseInt(parts[0], 10)
+    if (!isNaN(day) && month >= 0 && month < 12 && !isNaN(year))
+      return `${day} ${MESI_SHORT[month]} ${year}`
+  }
+  return null
 }
 
-function formatDate(d: string | null) {
-  if (!d) return '—'
-  const parts = d.split('T')[0].split('-')
-  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
-  return d
+function giorniColorClass(giorni: number): string {
+  if (giorni < 30) return 'scadenza-giorni-red'
+  if (giorni <= 90) return 'scadenza-giorni-orange'
+  return 'scadenza-giorni-green'
 }
 
 function formatEuro(val: number | null) {
   if (val === null || val === undefined) return '—'
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
-}
-
-function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: React.ReactNode[] = []
-  let listItems: string[] = []
-  let listKey = 0
-  const inlineParse = (s: string): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*)/)
-    return parts.map((p, i) =>
-      p.startsWith('**') && p.endsWith('**') ? <strong key={i}>{p.slice(2, -2)}</strong> : p
-    )
-  }
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(<ul key={`ul-${listKey++}`}>{listItems.map((item, i) => <li key={i}>{inlineParse(item)}</li>)}</ul>)
-      listItems = []
-    }
-  }
-  lines.forEach((line, i) => {
-    if (line.startsWith('# '))       { flushList(); elements.push(<h1 key={i}>{line.slice(2)}</h1>) }
-    else if (line.startsWith('## ')) { flushList(); elements.push(<h2 key={i}>{line.slice(3)}</h2>) }
-    else if (line.startsWith('### ')){ flushList(); elements.push(<h3 key={i}>{line.slice(4)}</h3>) }
-    else if (line.startsWith('- ') || line.startsWith('* ')) { listItems.push(line.slice(2)) }
-    else if (line.trim() === '')     { flushList() }
-    else                             { flushList(); elements.push(<p key={i}>{inlineParse(line)}</p>) }
-  })
-  flushList()
-  return <>{elements}</>
 }
 
 // ── Icons ──────────────────────────────────────────────────
@@ -87,9 +54,6 @@ function IconSearch() {
 }
 function IconDownload() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-}
-function IconClose() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 }
 function IconChevronUp() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', width: 12, height: 12, marginLeft: 3 }}><polyline points="18 15 12 9 6 15"/></svg>
@@ -100,63 +64,96 @@ function IconChevronDown() {
 function IconChevronDownSm() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
 }
+function IconTrash() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+}
 
 // ── Table row ──────────────────────────────────────────────
-function BandoRow({ b, dimmed, schedaLoading, onScheda }: {
+function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDeleteRequest, onDeleteConfirm, onDeleteCancel, deleting }: {
   b: Bando
   dimmed: boolean
   schedaLoading: number | null
   onScheda: (b: Bando) => void
+  confirmDeleteId: number | null
+  onDeleteRequest: (id: number) => void
+  onDeleteConfirm: (id: number) => void
+  onDeleteCancel: () => void
+  deleting: number | null
 }) {
+  const isConfirming = confirmDeleteId === b.id
+  const scadenzaStr = formatDateIT(b.data_scadenza)
   return (
     <tr style={dimmed ? { opacity: 0.52, color: 'var(--color-text-muted)' } : undefined}>
       <td className="td-muted" style={{ fontSize: '0.75rem' }}>{b.id}</td>
       <td>
-        <span className="td-title" style={dimmed ? { color: 'var(--color-text-muted)' } : undefined}>
+        <button
+          className="td-title-link"
+          style={dimmed ? { color: 'var(--color-text-muted)' } : undefined}
+          onClick={() => onScheda(b)}
+          disabled={schedaLoading === b.id}
+        >
           {b.titolo ?? `Bando #${b.id}`}
-        </span>
+        </button>
       </td>
       <td className="td-muted">{b.ente ?? '—'}</td>
       <td>
-        {b.urgenza
-          ? <span className={`badge ${urgencyClass(b.urgenza)}`}>{urgencyLabel(b.urgenza)}</span>
-          : <span className="td-muted">—</span>}
-      </td>
-      <td>
-        {b.data_scadenza ? (
-          <>
-            <span>{formatDate(b.data_scadenza)}</span>
+        {scadenzaStr && (
+          <div>
+            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{scadenzaStr}</span>
             {b.giorni_alla_scadenza !== null && (
-              <span className="td-muted" style={{ marginLeft: 6 }}>
-                ({b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`})
-              </span>
+              <div className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`}>
+                {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
+              </div>
             )}
-          </>
-        ) : <span className="td-muted">—</span>}
+          </div>
+        )}
       </td>
-      <td>{b.contributo_max !== null ? formatEuro(b.contributo_max) : <span className="td-muted">—</span>}</td>
+      <td>{b.contributo_max !== null ? <span className="font-medium">{formatEuro(b.contributo_max)}</span> : <span className="td-muted">—</span>}</td>
       <td>
-        <div className="btn-group">
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() => onScheda(b)}
-            disabled={schedaLoading === b.id}
-          >
-            {schedaLoading === b.id
-              ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-              : 'Scheda'}
-          </button>
-          <a href={`/api/bandi/${b.id}/scheda.md`} download className="btn btn-sm" title="Scarica .md">
-            <IconDownload />
-          </a>
-        </div>
+        {isConfirming ? (
+          <div className="btn-group" style={{ alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>Sei sicuro?</span>
+            <button
+              className="btn btn-sm"
+              style={{ background: '#dc2626', color: '#fff', border: 'none' }}
+              onClick={() => onDeleteConfirm(b.id)}
+              disabled={deleting === b.id}
+            >
+              {deleting === b.id ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : 'Sì, elimina'}
+            </button>
+            <button className="btn btn-sm" onClick={onDeleteCancel}>Annulla</button>
+          </div>
+        ) : (
+          <div className="btn-group">
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => onScheda(b)}
+              disabled={schedaLoading === b.id}
+            >
+              {schedaLoading === b.id
+                ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                : 'Scheda'}
+            </button>
+            <a href={`/api/bandi/${b.id}/scheda.md`} download className="btn btn-sm" title="Scarica .md">
+              <IconDownload />
+            </a>
+            <button
+              className="btn btn-sm"
+              style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+              onClick={() => onDeleteRequest(b.id)}
+              title="Elimina bando"
+            >
+              <IconTrash />
+            </button>
+          </div>
+        )}
       </td>
     </tr>
   )
 }
 
 // ── Table shell ────────────────────────────────────────────
-function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSort, SortIcon }: {
+function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSort, SortIcon, confirmDeleteId, onDeleteRequest, onDeleteConfirm, onDeleteCancel, deleting }: {
   rows: Bando[]
   dimmed: boolean
   emptyMsg: string
@@ -164,6 +161,11 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
   onScheda: (b: Bando) => void
   handleSort: (k: SortKey) => void
   SortIcon: React.FC<{ col: SortKey }>
+  confirmDeleteId: number | null
+  onDeleteRequest: (id: number) => void
+  onDeleteConfirm: (id: number) => void
+  onDeleteCancel: () => void
+  deleting: number | null
 }) {
   return (
     <div className="table-wrapper">
@@ -173,7 +175,6 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
             <th style={{ width: 40 }}>#</th>
             <th className="sortable" onClick={() => handleSort('titolo')}>Titolo <SortIcon col="titolo" /></th>
             <th>Ente</th>
-            <th className="sortable" onClick={() => handleSort('urgenza')}>Urgenza <SortIcon col="urgenza" /></th>
             <th className="sortable" onClick={() => handleSort('scadenza')}>Scadenza <SortIcon col="scadenza" /></th>
             <th className="sortable" onClick={() => handleSort('contributo')}>Contributo max <SortIcon col="contributo" /></th>
             <th>Azioni</th>
@@ -181,9 +182,13 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
         </thead>
         <tbody>
           {rows.length === 0
-            ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>{emptyMsg}</td></tr>
+            ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>{emptyMsg}</td></tr>
             : rows.map(b => (
-              <BandoRow key={b.id} b={b} dimmed={dimmed} schedaLoading={schedaLoading} onScheda={onScheda} />
+              <BandoRow
+                key={b.id} b={b} dimmed={dimmed} schedaLoading={schedaLoading} onScheda={onScheda}
+                confirmDeleteId={confirmDeleteId} onDeleteRequest={onDeleteRequest}
+                onDeleteConfirm={onDeleteConfirm} onDeleteCancel={onDeleteCancel} deleting={deleting}
+              />
             ))}
         </tbody>
       </table>
@@ -197,12 +202,21 @@ export default function Bandi() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('tutti')
+  const [regioneFilter, setRegioneFilter] = useState('')
   const [showScaduti, setShowScaduti] = useState(false)
-  const [sortKey, setSortKey] = useState<SortKey>('urgenza')
+  const [sortKey, setSortKey] = useState<SortKey>('scadenza')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [schedaLoading, setSchedaLoading] = useState<number | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState<number | null>(null)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(t)
+  }, [query])
 
   useEffect(() => {
     setLoading(true)
@@ -211,13 +225,6 @@ export default function Bandi() {
       .then(d => { setBandi(d.bandi ?? []); setLoading(false) })
       .catch(() => { setError('Errore nel caricamento dei bandi.'); setLoading(false) })
   }, [])
-
-  useEffect(() => {
-    if (!openScheda) return
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpenScheda(null) }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [openScheda])
 
   const handleSort = useCallback((key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -237,23 +244,52 @@ export default function Bandi() {
     }
   }
 
-  // Counts for quick filter labels (before search)
   const totalAttivi = useMemo(() => bandi.filter(b => !isExpired(b)).length, [bandi])
   const totalScaduti = useMemo(() => bandi.filter(isExpired).length, [bandi])
 
-  // Search → split → sort
+  const regioni = useMemo(() => {
+    const set = new Set<string>()
+    for (const b of bandi) {
+      try {
+        const arr = JSON.parse(b.regioni ?? '[]')
+        if (Array.isArray(arr)) arr.forEach((r: string) => { if (r) set.add(r) })
+      } catch { /* skip malformed */ }
+    }
+    return Array.from(set).sort()
+  }, [bandi])
+
   const { sortedAttivi, sortedScaduti } = useMemo(() => {
+    const filterRegione = (b: Bando): boolean => {
+      if (!regioneFilter) return true
+      try {
+        const arr: string[] = JSON.parse(b.regioni ?? '[]')
+        if (!arr.length) return true
+        const lower = arr.map((r: string) => r.toLowerCase())
+        if (lower.some(r => r === 'tutta italia' || r === 'tutte')) return true
+        return lower.includes(regioneFilter.toLowerCase())
+      } catch { return true }
+    }
     const searchFn = (b: Bando) => {
-      if (!query) return true
-      const q = query.toLowerCase()
-      return (b.titolo ?? '').toLowerCase().includes(q) || (b.ente ?? '').toLowerCase().includes(q)
+      if (debouncedQuery) {
+        const q = debouncedQuery.toLowerCase()
+        if (!(b.titolo ?? '').toLowerCase().includes(q) && !(b.ente ?? '').toLowerCase().includes(q)) return false
+      }
+      return filterRegione(b)
     }
     const sortFn = (a: Bando, b: Bando) => {
       let cmp = 0
-      if (sortKey === 'urgenza') cmp = urgencyOrder(a.urgenza) - urgencyOrder(b.urgenza)
-      else if (sortKey === 'scadenza') cmp = (a.giorni_alla_scadenza ?? 9999) - (b.giorni_alla_scadenza ?? 9999)
-      else if (sortKey === 'titolo') cmp = (a.titolo ?? '').localeCompare(b.titolo ?? '')
-      else if (sortKey === 'contributo') cmp = (b.contributo_max ?? 0) - (a.contributo_max ?? 0)
+      if (sortKey === 'scadenza') {
+        const aVal = a.giorni_alla_scadenza
+        const bVal = b.giorni_alla_scadenza
+        if (aVal === null && bVal === null) cmp = 0
+        else if (aVal === null) cmp = 1
+        else if (bVal === null) cmp = -1
+        else cmp = aVal - bVal
+      } else if (sortKey === 'titolo') {
+        cmp = (a.titolo ?? '').localeCompare(b.titolo ?? '')
+      } else if (sortKey === 'contributo') {
+        cmp = (b.contributo_max ?? 0) - (a.contributo_max ?? 0)
+      }
       return sortDir === 'asc' ? cmp : -cmp
     }
     const filtered = bandi.filter(searchFn)
@@ -261,14 +297,35 @@ export default function Bandi() {
       sortedAttivi: filtered.filter(b => !isExpired(b)).sort(sortFn),
       sortedScaduti: filtered.filter(isExpired).sort(sortFn),
     }
-  }, [bandi, query, sortKey, sortDir])
+  }, [bandi, query, regioneFilter, sortKey, sortDir])
+
+  const handleDeleteRequest = useCallback((id: number) => setConfirmDeleteId(id), [])
+  const handleDeleteCancel = useCallback(() => setConfirmDeleteId(null), [])
+  const handleDeleteConfirm = useCallback(async (id: number) => {
+    setDeleting(id)
+    try {
+      const res = await fetch(`/api/bandi/${id}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error()
+      setBandi(prev => prev.filter(b => b.id !== id))
+      setConfirmDeleteId(null)
+      toast.success('Bando eliminato.')
+    } catch {
+      toast.error('Errore durante l\'eliminazione del bando.')
+    } finally {
+      setDeleting(null)
+    }
+  }, [])
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return null
     return sortDir === 'asc' ? <IconChevronUp /> : <IconChevronDown />
   }
 
-  const tableProps = { schedaLoading, onScheda: handleScheda, handleSort, SortIcon }
+  const tableProps = {
+    schedaLoading, onScheda: handleScheda, handleSort, SortIcon,
+    confirmDeleteId, onDeleteRequest: handleDeleteRequest,
+    onDeleteConfirm: handleDeleteConfirm, onDeleteCancel: handleDeleteCancel, deleting,
+  }
 
   if (loading) {
     return <div className="loading-center"><div className="spinner" /> Caricamento bandi…</div>
@@ -309,29 +366,39 @@ export default function Bandi() {
         </div>
       ) : (
         <>
-          {/* Quick filter bar */}
-          <div className="quick-filter" style={{ marginBottom: 16 }}>
-            <button
-              className={`quick-filter-btn${quickFilter === 'tutti' ? ' active' : ''}`}
-              onClick={() => setQuickFilter('tutti')}
-            >
-              Tutti ({bandi.length})
-            </button>
-            <button
-              className={`quick-filter-btn${quickFilter === 'attivi' ? ' active' : ''}`}
-              onClick={() => setQuickFilter('attivi')}
-            >
-              Attivi ({totalAttivi})
-            </button>
-            <button
-              className={`quick-filter-btn${quickFilter === 'scaduti' ? ' active' : ''}`}
-              onClick={() => setQuickFilter('scaduti')}
-            >
-              Scaduti ({totalScaduti})
-            </button>
+          <div className="filter-bar" style={{ marginBottom: 16 }}>
+            <div className="quick-filter">
+              <button
+                className={`quick-filter-btn${quickFilter === 'tutti' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('tutti')}
+              >
+                Tutti ({bandi.length})
+              </button>
+              <button
+                className={`quick-filter-btn${quickFilter === 'attivi' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('attivi')}
+              >
+                Attivi ({totalAttivi})
+              </button>
+              <button
+                className={`quick-filter-btn${quickFilter === 'scaduti' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('scaduti')}
+              >
+                Scaduti ({totalScaduti})
+              </button>
+            </div>
+            {regioni.length > 0 && (
+              <select
+                value={regioneFilter}
+                onChange={e => setRegioneFilter(e.target.value)}
+                className="filter-select"
+              >
+                <option value="">Tutte le regioni</option>
+                {regioni.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            )}
           </div>
 
-          {/* View: tutti */}
           {quickFilter === 'tutti' && (
             <>
               <BandoTable
@@ -365,7 +432,6 @@ export default function Bandi() {
             </>
           )}
 
-          {/* View: attivi */}
           {quickFilter === 'attivi' && (
             <BandoTable
               rows={sortedAttivi}
@@ -375,7 +441,6 @@ export default function Bandi() {
             />
           )}
 
-          {/* View: scaduti */}
           {quickFilter === 'scaduti' && (
             <BandoTable
               rows={sortedScaduti}
@@ -388,31 +453,7 @@ export default function Bandi() {
       )}
 
       {openScheda && (
-        <div className="modal-backdrop" onClick={() => setOpenScheda(null)}>
-          <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <p className="modal-title">{openScheda.titolo}</p>
-                <p className="modal-subtitle">Scheda di sintesi</p>
-              </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                <a href={`/api/bandi/${openScheda.id}/scheda.md`} download className="btn btn-sm">
-                  <IconDownload /> Scarica
-                </a>
-                <button className="modal-close" onClick={() => setOpenScheda(null)} aria-label="Chiudi">
-                  <IconClose />
-                </button>
-              </div>
-            </div>
-            <div className="modal-body">
-              <div className="scheda-content">
-                {openScheda.scheda ? renderMarkdown(openScheda.scheda) : (
-                  <p className="text-muted">Scheda non disponibile per questo bando.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ModalScheda data={openScheda} onClose={() => setOpenScheda(null)} />
       )}
     </div>
   )

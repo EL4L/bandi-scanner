@@ -5,16 +5,6 @@ import Clienti from './components/Clienti'
 import CaricaBando from './components/CaricaBando'
 import ToastHost from './components/ToastHost'
 
-function IconScan() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 9v-1M12 16v-1M9 12H8M16 12h-1" />
-    </svg>
-  )
-}
-
 function IconGrid() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -67,9 +57,7 @@ function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">
-            <IconScan />
-          </div>
+          <div className="sidebar-logo-icon">BS</div>
           <div>
             <span className="sidebar-brand-name">BandiScanner</span>
             <span className="sidebar-brand-sub">per Commercialisti</span>
@@ -78,7 +66,6 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        <p className="sidebar-section-label">Navigazione</p>
         <NavLink to="/" end className={navClass}>
           <IconGrid /> Dashboard
         </NavLink>

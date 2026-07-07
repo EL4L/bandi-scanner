@@ -27,6 +27,7 @@ BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "link_fonte_ufficiale": (str, type(None)),
     "note_esclusioni": (dict, str, type(None)), 
     "spesa_minima_ammissibile": (int, float, type(None)),
+    "spesa_massima_ammissibile": (int, float, type(None)),
     "anzianita_impresa": dict,
     "forme_giuridiche_ammesse": list,
 }

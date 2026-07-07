@@ -1,0 +1,1555 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BandiScanner — Matching bandi pubblici per commercialisti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.44.0/dist/tabler-icons.min.css">
+<style>
+  :root{
+    /* Neutrals — dossier ink & paper */
+    --ink:#14171F;
+    --ink-2:#20242F;
+    --ink-muted:#4B4F5C;
+    --ink-faint:#9A9DA6;
+    --paper:#FBF9F4;
+    --paper-sunken:#EFEBE1;
+    --paper-border:#E3DFD3;
+    --on-ink:#EDEAE1;
+    --on-ink-muted:#9A9689;
+
+    /* Brand — sealing wax */
+    --oxblood:#8C2A3A;
+    --oxblood-dark:#6F1F2C;
+    --oxblood-tint:#F5E7E7;
+
+    /* Status ink tiers */
+    --pine:#1F6650;
+    --pine-bg:#E5F1EB;
+    --ochre:#B4780F;
+    --ochre-bg:#FBF0DC;
+    --crimson:#B23A2E;
+    --crimson-bg:#FBEAE7;
+    --gold:#A9873F;
+    --gold-tint:#F3ECD9;
+
+    --font-display:'Fraunces', ui-serif, Georgia, serif;
+    --font-body:'Public Sans', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+
+    --radius-sm:6px;
+    --radius-md:10px;
+    --radius-lg:16px;
+    --shadow-sm:0 1px 2px rgba(20,23,31,.06);
+    --shadow-md:0 6px 20px rgba(20,23,31,.09);
+    --shadow-lg:0 20px 48px rgba(20,23,31,.18);
+    --sidebar-w:268px;
+    --topbar-h:64px;
+    --transition:170ms ease;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    font-family:var(--font-body);
+    background:var(--paper-sunken);
+    color:var(--ink);
+    font-size:16px;
+    line-height:1.55;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:600;}
+  p{margin:0;}
+  button{font-family:inherit;}
+  ul,ol{margin:0;padding:0;list-style:none;}
+  a{color:inherit;}
+  input,select{font-family:inherit;font-size:0.9375rem;}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  }
+
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible{
+    outline:2px solid var(--oxblood);
+    outline-offset:2px;
+    border-radius:4px;
+  }
+
+  /* ---------- Layout shell ---------- */
+  .app-shell{display:flex;min-height:100vh;}
+
+  .sidebar{
+    width:var(--sidebar-w);
+    background:var(--ink);
+    color:var(--on-ink);
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    top:0;left:0;bottom:0;
+    z-index:40;
+    transition:transform var(--transition);
+    border-right:1px solid rgba(233,229,209,.08);
+  }
+  .sidebar-brand{
+    display:flex;align-items:center;gap:.8rem;
+    padding:1.6rem 1.4rem 1.3rem;
+    border-bottom:1px solid rgba(233,229,209,.1);
+  }
+  .brand-seal{
+    position:relative;width:42px;height:42px;flex-shrink:0;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--oxblood-dark), var(--oxblood) 70%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:1rem;color:var(--paper);
+  }
+  .brand-seal::after{
+    content:"";position:absolute;inset:-3px;border-radius:50%;
+    border:1px dashed rgba(237,234,225,.45);
+  }
+  .brand-name{font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--paper);letter-spacing:-.01em;}
+  .brand-tagline{display:block;font-size:.6875rem;color:var(--on-ink-muted);letter-spacing:.03em;margin-top:1px;text-transform:uppercase;}
+  .sidebar-nav{padding:.9rem .75rem;display:flex;flex-direction:column;gap:2px;flex:1;}
+  .nav-item{
+    display:flex;align-items:center;gap:.75rem;
+    padding:.65rem .875rem;
+    border-radius:var(--radius-sm);
+    background:transparent;border:none;border-left:3px solid transparent;color:var(--on-ink-muted);
+    font-size:.9375rem;font-weight:500;
+    cursor:pointer;text-align:left;width:100%;
+    transition:background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .nav-item i{font-size:1.15rem;width:20px;text-align:center;flex-shrink:0;}
+  .nav-item:hover{background:rgba(237,234,225,.06);color:var(--on-ink);}
+  .nav-item.active{background:rgba(140,42,58,.22);color:var(--paper);border-left-color:var(--oxblood);}
+  .sidebar-footer{padding:1.1rem 1.4rem 1.4rem;border-top:1px solid rgba(233,229,209,.1);}
+  .sidebar-footer p{font-size:.75rem;color:var(--on-ink-muted);font-family:var(--font-mono);}
+  .sidebar-footer p:first-child{color:var(--on-ink);font-weight:500;margin-bottom:2px;}
+  .sidebar-backdrop{display:none;}
+
+  .main-area{flex:1;margin-left:var(--sidebar-w);min-width:0;display:flex;flex-direction:column;}
+
+  .topbar{
+    display:none;
+    align-items:center;gap:.75rem;
+    height:var(--topbar-h);
+    padding:0 1.25rem;
+    background:var(--paper);
+    border-bottom:1px solid var(--paper-border);
+    position:sticky;top:0;z-index:30;
+  }
+  .hamburger{
+    width:40px;height:40px;border-radius:var(--radius-sm);
+    border:1px solid var(--paper-border);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:1.15rem;color:var(--ink);
+    flex-shrink:0;
+  }
+  .topbar .brand-name{color:var(--ink);font-size:1rem;}
+  .topbar .brand-seal{width:32px;height:32px;font-size:.8rem;}
+
+  .content{flex:1;padding:2.25rem 2.75rem 3.5rem;max-width:1420px;width:100%;margin:0 auto;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .page-header{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:1rem;flex-wrap:wrap;margin-bottom:.9rem;
+  }
+  .page-header h2{font-family:var(--font-display);font-size:1.875rem;font-weight:600;margin-bottom:.35rem;letter-spacing:-.01em;}
+  .page-subtitle{color:var(--ink-muted);font-size:.9375rem;}
+  .header-actions{display:flex;gap:.625rem;flex-wrap:wrap;}
+
+  .letterhead-rule{height:1px;background:var(--paper-border);position:relative;margin-bottom:1.9rem;}
+  .letterhead-rule::before{content:"";position:absolute;left:0;top:-3px;width:64px;height:3px;background:var(--oxblood);}
+  .letterhead-rule::after{content:"";position:absolute;left:70px;top:-2px;width:22px;height:1px;background:var(--gold);}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;gap:.5rem;
+    padding:.6rem 1.05rem;border-radius:var(--radius-sm);
+    font-size:.875rem;font-weight:600;font-family:var(--font-body);
+    border:1px solid transparent;cursor:pointer;
+    transition:background var(--transition), border-color var(--transition), color var(--transition);
+    white-space:nowrap;
+  }
+  .btn i{font-size:1.05rem;}
+  .btn-primary{background:var(--oxblood);color:var(--paper);}
+  .btn-primary:hover{background:var(--oxblood-dark);}
+  .btn-secondary{background:var(--paper);color:var(--ink);border-color:var(--paper-border);}
+  .btn-secondary:hover{background:var(--paper-sunken);border-color:var(--ink-faint);}
+  .btn-ghost{background:transparent;color:var(--ink-muted);border-color:transparent;}
+  .btn-ghost:hover{background:var(--paper-sunken);color:var(--ink);}
+  .btn:disabled{opacity:.6;cursor:not-allowed;}
+  .btn-sm{padding:.42rem .75rem;font-size:.8125rem;}
+
+  .icon-btn{
+    width:34px;height:34px;border-radius:var(--radius-sm);
+    display:inline-flex;align-items:center;justify-content:center;
+    background:var(--paper);border:1px solid var(--paper-border);
+    color:var(--ink-muted);cursor:pointer;font-size:1rem;
+    transition:background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .icon-btn:hover{background:var(--paper-sunken);color:var(--oxblood);border-color:var(--oxblood);}
+  .icon-btn.danger:hover{color:var(--crimson);border-color:var(--crimson);}
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:1.75rem;}
+  .kpi-card{
+    background:var(--paper);border:1px solid var(--paper-border);border-left:3px solid var(--kpi-accent, var(--oxblood));
+    border-radius:var(--radius-md);padding:1.4rem 1.5rem;
+    display:flex;flex-direction:column;gap:.15rem;
+    box-shadow:var(--shadow-sm);
+  }
+  .kpi-value{font-family:var(--font-display);font-size:2.5rem;font-weight:600;line-height:1;letter-spacing:-.01em;}
+  .kpi-label{color:var(--ink-muted);font-size:.8125rem;margin-top:.35rem;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+
+  /* ---------- Urgency rail ---------- */
+  .urgency-rail{margin-bottom:1.75rem;}
+  .urgency-rail-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem;font-size:.8125rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--oxblood);}
+  .urgency-rail-header i{font-size:1rem;}
+  .urgency-rail-track{display:flex;gap:.75rem;overflow-x:auto;padding-bottom:.35rem;}
+  .urgency-chip{
+    display:flex;align-items:center;gap:.65rem;flex-shrink:0;
+    background:var(--paper);border:1px solid var(--paper-border);border-left:3px solid var(--chip-color,var(--crimson));
+    border-radius:var(--radius-sm);padding:.6rem .95rem;cursor:pointer;min-width:220px;max-width:280px;
+    transition:box-shadow var(--transition), transform var(--transition);
+    text-align:left;
+  }
+  .urgency-chip:hover{box-shadow:var(--shadow-sm);transform:translateY(-1px);}
+  .urgency-chip-days{font-family:var(--font-mono);font-weight:600;font-size:.8125rem;color:var(--chip-color,var(--crimson));white-space:nowrap;}
+  .urgency-chip-title{font-size:.8125rem;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  /* ---------- Dashboard toolbar ---------- */
+  .dash-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:.6rem;margin-bottom:1rem;}
+  .dash-toolbar label{font-size:.8125rem;color:var(--ink-muted);font-weight:600;}
+
+  /* ---------- Bandi grid (Dashboard) ---------- */
+  .bandi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1.25rem;}
+  .bando-card{
+    background:var(--paper);border:1px solid var(--paper-border);
+    border-radius:var(--radius-lg);padding:1.4rem;
+    box-shadow:var(--shadow-sm);
+    display:flex;flex-direction:column;gap:1rem;
+    transition:box-shadow var(--transition), transform var(--transition);
+    animation:cardRise 420ms ease both;
+    animation-delay:calc(var(--i, 0) * 55ms);
+  }
+  @keyframes cardRise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .bando-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+  .bando-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;}
+  .bando-card-top h3{font-family:var(--font-display);font-size:1.125rem;line-height:1.3;margin-bottom:.35rem;font-weight:600;}
+  .ente{display:flex;align-items:center;gap:.35rem;color:var(--ink-muted);font-size:.8125rem;}
+  .ente i{font-size:.9rem;}
+
+  /* ---------- Stamp (score indicator) ---------- */
+  .stamp{position:relative;width:58px;height:58px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .stamp-fill{
+    position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(var(--tier,var(--oxblood)) calc(var(--score,0)*3.6deg), var(--paper-border) 0deg);
+    animation:stampFill 480ms cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--i, 0) * 55ms);
+  }
+  .stamp-fill::after{content:"";position:absolute;inset:7px;background:var(--paper);border-radius:50%;}
+  .stamp-ring{
+    position:absolute;inset:-5px;border-radius:50%;
+    border:1.5px dashed var(--tier,var(--oxblood));opacity:.4;
+    animation:stampRing 620ms cubic-bezier(.22,1,.36,1) both;
+    animation-delay:calc(var(--i, 0) * 55ms);
+  }
+  .stamp-value{position:relative;font-family:var(--font-mono);font-weight:600;font-size:.8125rem;color:var(--ink);
+    animation:stampValueIn 380ms ease both;
+    animation-delay:calc(var(--i, 0) * 55ms + 120ms);
+  }
+  @keyframes stampFill{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+  @keyframes stampRing{from{transform:rotate(-30deg) scale(.6);opacity:0;}to{transform:rotate(-4deg) scale(1);opacity:.4;}}
+  @keyframes stampValueIn{from{opacity:0;transform:scale(.7);}to{opacity:1;transform:scale(1);}}
+
+  .bando-card-meta{display:flex;flex-direction:column;gap:.45rem;}
+  .meta-item{display:flex;align-items:center;gap:.5rem;font-size:.8438rem;color:var(--ink-muted);flex-wrap:wrap;}
+  .meta-item i{font-size:1rem;color:var(--ink-faint);}
+  .meta-item strong{color:var(--ink);font-weight:700;font-family:var(--font-mono);}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:.3rem;
+    padding:.2rem .55rem;border-radius:999px;
+    font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    font-family:var(--font-mono);
+  }
+  .badge-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+  .badge-success{background:var(--pine-bg);color:var(--pine);}
+  .badge-warning{background:var(--ochre-bg);color:var(--ochre);}
+  .badge-danger{background:var(--crimson-bg);color:var(--crimson);}
+  .badge-neutral{background:var(--paper-sunken);color:var(--ink-muted);}
+  .badge-gold{background:var(--gold-tint);color:var(--gold);}
+  .badge-accent{background:var(--oxblood-tint);color:var(--oxblood-dark);}
+
+  .clients-label{font-size:.75rem;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.5rem;}
+  .client-chip-list{display:flex;flex-direction:column;gap:.4rem;max-height:132px;overflow-y:auto;}
+  .client-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+    padding:.45rem .625rem;background:var(--paper-sunken);border-radius:var(--radius-sm);
+    font-size:.8125rem;
+  }
+  .client-chip-name{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .client-chip-empty{font-size:.8125rem;color:var(--ink-faint);font-style:italic;padding:.4rem 0;}
+
+  .bando-card-actions{display:flex;gap:.5rem;border-top:1px solid var(--paper-border);margin-top:.15rem;padding-top:.85rem;}
+
+  /* ---------- Toolbar / filters ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-bottom:1.25rem;}
+  .search-box{
+    display:flex;align-items:center;gap:.5rem;
+    background:var(--paper);border:1px solid var(--paper-border);
+    border-radius:var(--radius-sm);padding:.55rem .875rem;flex:1;min-width:220px;max-width:360px;
+  }
+  .search-box i{color:var(--ink-faint);font-size:1.05rem;}
+  .search-box input{border:none;outline:none;background:transparent;width:100%;color:var(--ink);}
+  .pill-group{display:flex;gap:.4rem;flex-wrap:wrap;}
+  .pill{
+    padding:.5rem 1rem;border-radius:999px;border:1px solid var(--paper-border);
+    background:var(--paper);color:var(--ink-muted);font-size:.8438rem;font-weight:600;
+    cursor:pointer;transition:background var(--transition), color var(--transition), border-color var(--transition);
+  }
+  .pill:hover{border-color:var(--oxblood);color:var(--oxblood-dark);}
+  .pill.active{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+  .select-filter{
+    padding:.55rem .875rem;border-radius:var(--radius-sm);border:1px solid var(--paper-border);
+    background:var(--paper);color:var(--ink);cursor:pointer;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{
+    background:var(--paper);border:1px solid var(--paper-border);
+    border-radius:var(--radius-lg);overflow-x:auto;box-shadow:var(--shadow-sm);
+  }
+  .data-table{width:100%;border-collapse:collapse;min-width:680px;}
+  .data-table th{
+    text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--ink-muted);font-weight:700;font-family:var(--font-mono);
+    padding:.9rem 1.1rem;border-bottom:1px solid var(--paper-border);
+    background:var(--paper-sunken);white-space:nowrap;
+  }
+  .data-table th.sortable{cursor:pointer;user-select:none;}
+  .data-table th.sortable:hover{color:var(--oxblood-dark);}
+  .data-table th.sortable i{font-size:.85rem;margin-left:.25rem;opacity:.5;}
+  .data-table th.sortable.sort-active i{opacity:1;color:var(--oxblood);}
+  .data-table td{
+    padding:.95rem 1.1rem;border-bottom:1px solid var(--paper-border);
+    font-size:.875rem;color:var(--ink);vertical-align:middle;
+  }
+  .data-table tbody tr:last-child td{border-bottom:none;}
+  .data-table tbody tr:hover{background:var(--oxblood-tint);}
+  .text-right{text-align:right;}
+  .cell-actions{display:flex;gap:.4rem;justify-content:flex-end;}
+  .cell-muted{color:var(--ink-muted);font-size:.8125rem;}
+  .cell-mono{font-family:var(--font-mono);}
+  .cell-title{font-weight:700;font-family:var(--font-display);font-size:.9688rem;}
+  .client-name-cell{display:flex;align-items:center;gap:.7rem;}
+  .client-name-text strong{display:block;font-weight:700;}
+  .client-name-text span{display:block;color:var(--ink-muted);font-size:.75rem;margin-top:1px;}
+  .seal-badge{
+    width:34px;height:34px;flex-shrink:0;border-radius:50%;background:var(--ink);color:var(--on-ink);
+    display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:600;font-size:.75rem;
+  }
+  .confirm-inline{display:flex;gap:.4rem;align-items:center;justify-content:flex-end;white-space:nowrap;}
+  .confirm-inline span{font-size:.75rem;color:var(--crimson);font-weight:600;margin-right:.2rem;}
+  .empty-state{padding:3rem 1.5rem;text-align:center;color:var(--ink-faint);}
+  .empty-state i{font-size:2rem;display:block;margin-bottom:.6rem;color:var(--paper-border);}
+  .results-count{font-size:.8125rem;color:var(--ink-muted);margin-bottom:.85rem;}
+
+  /* ---------- Carica Bando ---------- */
+  .upload-layout{display:grid;grid-template-columns:1.4fr 1fr;gap:1.5rem;align-items:start;}
+  .upload-left, .upload-right{display:flex;flex-direction:column;gap:1.25rem;}
+  .dropzone{
+    background:var(--paper);border:2px dashed var(--paper-border);
+    border-radius:var(--radius-lg);padding:3rem 1.5rem;text-align:center;
+    cursor:pointer;transition:border-color var(--transition), background var(--transition);
+  }
+  .dropzone:hover, .dropzone.dragover{border-color:var(--oxblood);background:var(--oxblood-tint);}
+  .dropzone-icon{font-size:2.75rem;color:var(--oxblood);display:block;margin-bottom:.75rem;}
+  .dropzone-title{font-family:var(--font-display);font-size:1.1875rem;font-weight:600;margin-bottom:.3rem;}
+  .dropzone-sub{color:var(--ink-muted);font-size:.875rem;margin-bottom:1.25rem;}
+  .dropzone-btn{pointer-events:none;}
+
+  .steps-list{background:var(--paper);border:1px solid var(--paper-border);border-radius:var(--radius-lg);padding:1.25rem 1.375rem;box-shadow:var(--shadow-sm);}
+  .step-item{display:flex;gap:.9rem;padding:.75rem 0;}
+  .step-item:not(:last-child){border-bottom:1px solid var(--paper-border);}
+  .step-num{
+    width:28px;height:28px;border-radius:50%;background:var(--paper-sunken);color:var(--ink-muted);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;font-family:var(--font-mono);
+    transition:background var(--transition), color var(--transition);
+  }
+  .step-item.active .step-num{background:var(--oxblood);color:var(--paper);}
+  .step-item.done .step-num{background:var(--pine);color:var(--paper);}
+  .step-item strong{display:block;font-size:.9375rem;margin-bottom:.15rem;font-family:var(--font-display);font-weight:600;}
+  .step-item p{color:var(--ink-muted);font-size:.8125rem;}
+
+  .disclaimer{
+    display:flex;gap:.75rem;background:var(--gold-tint);border:1px solid var(--gold);border-left-width:3px;
+    border-radius:var(--radius-md);padding:1rem 1.125rem;
+  }
+  .disclaimer i{color:var(--gold);font-size:1.25rem;flex-shrink:0;margin-top:1px;}
+  .disclaimer p{font-size:.8125rem;color:#5C4A1E;line-height:1.55;}
+
+  .feature-card{
+    background:var(--paper);border:1px solid var(--paper-border);border-radius:var(--radius-lg);
+    padding:1.25rem;box-shadow:var(--shadow-sm);display:flex;gap:.9rem;
+  }
+  .feature-icon{
+    width:44px;height:44px;border-radius:var(--radius-md);background:var(--ink);
+    color:var(--on-ink);display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0;
+  }
+  .feature-card h4{font-family:var(--font-display);font-size:.9688rem;margin-bottom:.25rem;font-weight:600;}
+  .feature-card p{font-size:.8125rem;color:var(--ink-muted);line-height:1.55;}
+
+  .upload-progress-card{
+    background:var(--paper);border:1px solid var(--paper-border);border-radius:var(--radius-lg);
+    padding:1.5rem;box-shadow:var(--shadow-sm);display:none;flex-direction:column;gap:.75rem;
+  }
+  .upload-progress-card.visible{display:flex;}
+  .result-summary{background:var(--pine-bg);border:1px solid var(--pine);border-left-width:3px;border-radius:var(--radius-md);padding:1rem 1.125rem;display:none;}
+  .result-summary.visible{display:block;}
+  .result-summary h4{color:var(--pine);font-size:.9375rem;margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem;font-family:var(--font-display);font-weight:600;}
+
+  .upload-log{background:var(--paper);border:1px solid var(--paper-border);border-radius:var(--radius-lg);padding:1.25rem 1.375rem;box-shadow:var(--shadow-sm);}
+  .upload-log h4{font-family:var(--font-display);font-size:.9688rem;font-weight:600;margin-bottom:.85rem;}
+  .upload-log-item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.65rem 0;font-size:.8125rem;}
+  .upload-log-item:not(:last-child){border-bottom:1px solid var(--paper-border);}
+  .upload-log-item .ulog-name{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .upload-log-item .ulog-time{color:var(--ink-muted);font-family:var(--font-mono);font-size:.75rem;white-space:nowrap;}
+  .upload-log-empty{font-size:.8125rem;color:var(--ink-faint);font-style:italic;}
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(20,23,31,.55);
+    display:none;align-items:flex-start;justify-content:center;
+    padding:4vh 1rem;overflow-y:auto;z-index:100;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--paper);border-radius:var(--radius-lg);
+    width:100%;max-width:560px;box-shadow:var(--shadow-lg);
+    animation:modalIn 200ms ease;
+    border-top:3px solid var(--oxblood);
+  }
+  @keyframes modalIn{from{opacity:0;transform:translateY(-8px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--paper-border);}
+  .modal-header h3{font-family:var(--font-display);font-size:1.1875rem;font-weight:600;}
+  .modal-body{padding:1.5rem;max-height:65vh;overflow-y:auto;}
+  .modal-footer{display:flex;justify-content:flex-end;gap:.6rem;padding:1.1rem 1.5rem;border-top:1px solid var(--paper-border);}
+  .modal-close{
+    width:32px;height:32px;border-radius:50%;border:none;background:var(--paper-sunken);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-muted);font-size:1rem;
+  }
+  .modal-close:hover{background:var(--paper-border);color:var(--ink);}
+
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .form-field{display:flex;flex-direction:column;gap:.35rem;}
+  .form-field.full{grid-column:1/-1;}
+  .form-field label{font-size:.8125rem;font-weight:600;color:var(--ink-muted);}
+  .form-field input, .form-field select, .form-field textarea{
+    padding:.6rem .75rem;border:1px solid var(--paper-border);border-radius:var(--radius-sm);
+    background:var(--paper-sunken);color:var(--ink);width:100%;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus{
+    outline:2px solid var(--oxblood);outline-offset:1px;background:var(--paper);
+  }
+
+  .scheda-detail dl{display:grid;grid-template-columns:1fr;gap:.9rem;}
+  .scheda-row{display:flex;flex-direction:column;gap:.2rem;padding-bottom:.9rem;border-bottom:1px solid var(--paper-border);}
+  .scheda-row:last-child{border-bottom:none;padding-bottom:0;}
+  .scheda-row dt{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);font-family:var(--font-mono);}
+  .scheda-row dd{margin:0;font-size:.9375rem;color:var(--ink);}
+  .tag-list{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.3rem;}
+
+  /* ---------- Toasts ---------- */
+  .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.6rem;z-index:200;max-width:340px;}
+  .toast{
+    background:var(--ink);color:var(--on-ink);padding:.85rem 1.1rem;border-radius:var(--radius-md);
+    box-shadow:var(--shadow-lg);font-size:.875rem;display:flex;align-items:center;gap:.6rem;
+    animation:toastIn 220ms ease;border-left:3px solid var(--oxblood);
+  }
+  .toast i{font-size:1.15rem;flex-shrink:0;}
+  .toast.success{border-left-color:var(--pine);}
+  .toast.success i{color:#4CAE8D;}
+  .toast.error{border-left-color:var(--crimson);}
+  .toast.error i{color:#E08277;}
+  .toast.info i{color:#B7ADE0;}
+  @keyframes toastIn{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:translateX(0);}}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:1024px){
+    .sidebar{transform:translateX(-100%);box-shadow:var(--shadow-lg);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(20,23,31,.4);z-index:39;}
+    .sidebar-backdrop.show{display:block;}
+    .main-area{margin-left:0;}
+    .topbar{display:flex;}
+    .content{padding:1.5rem 1.25rem 2.5rem;}
+    .upload-layout{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:1fr 1fr;}
+  }
+  @media (max-width:640px){
+    .kpi-row{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .page-header{flex-direction:column;}
+    .header-actions{width:100%;}
+    .header-actions .btn{flex:1;justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-seal">BS</div>
+      <div>
+        <span class="brand-name">BandiScanner</span>
+        <span class="brand-tagline">Studio &amp; consulenza</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav" aria-label="Navigazione principale">
+      <button class="nav-item active" data-page="dashboard" aria-current="page">
+        <i class="ti ti-layout-dashboard"></i><span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-page="bandi">
+        <i class="ti ti-file-text"></i><span>Bandi</span>
+      </button>
+      <button class="nav-item" data-page="clienti">
+        <i class="ti ti-users"></i><span>Clienti</span>
+      </button>
+      <button class="nav-item" data-page="carica">
+        <i class="ti ti-cloud-upload"></i><span>Carica Bando</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <p>BandiScanner v2.4</p>
+      <p>Matching bandi per studi di consulenza</p>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <header class="topbar">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Apri menu di navigazione" aria-expanded="false">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="brand-seal">BS</div>
+      <span class="brand-name">BandiScanner</span>
+    </header>
+
+    <main class="content">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <h2>Dashboard</h2>
+            <p class="page-subtitle">Panoramica dei bandi attivi e degli abbinamenti con i tuoi clienti</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-secondary" id="btnExportCsv"><i class="ti ti-file-export"></i>Esporta CSV</button>
+            <button class="btn btn-secondary" id="btnDeduplica"><i class="ti ti-copy-off"></i>Deduplica</button>
+            <button class="btn btn-primary" id="btnRicalcola"><i class="ti ti-refresh"></i>Ricalcola match</button>
+          </div>
+        </div>
+        <div class="letterhead-rule"></div>
+
+        <div class="kpi-row">
+          <div class="kpi-card" style="--kpi-accent:var(--oxblood)">
+            <p class="kpi-value" id="kpiTotaleBandi">0</p><p class="kpi-label">Totale bandi</p>
+          </div>
+          <div class="kpi-card" style="--kpi-accent:var(--gold)">
+            <p class="kpi-value" id="kpiAbbinamenti">0</p><p class="kpi-label">Abbinamenti trovati</p>
+          </div>
+          <div class="kpi-card" style="--kpi-accent:var(--pine)">
+            <p class="kpi-value" id="kpiBandiCompatibili">0</p><p class="kpi-label">Bandi con clienti compatibili</p>
+          </div>
+        </div>
+
+        <div class="urgency-rail" id="urgencyRail" style="display:none;">
+          <div class="urgency-rail-header"><i class="ti ti-alarm"></i><span>In scadenza a breve</span></div>
+          <div class="urgency-rail-track" id="urgencyRailTrack"></div>
+        </div>
+
+        <div class="dash-toolbar">
+          <label for="dashboardSort">Ordina per</label>
+          <select id="dashboardSort" class="select-filter">
+            <option value="score">Score più alto</option>
+            <option value="scadenza">Scadenza più vicina</option>
+            <option value="contributo">Contributo più alto</option>
+          </select>
+        </div>
+
+        <div class="bandi-grid" id="dashboardGrid"></div>
+      </section>
+
+      <!-- ================= BANDI ================= -->
+      <section class="page" id="page-bandi">
+        <div class="page-header">
+          <div>
+            <h2>Bandi</h2>
+            <p class="page-subtitle">Archivio completo dei bandi caricati</p>
+          </div>
+        </div>
+        <div class="letterhead-rule"></div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="ti ti-search"></i>
+            <input type="search" id="bandiSearch" placeholder="Cerca per titolo o ente..." aria-label="Cerca bandi per titolo o ente">
+          </div>
+          <div class="pill-group" id="bandiStatusPills" role="group" aria-label="Filtra per stato">
+            <button class="pill active" data-filter="tutti">Tutti</button>
+            <button class="pill" data-filter="attivi">Attivi</button>
+            <button class="pill" data-filter="scaduti">Scaduti</button>
+          </div>
+          <label class="sr-only" for="bandiRegioneFilter">Filtra per regione</label>
+          <select class="select-filter" id="bandiRegioneFilter">
+            <option value="">Tutte le regioni</option>
+          </select>
+        </div>
+
+        <p class="results-count" id="bandiResultsCount"></p>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th class="sortable" data-sort="titolo">Titolo <i class="ti ti-arrows-sort"></i></th>
+                <th class="sortable" data-sort="ente">Ente <i class="ti ti-arrows-sort"></i></th>
+                <th class="sortable" data-sort="data_scadenza">Scadenza <i class="ti ti-arrows-sort"></i></th>
+                <th class="sortable" data-sort="contributo_max">Contributo max <i class="ti ti-arrows-sort"></i></th>
+                <th class="text-right">Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="bandiTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= CLIENTI ================= -->
+      <section class="page" id="page-clienti">
+        <div class="page-header">
+          <div>
+            <h2>Clienti</h2>
+            <p class="page-subtitle">Anagrafica clienti e compatibilità con i bandi attivi</p>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-primary" id="btnAddCliente"><i class="ti ti-plus"></i>Aggiungi cliente</button>
+          </div>
+        </div>
+        <div class="letterhead-rule"></div>
+
+        <div class="toolbar">
+          <div class="search-box">
+            <i class="ti ti-search"></i>
+            <input type="search" id="clientiSearch" placeholder="Cerca per ragione sociale, P.IVA o ATECO..." aria-label="Cerca clienti">
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ragione sociale</th>
+                <th>P.IVA</th>
+                <th>Codice ATECO</th>
+                <th>Regione</th>
+                <th>Fatturato</th>
+                <th>Dimensione</th>
+                <th>Bandi compatibili</th>
+                <th class="text-right">Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="clientiTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ================= CARICA BANDO ================= -->
+      <section class="page" id="page-carica">
+        <div class="page-header">
+          <div>
+            <h2>Carica Bando</h2>
+            <p class="page-subtitle">Carica un PDF per estrarre automaticamente i dati del bando</p>
+          </div>
+        </div>
+        <div class="letterhead-rule"></div>
+
+        <div class="upload-layout">
+          <div class="upload-left">
+            <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Carica un file PDF trascinandolo qui o selezionandolo dal computer">
+              <input type="file" id="fileInput" accept="application/pdf" class="sr-only">
+              <i class="ti ti-cloud-upload dropzone-icon"></i>
+              <p class="dropzone-title">Trascina qui il PDF del bando</p>
+              <p class="dropzone-sub">oppure clicca per selezionare un file dal computer</p>
+              <span class="btn btn-secondary dropzone-btn"><i class="ti ti-upload"></i>Seleziona file</span>
+            </div>
+
+            <div class="upload-progress-card" id="progressCard">
+              <h4 style="font-family:var(--font-display);font-size:.9688rem;font-weight:600;">Elaborazione in corso</h4>
+              <p class="cell-muted" id="progressFilename"></p>
+            </div>
+
+            <div class="result-summary" id="resultSummary">
+              <h4><i class="ti ti-circle-check"></i>Bando caricato con successo</h4>
+              <p style="font-size:.8438rem;color:#134E3A;" id="resultText"></p>
+              <div style="margin-top:.75rem;">
+                <button class="btn btn-primary btn-sm" id="btnGoDashboard"><i class="ti ti-arrow-right"></i>Vai alla Dashboard</button>
+              </div>
+            </div>
+
+            <ol class="steps-list" id="stepsList">
+              <li class="step-item" data-step="1">
+                <span class="step-num">1</span>
+                <div><strong>Estrazione testo</strong><p>Il PDF viene analizzato e il testo viene estratto tramite parsing automatico.</p></div>
+              </li>
+              <li class="step-item" data-step="2">
+                <span class="step-num">2</span>
+                <div><strong>Analisi con intelligenza artificiale</strong><p>Il modello AI individua titolo, ente, scadenze, requisiti e importi del bando.</p></div>
+              </li>
+              <li class="step-item" data-step="3">
+                <span class="step-num">3</span>
+                <div><strong>Matching automatico</strong><p>Il bando viene confrontato con l'anagrafica clienti e vengono calcolati gli score di compatibilità.</p></div>
+              </li>
+            </ol>
+
+            <div class="disclaimer">
+              <i class="ti ti-alert-triangle"></i>
+              <p>I dati estratti sono generati tramite intelligenza artificiale e potrebbero contenere imprecisioni o omissioni. Verifica sempre le informazioni con il testo ufficiale del bando prima di prendere decisioni operative.</p>
+            </div>
+
+            <div class="upload-log">
+              <h4>Caricamenti recenti</h4>
+              <ul id="uploadLogList"><li class="upload-log-empty">Nessun caricamento in questa sessione.</li></ul>
+            </div>
+          </div>
+
+          <div class="upload-right">
+            <h3 style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;">Come funziona</h3>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="ti ti-scan"></i></div>
+              <div><h4>Estrazione AI</h4><p>Il testo del PDF viene interpretato da un modello linguistico che riconosce automaticamente i dati chiave del bando.</p></div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="ti ti-affiliate"></i></div>
+              <div><h4>Matching automatico</h4><p>Ogni bando caricato viene confrontato con tutti i clienti in anagrafica e riceve uno score di compatibilità 0-100.</p></div>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon"><i class="ti ti-notes"></i></div>
+              <div><h4>Scheda sintetica</h4><p>Per ogni bando viene generata una scheda riepilogativa scaricabile, pronta da condividere con il cliente.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modalContent" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- Mock data ---------------- */
+  let clienti = [
+    {id:1, ragione_sociale:"Rossi Costruzioni Srl", descrizione_attivita:"Costruzioni edili residenziali e commerciali", p_iva:"01234567890", codice_ateco:"41.20", regione:"Lombardia", fatturato:3200000, dimensione:"piccola"},
+    {id:2, ragione_sociale:"GreenEnergy Impianti Srl", descrizione_attivita:"Impianti fotovoltaici ed efficientamento energetico", p_iva:"02345678901", codice_ateco:"43.21", regione:"Veneto", fatturato:1800000, dimensione:"micro"},
+    {id:3, ragione_sociale:"Studio Ferrari & Associati", descrizione_attivita:"Consulenza fiscale e societaria", p_iva:"03456789012", codice_ateco:"69.20", regione:"Lazio", fatturato:650000, dimensione:"micro"},
+    {id:4, ragione_sociale:"Verdi Tech Solutions Srl", descrizione_attivita:"Sviluppo software e soluzioni digitali", p_iva:"04567890123", codice_ateco:"62.01", regione:"Emilia-Romagna", fatturato:4500000, dimensione:"media"},
+    {id:5, ragione_sociale:"Moda Italia Snc", descrizione_attivita:"Produzione e commercio di abbigliamento", p_iva:"05678901234", codice_ateco:"14.13", regione:"Toscana", fatturato:1200000, dimensione:"piccola"},
+    {id:6, ragione_sociale:"Bianchi Consulting Srl", descrizione_attivita:"Consulenza strategica e management", p_iva:"06789012345", codice_ateco:"70.22", regione:"Piemonte", fatturato:2100000, dimensione:"piccola"}
+  ];
+  let nextClienteId = 7;
+
+  let bandi = [
+    {id:1, titolo:"Nuova Sabatini 2026", ente:"Ministero delle Imprese e del Made in Italy", regione:"Nazionale", data_scadenza:"2026-09-30", contributo_max:200000, percentuale_fondo_perduto:null,
+      descrizione:"Agevolazione per l'acquisto di macchinari, impianti e beni strumentali nuovi attraverso finanziamenti agevolati.",
+      spese_ammissibili:["Macchinari e impianti","Beni strumentali d'impresa","Hardware e software"],
+      link:"#", matches:[{clienteId:1,score:82},{clienteId:2,score:65},{clienteId:4,score:58},{clienteId:6,score:45}]},
+    {id:2, titolo:"Transizione 4.0", ente:"PNRR - Ministero dell'Economia e delle Finanze", regione:"Nazionale", data_scadenza:"2026-08-15", contributo_max:350000, percentuale_fondo_perduto:30,
+      descrizione:"Credito d'imposta per investimenti in beni strumentali 4.0 e software di gestione digitale dei processi.",
+      spese_ammissibili:["Beni strumentali 4.0","Software gestionali","Formazione del personale"],
+      link:"#", matches:[{clienteId:4,score:91},{clienteId:2,score:74},{clienteId:1,score:60}]},
+    {id:3, titolo:"Fondo Impresa Femminile 2026", ente:"Ministero delle Imprese e del Made in Italy", regione:"Nazionale", data_scadenza:"2026-10-31", contributo_max:150000, percentuale_fondo_perduto:50,
+      descrizione:"Contributo a fondo perduto per la nascita e il consolidamento di imprese a prevalente conduzione femminile.",
+      spese_ammissibili:["Avvio d'impresa","Attrezzature","Consulenze specialistiche"],
+      link:"#", matches:[{clienteId:5,score:79},{clienteId:3,score:55}]},
+    {id:4, titolo:"Voucher Digitalizzazione PMI", ente:"Regione Lombardia", regione:"Lombardia", data_scadenza:"2026-07-20", contributo_max:25000, percentuale_fondo_perduto:70,
+      descrizione:"Voucher a fondo perduto per l'adozione di soluzioni digitali, e-commerce e cybersecurity nelle PMI lombarde.",
+      spese_ammissibili:["Siti e-commerce","Software gestionali cloud","Sicurezza informatica"],
+      link:"#", matches:[{clienteId:1,score:88},{clienteId:4,score:95},{clienteId:6,score:70},{clienteId:2,score:40}]},
+    {id:5, titolo:"Bando Efficientamento Energetico PMI", ente:"Regione Veneto", regione:"Veneto", data_scadenza:"2026-11-15", contributo_max:80000, percentuale_fondo_perduto:40,
+      descrizione:"Contributi per interventi di efficientamento energetico e installazione di impianti da fonti rinnovabili.",
+      spese_ammissibili:["Impianti fotovoltaici","Isolamento termico","Sistemi di accumulo energetico"],
+      link:"#", matches:[{clienteId:2,score:93},{clienteId:1,score:52}]},
+    {id:6, titolo:"bando efficientamento energetico pmi", ente:"Regione Veneto", regione:"Veneto", data_scadenza:"2026-11-15", contributo_max:80000, percentuale_fondo_perduto:40,
+      descrizione:"Contributi per interventi di efficientamento energetico e installazione di impianti da fonti rinnovabili.",
+      spese_ammissibili:["Impianti fotovoltaici","Isolamento termico","Sistemi di accumulo energetico"],
+      link:"#", matches:[{clienteId:2,score:93},{clienteId:1,score:52}]},
+    {id:7, titolo:"Fondo Perduto Turismo e Ospitalità", ente:"Regione Toscana", regione:"Toscana", data_scadenza:"2026-03-10", contributo_max:60000, percentuale_fondo_perduto:60,
+      descrizione:"Sostegno alle imprese del settore turistico-ricettivo per la riqualificazione delle strutture.",
+      spese_ammissibili:["Ristrutturazione strutture ricettive","Arredi","Impianti"],
+      link:"#", matches:[{clienteId:5,score:68}]},
+    {id:8, titolo:"Bando Internazionalizzazione Export", ente:"ICE Agenzia", regione:"Nazionale", data_scadenza:"2026-12-05", contributo_max:120000, percentuale_fondo_perduto:45,
+      descrizione:"Contributi per la partecipazione a fiere internazionali e lo sviluppo di canali export.",
+      spese_ammissibili:["Partecipazione a fiere estere","Studi di mercato","Materiale promozionale multilingua"],
+      link:"#", matches:[{clienteId:4,score:71},{clienteId:5,score:49},{clienteId:6,score:63}]}
+  ];
+  let nextBandoId = 9;
+
+  let bandiFilter = { search:"", status:"tutti", regione:"", sort:{key:null, dir:1} };
+  let clientiSearch = "";
+  let dashboardSortKey = "score";
+  let pendingDeleteBandoId = null;
+  let pendingDeleteClienteId = null;
+  let uploadLog = [];
+
+  /* ---------------- Helpers ---------------- */
+  const MESI = ["gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"];
+  const STOPWORDS = new Set(["srl","spa","snc","sas","associati","e","di","&","group","studio"]);
+
+  function daysUntil(dateStr){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const target = new Date(dateStr + "T00:00:00");
+    return Math.round((target - today) / 86400000);
+  }
+  function formatDate(dateStr){
+    const d = new Date(dateStr + "T00:00:00");
+    return `${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  function formatEuro(n){
+    return "€ " + Number(n).toLocaleString("it-IT");
+  }
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+  function slugify(str){
+    return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");
+  }
+  function scoreColorVar(score){
+    if(score >= 75) return "var(--pine)";
+    if(score >= 50) return "var(--ochre)";
+    return "var(--crimson)";
+  }
+  function scoreBadgeClass(score){
+    if(score >= 75) return "badge-success";
+    if(score >= 50) return "badge-warning";
+    return "badge-danger";
+  }
+  function urgencyBadge(dateStr){
+    const days = daysUntil(dateStr);
+    if(days < 0) return `<span class="badge badge-neutral"><span class="badge-dot"></span>Scaduto</span>`;
+    if(days <= 15) return `<span class="badge badge-danger"><span class="badge-dot"></span>tra ${days} gg</span>`;
+    if(days <= 45) return `<span class="badge badge-warning"><span class="badge-dot"></span>tra ${days} gg</span>`;
+    return `<span class="badge badge-success"><span class="badge-dot"></span>tra ${days} gg</span>`;
+  }
+  function dimensioneBadge(dim){
+    const map = {micro:"badge-neutral", piccola:"badge-accent", media:"badge-warning", grande:"badge-gold"};
+    const cls = map[dim] || "badge-neutral";
+    return `<span class="badge ${cls}"><span class="badge-dot"></span>${dim}</span>`;
+  }
+  function initialsFor(ragioneSociale){
+    const words = ragioneSociale.split(/\s+/).filter(w => w && !STOPWORDS.has(w.toLowerCase().replace(/[^a-z]/gi,"")));
+    const chars = words.slice(0,2).map(w => w[0].toUpperCase());
+    return chars.join("") || ragioneSociale.slice(0,2).toUpperCase();
+  }
+  function getCliente(id){ return clienti.find(c => c.id === id); }
+  function topScore(bando){
+    if(!bando.matches.length) return 0;
+    return Math.max(...bando.matches.map(m => m.score));
+  }
+  function compatibleMatches(bando){
+    return bando.matches
+      .filter(m => getCliente(m.clienteId))
+      .slice()
+      .sort((a,b) => b.score - a.score);
+  }
+  function countCompatibleBandiForCliente(clienteId){
+    return bandi.filter(b => b.matches.some(m => m.clienteId === clienteId && m.score >= 50)).length;
+  }
+  function countBandiConClientiCompatibili(){
+    return bandi.filter(b => b.matches.some(m => m.score >= 50)).length;
+  }
+  function countAbbinamenti(){
+    return bandi.reduce((sum,b) => sum + b.matches.filter(m => m.score >= 50).length, 0);
+  }
+
+  /* ---------------- Toasts ---------------- */
+  function showToast(message, type){
+    type = type || "info";
+    const icons = {success:"ti-circle-check", error:"ti-alert-circle", info:"ti-info-circle"};
+    const el = document.createElement("div");
+    el.className = "toast " + type;
+    el.innerHTML = `<i class="ti ${icons[type]}"></i><span>${escapeHtml(message)}</span>`;
+    document.getElementById("toastContainer").appendChild(el);
+    setTimeout(() => {
+      el.style.transition = "opacity 220ms ease, transform 220ms ease";
+      el.style.opacity = "0";
+      el.style.transform = "translateX(16px)";
+      setTimeout(() => el.remove(), 240);
+    }, 3400);
+  }
+
+  /* ---------------- Modal ---------------- */
+  const modalOverlay = document.getElementById("modalOverlay");
+  const modalContent = document.getElementById("modalContent");
+  function openModal(html){
+    modalContent.innerHTML = html;
+    modalOverlay.classList.add("show");
+    const firstInput = modalContent.querySelector("input, select, textarea, button");
+    if(firstInput) firstInput.focus();
+  }
+  function closeModal(){
+    modalOverlay.classList.remove("show");
+    modalContent.innerHTML = "";
+  }
+  modalOverlay.addEventListener("click", e => { if(e.target === modalOverlay) closeModal(); });
+  document.addEventListener("keydown", e => { if(e.key === "Escape" && modalOverlay.classList.contains("show")) closeModal(); });
+
+  /* ---------------- Navigation ---------------- */
+  const sidebar = document.getElementById("sidebar");
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+
+  function setPage(pageName){
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById("page-" + pageName).classList.add("active");
+    document.querySelectorAll(".nav-item").forEach(btn => {
+      const active = btn.dataset.page === pageName;
+      btn.classList.toggle("active", active);
+      if(active) btn.setAttribute("aria-current","page"); else btn.removeAttribute("aria-current");
+    });
+    closeSidebar();
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll(".nav-item").forEach(btn => {
+    btn.addEventListener("click", () => setPage(btn.dataset.page));
+  });
+  function openSidebar(){ sidebar.classList.add("open"); sidebarBackdrop.classList.add("show"); hamburgerBtn.setAttribute("aria-expanded","true"); }
+  function closeSidebar(){ sidebar.classList.remove("open"); sidebarBackdrop.classList.remove("show"); hamburgerBtn.setAttribute("aria-expanded","false"); }
+  hamburgerBtn.addEventListener("click", () => {
+    sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+  });
+  sidebarBackdrop.addEventListener("click", closeSidebar);
+
+  /* ---------------- Rendering: Dashboard ---------------- */
+  function renderKpis(){
+    document.getElementById("kpiTotaleBandi").textContent = bandi.length;
+    document.getElementById("kpiAbbinamenti").textContent = countAbbinamenti();
+    document.getElementById("kpiBandiCompatibili").textContent = countBandiConClientiCompatibili();
+  }
+
+  function renderUrgencyRail(){
+    const rail = document.getElementById("urgencyRail");
+    const track = document.getElementById("urgencyRailTrack");
+    const urgent = bandi
+      .filter(b => { const d = daysUntil(b.data_scadenza); return d >= 0 && d <= 30; })
+      .sort((a,b) => daysUntil(a.data_scadenza) - daysUntil(b.data_scadenza))
+      .slice(0,6);
+    if(!urgent.length){ rail.style.display = "none"; track.innerHTML = ""; return; }
+    rail.style.display = "block";
+    track.innerHTML = urgent.map(b => {
+      const days = daysUntil(b.data_scadenza);
+      const color = days <= 15 ? "var(--crimson)" : "var(--ochre)";
+      return `<button class="urgency-chip" style="--chip-color:${color}" data-action="scheda" data-id="${b.id}">
+        <span class="urgency-chip-days">${days}gg</span>
+        <span class="urgency-chip-title">${escapeHtml(b.titolo)}</span>
+      </button>`;
+    }).join("");
+  }
+
+  function sortedBandiForDashboard(){
+    const copy = bandi.slice();
+    if(dashboardSortKey === "score") copy.sort((a,b) => topScore(b) - topScore(a));
+    else if(dashboardSortKey === "scadenza") copy.sort((a,b) => daysUntil(a.data_scadenza) - daysUntil(b.data_scadenza));
+    else if(dashboardSortKey === "contributo") copy.sort((a,b) => b.contributo_max - a.contributo_max);
+    return copy;
+  }
+
+  function renderBandoCard(bando, idx){
+    const score = topScore(bando);
+    const tier = scoreColorVar(score);
+    const matches = compatibleMatches(bando);
+    const clientsHtml = matches.length
+      ? matches.map(m => {
+          const c = getCliente(m.clienteId);
+          if(!c) return "";
+          return `<li class="client-chip"><span class="client-chip-name">${escapeHtml(c.ragione_sociale)}</span><span class="badge ${scoreBadgeClass(m.score)}">${m.score}%</span></li>`;
+        }).join("")
+      : `<li class="client-chip-empty">Nessun cliente compatibile al momento</li>`;
+
+    return `
+    <article class="bando-card" data-bando-id="${bando.id}" style="--i:${idx}">
+      <div class="bando-card-top">
+        <div>
+          <h3>${escapeHtml(bando.titolo)}</h3>
+          <p class="ente"><i class="ti ti-building-bank"></i>${escapeHtml(bando.ente)}</p>
+        </div>
+        <div class="stamp" style="--score:${score};--tier:${tier};--i:${idx}">
+          <div class="stamp-fill"></div>
+          <div class="stamp-ring"></div>
+          <span class="stamp-value">${score}%</span>
+        </div>
+      </div>
+      <div class="bando-card-meta">
+        <div class="meta-item"><i class="ti ti-currency-euro"></i><span>Fino a <strong>${formatEuro(bando.contributo_max)}</strong></span></div>
+        <div class="meta-item"><i class="ti ti-calendar"></i><span>Scade il ${formatDate(bando.data_scadenza)}</span> ${urgencyBadge(bando.data_scadenza)}</div>
+      </div>
+      <div>
+        <p class="clients-label">Clienti compatibili (${matches.length})</p>
+        <ul class="client-chip-list">${clientsHtml}</ul>
+      </div>
+      <div class="bando-card-actions">
+        <button class="btn btn-secondary btn-sm" data-action="scheda" data-id="${bando.id}"><i class="ti ti-file-description"></i>Scheda</button>
+        <button class="icon-btn" data-action="download" data-id="${bando.id}" aria-label="Scarica scheda in markdown" title="Scarica scheda"><i class="ti ti-download"></i></button>
+        <button class="icon-btn" data-action="link" data-id="${bando.id}" aria-label="Apri link fonte ufficiale" title="Link fonte ufficiale"><i class="ti ti-external-link"></i></button>
+      </div>
+    </article>`;
+  }
+
+  function renderDashboardGrid(){
+    const grid = document.getElementById("dashboardGrid");
+    if(!bandi.length){
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;"><i class="ti ti-inbox"></i>Nessun bando presente. Caricane uno dalla sezione "Carica Bando".</div>`;
+      return;
+    }
+    grid.innerHTML = sortedBandiForDashboard().map(renderBandoCard).join("");
+    renderUrgencyRail();
+  }
+
+  document.getElementById("dashboardSort").addEventListener("change", e => {
+    dashboardSortKey = e.target.value;
+    renderDashboardGrid();
+  });
+
+  /* ---------------- Rendering: Bandi table ---------------- */
+  function populateRegioneFilter(){
+    const select = document.getElementById("bandiRegioneFilter");
+    const current = select.value;
+    const regioni = Array.from(new Set(bandi.map(b => b.regione))).sort();
+    select.innerHTML = `<option value="">Tutte le regioni</option>` + regioni.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join("");
+    select.value = current;
+  }
+
+  function filteredBandi(){
+    const q = bandiFilter.search.trim().toLowerCase();
+    let rows = bandi.filter(b => {
+      if(q && !(b.titolo.toLowerCase().includes(q) || b.ente.toLowerCase().includes(q))) return false;
+      if(bandiFilter.regione && b.regione !== bandiFilter.regione) return false;
+      const days = daysUntil(b.data_scadenza);
+      if(bandiFilter.status === "attivi" && days < 0) return false;
+      if(bandiFilter.status === "scaduti" && days >= 0) return false;
+      return true;
+    });
+    const {key, dir} = bandiFilter.sort;
+    if(key){
+      rows = rows.slice().sort((a,b) => {
+        let av = a[key], bv = b[key];
+        if(typeof av === "string") { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+        if(av < bv) return -1 * dir;
+        if(av > bv) return 1 * dir;
+        return 0;
+      });
+    }
+    return rows;
+  }
+
+  function renderBandiTable(){
+    const tbody = document.getElementById("bandiTableBody");
+    const rows = filteredBandi();
+    document.getElementById("bandiResultsCount").textContent = `${rows.length} bando${rows.length === 1 ? "" : "i"} su ${bandi.length}`;
+    document.querySelectorAll('.data-table th.sortable').forEach(th => {
+      const active = th.dataset.sort === bandiFilter.sort.key;
+      th.classList.toggle("sort-active", active);
+      const icon = th.querySelector("i");
+      icon.className = active ? (bandiFilter.sort.dir === 1 ? "ti ti-sort-ascending" : "ti ti-sort-descending") : "ti ti-arrows-sort";
+    });
+    if(!rows.length){
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="ti ti-search-off"></i>Nessun bando corrisponde ai filtri selezionati.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((b, idx) => {
+      const isConfirming = pendingDeleteBandoId === b.id;
+      const actions = isConfirming
+        ? `<div class="confirm-inline"><span>Eliminare?</span>
+             <button class="icon-btn danger" data-action="confirm-delete-bando" data-id="${b.id}" aria-label="Conferma eliminazione"><i class="ti ti-check"></i></button>
+             <button class="icon-btn" data-action="cancel-delete-bando" data-id="${b.id}" aria-label="Annulla eliminazione"><i class="ti ti-x"></i></button>
+           </div>`
+        : `<div class="cell-actions">
+             <button class="icon-btn" data-action="scheda" data-id="${b.id}" aria-label="Vedi scheda bando" title="Scheda"><i class="ti ti-file-description"></i></button>
+             <button class="icon-btn" data-action="download" data-id="${b.id}" aria-label="Scarica scheda" title="Scarica"><i class="ti ti-download"></i></button>
+             <button class="icon-btn danger" data-action="delete-bando" data-id="${b.id}" aria-label="Elimina bando" title="Elimina"><i class="ti ti-trash"></i></button>
+           </div>`;
+      return `<tr>
+        <td class="cell-muted cell-mono">${idx + 1}</td>
+        <td class="cell-title">${escapeHtml(b.titolo)}</td>
+        <td class="cell-muted">${escapeHtml(b.ente)}</td>
+        <td>${formatDate(b.data_scadenza)} ${urgencyBadge(b.data_scadenza)}</td>
+        <td class="cell-mono">${formatEuro(b.contributo_max)}</td>
+        <td class="text-right">${actions}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  document.querySelectorAll('.data-table th.sortable').forEach(th => {
+    th.addEventListener("click", () => {
+      const key = th.dataset.sort;
+      if(bandiFilter.sort.key === key) bandiFilter.sort.dir *= -1;
+      else bandiFilter.sort = {key, dir:1};
+      renderBandiTable();
+    });
+  });
+
+  /* ---------------- Rendering: Clienti table ---------------- */
+  function filteredClienti(){
+    const q = clientiSearch.trim().toLowerCase();
+    if(!q) return clienti;
+    return clienti.filter(c =>
+      c.ragione_sociale.toLowerCase().includes(q) ||
+      c.p_iva.toLowerCase().includes(q) ||
+      c.codice_ateco.toLowerCase().includes(q)
+    );
+  }
+
+  function renderClientiTable(){
+    const tbody = document.getElementById("clientiTableBody");
+    const rows = filteredClienti();
+    if(!clienti.length){
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ti ti-users"></i>Nessun cliente in anagrafica.</div></td></tr>`;
+      return;
+    }
+    if(!rows.length){
+      tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ti ti-search-off"></i>Nessun cliente corrisponde alla ricerca.</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map(c => {
+      const isConfirming = pendingDeleteClienteId === c.id;
+      const actions = isConfirming
+        ? `<div class="confirm-inline"><span>Eliminare?</span>
+             <button class="icon-btn danger" data-action="confirm-delete-cliente" data-id="${c.id}" aria-label="Conferma eliminazione"><i class="ti ti-check"></i></button>
+             <button class="icon-btn" data-action="cancel-delete-cliente" data-id="${c.id}" aria-label="Annulla eliminazione"><i class="ti ti-x"></i></button>
+           </div>`
+        : `<div class="cell-actions">
+             <button class="icon-btn" data-action="edit-cliente" data-id="${c.id}" aria-label="Modifica cliente" title="Modifica"><i class="ti ti-edit"></i></button>
+             <button class="icon-btn danger" data-action="delete-cliente" data-id="${c.id}" aria-label="Elimina cliente" title="Elimina"><i class="ti ti-trash"></i></button>
+           </div>`;
+      const nBandi = countCompatibleBandiForCliente(c.id);
+      return `<tr>
+        <td><div class="client-name-cell"><div class="seal-badge">${initialsFor(c.ragione_sociale)}</div><div class="client-name-text"><strong>${escapeHtml(c.ragione_sociale)}</strong><span>${escapeHtml(c.descrizione_attivita)}</span></div></div></td>
+        <td class="cell-muted cell-mono">${escapeHtml(c.p_iva)}</td>
+        <td class="cell-muted cell-mono">${escapeHtml(c.codice_ateco)}</td>
+        <td class="cell-muted">${escapeHtml(c.regione)}</td>
+        <td class="cell-mono">${formatEuro(c.fatturato)}</td>
+        <td>${dimensioneBadge(c.dimensione)}</td>
+        <td><span class="badge ${nBandi>0?'badge-accent':'badge-neutral'}">${nBandi}</span></td>
+        <td class="text-right">${actions}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  document.getElementById("clientiSearch").addEventListener("input", e => {
+    clientiSearch = e.target.value;
+    renderClientiTable();
+  });
+
+  function renderAll(){
+    renderKpis();
+    renderDashboardGrid();
+    populateRegioneFilter();
+    renderBandiTable();
+    renderClientiTable();
+  }
+
+  /* ---------------- Dashboard actions ---------------- */
+  document.getElementById("btnExportCsv").addEventListener("click", () => {
+    const header = ["Bando","Ente","Cliente","Score","Scadenza","Contributo Max"];
+    const rows = [header.join(",")];
+    bandi.forEach(b => {
+      b.matches.forEach(m => {
+        const c = getCliente(m.clienteId);
+        if(!c) return;
+        rows.push([
+          `"${b.titolo.replace(/"/g,'""')}"`,
+          `"${b.ente.replace(/"/g,'""')}"`,
+          `"${c.ragione_sociale.replace(/"/g,'""')}"`,
+          m.score,
+          b.data_scadenza,
+          b.contributo_max
+        ].join(","));
+      });
+    });
+    const blob = new Blob([rows.join("\n")], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "matching_export.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Export CSV completato", "success");
+  });
+
+  document.getElementById("btnDeduplica").addEventListener("click", () => {
+    const seen = new Map();
+    const toRemove = [];
+    bandi.forEach(b => {
+      const key = b.titolo.trim().toLowerCase() + "|" + b.ente.trim().toLowerCase();
+      if(seen.has(key)) toRemove.push(b.id);
+      else seen.set(key, b.id);
+    });
+    if(!toRemove.length){
+      showToast("Nessun duplicato trovato", "info");
+      return;
+    }
+    bandi = bandi.filter(b => !toRemove.includes(b.id));
+    renderAll();
+    showToast(`${toRemove.length} bando duplicato rimosso`, "success");
+  });
+
+  document.getElementById("btnRicalcola").addEventListener("click", () => {
+    let count = 0;
+    bandi.forEach(b => {
+      b.matches.forEach(m => {
+        const delta = Math.round((Math.random() * 8) - 4);
+        m.score = Math.max(0, Math.min(100, m.score + delta));
+        count++;
+      });
+    });
+    renderAll();
+    showToast(`Match ricalcolati per ${bandi.length} bandi (${count} abbinamenti aggiornati)`, "success");
+  });
+
+  /* ---------------- Scheda / download / link ---------------- */
+  function schedaMarkdown(b){
+    return `# ${b.titolo}
+
+**Ente erogatore:** ${b.ente}
+**Regione:** ${b.regione}
+**Scadenza:** ${formatDate(b.data_scadenza)}
+**Contributo massimo:** ${formatEuro(b.contributo_max)}
+${b.percentuale_fondo_perduto ? `**Percentuale fondo perduto:** ${b.percentuale_fondo_perduto}%\n` : ""}
+## Descrizione
+${b.descrizione}
+
+## Spese ammissibili
+${b.spese_ammissibili.map(s => "- " + s).join("\n")}
+`;
+  }
+
+  function openSchedaModal(bando){
+    const matches = compatibleMatches(bando);
+    const clientsHtml = matches.length
+      ? matches.map(m => {
+          const c = getCliente(m.clienteId);
+          return c ? `<li class="client-chip"><span class="client-chip-name">${escapeHtml(c.ragione_sociale)}</span><span class="badge ${scoreBadgeClass(m.score)}">${m.score}%</span></li>` : "";
+        }).join("")
+      : `<li class="client-chip-empty">Nessun cliente compatibile</li>`;
+
+    openModal(`
+      <div class="modal-header">
+        <h3>Scheda bando</h3>
+        <button class="modal-close" id="modalCloseBtn" aria-label="Chiudi"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="modal-body scheda-detail">
+        <dl>
+          <div class="scheda-row"><dt>Titolo</dt><dd>${escapeHtml(bando.titolo)}</dd></div>
+          <div class="scheda-row"><dt>Ente erogatore</dt><dd>${escapeHtml(bando.ente)}</dd></div>
+          <div class="scheda-row"><dt>Scadenza</dt><dd>${formatDate(bando.data_scadenza)} ${urgencyBadge(bando.data_scadenza)}</dd></div>
+          <div class="scheda-row"><dt>Contributo massimo</dt><dd>${formatEuro(bando.contributo_max)}${bando.percentuale_fondo_perduto ? ` &middot; ${bando.percentuale_fondo_perduto}% a fondo perduto` : ""}</dd></div>
+          <div class="scheda-row"><dt>Descrizione</dt><dd>${escapeHtml(bando.descrizione)}</dd></div>
+          <div class="scheda-row"><dt>Spese ammissibili</dt><dd><div class="tag-list">${bando.spese_ammissibili.map(s => `<span class="badge badge-neutral">${escapeHtml(s)}</span>`).join("")}</div></dd></div>
+          <div class="scheda-row"><dt>Clienti compatibili (${matches.length})</dt><dd><ul class="client-chip-list" style="max-height:160px;">${clientsHtml}</ul></dd></div>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modalDownloadBtn"><i class="ti ti-download"></i>Scarica .md</button>
+        <button class="btn btn-primary" id="modalCloseBtn2">Chiudi</button>
+      </div>
+    `);
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCloseBtn2").addEventListener("click", closeModal);
+    document.getElementById("modalDownloadBtn").addEventListener("click", () => downloadScheda(bando));
+  }
+
+  function downloadScheda(bando){
+    const blob = new Blob([schedaMarkdown(bando)], {type:"text/markdown;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `scheda-${slugify(bando.titolo)}.md`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Scheda scaricata", "success");
+  }
+
+  function handleAction(action, id){
+    const bando = bandi.find(b => b.id === id);
+    if(action === "scheda" && bando){ openSchedaModal(bando); return; }
+    if(action === "download" && bando){ downloadScheda(bando); return; }
+    if(action === "link"){ showToast("In una versione reale si aprirebbe il link ufficiale del bando", "info"); return; }
+    if(action === "delete-bando"){ pendingDeleteBandoId = id; renderBandiTable(); return; }
+    if(action === "cancel-delete-bando"){ pendingDeleteBandoId = null; renderBandiTable(); return; }
+    if(action === "confirm-delete-bando"){
+      bandi = bandi.filter(b => b.id !== id);
+      pendingDeleteBandoId = null;
+      renderAll();
+      showToast("Bando eliminato", "success");
+      return;
+    }
+    if(action === "edit-cliente"){ openClienteModal(getCliente(id)); return; }
+    if(action === "delete-cliente"){ pendingDeleteClienteId = id; renderClientiTable(); return; }
+    if(action === "cancel-delete-cliente"){ pendingDeleteClienteId = null; renderClientiTable(); return; }
+    if(action === "confirm-delete-cliente"){
+      clienti = clienti.filter(c => c.id !== id);
+      bandi.forEach(b => { b.matches = b.matches.filter(m => m.clienteId !== id); });
+      pendingDeleteClienteId = null;
+      renderAll();
+      showToast("Cliente eliminato", "success");
+      return;
+    }
+  }
+
+  document.getElementById("dashboardGrid").addEventListener("click", e => {
+    const btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    handleAction(btn.dataset.action, Number(btn.dataset.id));
+  });
+  document.getElementById("urgencyRailTrack").addEventListener("click", e => {
+    const btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    handleAction(btn.dataset.action, Number(btn.dataset.id));
+  });
+  document.getElementById("bandiTableBody").addEventListener("click", e => {
+    const btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    handleAction(btn.dataset.action, Number(btn.dataset.id));
+  });
+  document.getElementById("clientiTableBody").addEventListener("click", e => {
+    const btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    handleAction(btn.dataset.action, Number(btn.dataset.id));
+  });
+
+  /* ---------------- Bandi filters ---------------- */
+  document.getElementById("bandiSearch").addEventListener("input", e => {
+    bandiFilter.search = e.target.value;
+    renderBandiTable();
+  });
+  document.getElementById("bandiStatusPills").addEventListener("click", e => {
+    const pill = e.target.closest(".pill");
+    if(!pill) return;
+    document.querySelectorAll("#bandiStatusPills .pill").forEach(p => p.classList.remove("active"));
+    pill.classList.add("active");
+    bandiFilter.status = pill.dataset.filter;
+    renderBandiTable();
+  });
+  document.getElementById("bandiRegioneFilter").addEventListener("change", e => {
+    bandiFilter.regione = e.target.value;
+    renderBandiTable();
+  });
+
+  /* ---------------- Cliente form modal ---------------- */
+  const REGIONI_ITALIANE = ["Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio","Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana","Trentino-Alto Adige","Umbria","Valle d'Aosta","Veneto"];
+
+  function openClienteModal(cliente){
+    const isEdit = !!cliente;
+    const c = cliente || {ragione_sociale:"",p_iva:"",codice_ateco:"",descrizione_attivita:"",regione:"Lombardia",fatturato:"",dimensione:"micro"};
+    openModal(`
+      <div class="modal-header">
+        <h3>${isEdit ? "Modifica cliente" : "Aggiungi cliente"}</h3>
+        <button class="modal-close" id="modalCloseBtn" aria-label="Chiudi"><i class="ti ti-x"></i></button>
+      </div>
+      <form id="clienteForm">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-field full">
+              <label for="f_ragione_sociale">Ragione sociale</label>
+              <input id="f_ragione_sociale" required value="${escapeHtml(c.ragione_sociale)}">
+            </div>
+            <div class="form-field full">
+              <label for="f_descrizione">Descrizione attività</label>
+              <input id="f_descrizione" value="${escapeHtml(c.descrizione_attivita)}">
+            </div>
+            <div class="form-field">
+              <label for="f_piva">Partita IVA</label>
+              <input id="f_piva" required maxlength="11" value="${escapeHtml(c.p_iva)}">
+            </div>
+            <div class="form-field">
+              <label for="f_ateco">Codice ATECO</label>
+              <input id="f_ateco" placeholder="XX.XX" value="${escapeHtml(c.codice_ateco)}">
+            </div>
+            <div class="form-field">
+              <label for="f_regione">Regione</label>
+              <select id="f_regione">${REGIONI_ITALIANE.map(r => `<option ${r===c.regione?"selected":""}>${r}</option>`).join("")}</select>
+            </div>
+            <div class="form-field">
+              <label for="f_fatturato">Fatturato annuo (€)</label>
+              <input id="f_fatturato" type="number" min="0" step="1000" value="${c.fatturato}">
+            </div>
+            <div class="form-field">
+              <label for="f_dimensione">Dimensione impresa</label>
+              <select id="f_dimensione">
+                ${["micro","piccola","media","grande"].map(d => `<option value="${d}" ${d===c.dimensione?"selected":""}>${d[0].toUpperCase()+d.slice(1)}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="modalCancelBtn">Annulla</button>
+          <button type="submit" class="btn btn-primary"><i class="ti ti-device-floppy"></i>Salva</button>
+        </div>
+      </form>
+    `);
+    document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+    document.getElementById("modalCancelBtn").addEventListener("click", closeModal);
+    document.getElementById("clienteForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const data = {
+        ragione_sociale: document.getElementById("f_ragione_sociale").value.trim(),
+        descrizione_attivita: document.getElementById("f_descrizione").value.trim(),
+        p_iva: document.getElementById("f_piva").value.trim(),
+        codice_ateco: document.getElementById("f_ateco").value.trim(),
+        regione: document.getElementById("f_regione").value,
+        fatturato: Number(document.getElementById("f_fatturato").value) || 0,
+        dimensione: document.getElementById("f_dimensione").value
+      };
+      if(!data.ragione_sociale || !data.p_iva){
+        showToast("Ragione sociale e Partita IVA sono obbligatorie", "error");
+        return;
+      }
+      if(isEdit){
+        Object.assign(cliente, data);
+        showToast("Cliente aggiornato", "success");
+      } else {
+        const newCliente = Object.assign({id: nextClienteId++}, data);
+        clienti.push(newCliente);
+        bandi.forEach(b => {
+          b.matches.push({clienteId: newCliente.id, score: Math.round(20 + Math.random()*70)});
+        });
+        showToast("Cliente creato e matching avviato automaticamente", "success");
+      }
+      closeModal();
+      renderAll();
+    });
+  }
+
+  document.getElementById("btnAddCliente").addEventListener("click", () => openClienteModal(null));
+
+  /* ---------------- Carica Bando ---------------- */
+  const dropzone = document.getElementById("dropzone");
+  const fileInput = document.getElementById("fileInput");
+  const progressCard = document.getElementById("progressCard");
+  const progressFilename = document.getElementById("progressFilename");
+  const resultSummary = document.getElementById("resultSummary");
+  const resultText = document.getElementById("resultText");
+  const stepsList = document.getElementById("stepsList");
+
+  const MOCK_TITLES = [
+    {titolo:"Bando Ricerca e Sviluppo Tecnologico 2026", ente:"Ministero dell'Università e della Ricerca", contributo_max:180000},
+    {titolo:"Fondo Innovazione PMI Manifatturiere", ente:"Regione Emilia-Romagna", contributo_max:90000},
+    {titolo:"Contributi Start-up Innovative", ente:"Invitalia", contributo_max:100000}
+  ];
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); fileInput.click(); } });
+  ["dragover","dragenter"].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add("dragover"); }));
+  ["dragleave","dragend"].forEach(evt => dropzone.addEventListener(evt, () => dropzone.classList.remove("dragover")));
+  dropzone.addEventListener("drop", e => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if(e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", e => {
+    if(e.target.files.length) processFile(e.target.files[0]);
+    fileInput.value = "";
+  });
+
+  function resetSteps(){
+    stepsList.querySelectorAll(".step-item").forEach(s => s.classList.remove("active","done"));
+  }
+
+  function processFile(file){
+    if(file.type !== "application/pdf"){
+      showToast("Seleziona un file PDF valido", "error");
+      return;
+    }
+    resultSummary.classList.remove("visible");
+    resetSteps();
+    progressCard.classList.add("visible");
+    progressFilename.textContent = `File: ${file.name} · ${(file.size/1024).toFixed(0)} KB`;
+
+    const steps = Array.from(stepsList.querySelectorAll(".step-item"));
+    let i = 0;
+    function nextStep(){
+      if(i > 0) steps[i-1].classList.remove("active");
+      if(i > 0) steps[i-1].classList.add("done");
+      if(i < steps.length){
+        steps[i].classList.add("active");
+        i++;
+        setTimeout(nextStep, 850);
+      } else {
+        finishProcessing(file);
+      }
+    }
+    nextStep();
+  }
+
+  function renderUploadLog(){
+    const list = document.getElementById("uploadLogList");
+    if(!uploadLog.length){
+      list.innerHTML = `<li class="upload-log-empty">Nessun caricamento in questa sessione.</li>`;
+      return;
+    }
+    list.innerHTML = uploadLog.map(entry => `
+      <li class="upload-log-item">
+        <span class="ulog-name">${escapeHtml(entry.titolo)}</span>
+        <span class="ulog-time">${entry.time}</span>
+      </li>`).join("");
+  }
+
+  function finishProcessing(file){
+    progressCard.classList.remove("visible");
+    const mock = MOCK_TITLES[Math.floor(Math.random() * MOCK_TITLES.length)];
+    const newBando = {
+      id: nextBandoId++,
+      titolo: mock.titolo,
+      ente: mock.ente,
+      regione: "Nazionale",
+      data_scadenza: "2026-12-20",
+      contributo_max: mock.contributo_max,
+      percentuale_fondo_perduto: 40,
+      descrizione: "Bando estratto automaticamente dal PDF caricato. Verificare i dettagli con il testo ufficiale.",
+      spese_ammissibili: ["Da verificare sul bando ufficiale"],
+      link: "#",
+      matches: clienti.map(c => ({clienteId: c.id, score: Math.round(20 + Math.random()*70)}))
+    };
+    bandi.push(newBando);
+    const now = new Date();
+    uploadLog.unshift({titolo: newBando.titolo, time: now.toLocaleTimeString("it-IT", {hour:"2-digit", minute:"2-digit"})});
+    uploadLog = uploadLog.slice(0,5);
+    renderUploadLog();
+    resultText.textContent = `"${newBando.titolo}" (${newBando.ente}) è stato estratto, validato e messo a confronto con ${clienti.length} clienti in anagrafica.`;
+    resultSummary.classList.add("visible");
+    renderAll();
+    showToast("Bando caricato ed elaborato con successo", "success");
+  }
+
+  document.getElementById("btnGoDashboard").addEventListener("click", () => setPage("dashboard"));
+
+  /* ---------------- Init ---------------- */
+  renderAll();
+})();
+</script>
+</body>
+</html>

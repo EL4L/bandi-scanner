@@ -405,7 +405,7 @@ if page == "Dashboard":
                         
                         # Recupero dati e calcolo breakdown
                         with get_connection() as conn:
-                            cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = ?", (cliente_id,)).fetchone()
+                            cliente_row_db = conn.execute("SELECT * FROM clienti WHERE id = %s", (cliente_id,)).fetchone()
                             if cliente_row_db:
                                 cliente_row = dict(cliente_row_db)
                             else:

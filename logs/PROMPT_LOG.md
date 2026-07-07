@@ -14,8 +14,9 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 | 1.1 | 2026-05-21 | idem | Istruzioni esplicite su `data_scadenza` YYYY-MM-DD; rimosso “lascia vuoto se incerto” troppo permissivo |
 | 2.0 | 2026-05-21 | idem | Schema annidato `{"bando": {...}}`, vincoli Melanie (solo testo, `null`, `attivita_ammesse`, `note_esclusioni`, strategia di analisi) |
 | 3.0 | 2026-06-03 | idem | Destrutturazione `note_esclusioni` in dict JSON (liste ATECO/attività); Regole logiche booleane rigide per `ateco_aperto_a_tutti`. |
+| 3.1 | 2026-07-02 | idem | Aggiunto campo `spesa_massima_ammissibile` (tetto massimo spesa per singolo progetto, distinto da `contributo_max`); aggiornato esempio JSON di schema e aggiunta regola esplicita in "Regole Rigide". Sincronizzato con `BANDO_SCHEMA` in `modules/schema.py`. **Nota (2026-07-04):** aggiunte, come integrazione alla stessa versione 3.1, le sezioni "Gestione Ambiguità" (settori esclusi vs ammessi, percentuale fondo perduto implicita, più date di scadenza) ed "Esempi di casi edge" (2 esempi completi) in `prompts/system_extraction.md`. |
 
-**Modello API:** `claude-sonnet-4-6` · **max_tokens:** 4000 · **Retry:** 3 tentativi, 300 s tra un tentativo e l’altro (`tenacity`).
+**Modello API:** `deepseek/deepseek-v4-flash` via OpenRouter (fallback `claude-haiku-4-5-20251001`) · **Retry:** 3 tentativi, intervallo configurabile via `LLM_RETRY_WAIT_SECONDS` (default 60 s) (`tenacity`).
 
 ---
 
@@ -156,4 +157,39 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 ### bando_ateco_specifico.pdf — 2026-06-24 17:33:34
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.anzianita_impresa
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### nuova_sabatini_esclusioni.pdf — 2026-06-27 19:38:42
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.data_scadenza, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Campi null/vuoti:** bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.link_fonte_ufficiale
+- **Note:** Validazione OK
+
+### nuova_sabatini_esclusioni.pdf — 2026-06-28 00:04:57
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.link_fonte_ufficiale, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### complesso_claude.pdf — 2026-06-28 00:12:03
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.fatturato_max, bando.contributo_max, bando.link_fonte_ufficiale, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### nuova_sabatini_esclusioni.pdf — 2026-06-28 00:28:07
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto
+- **Note:** Validazione OK
+
+### complesso_claude.pdf — 2026-07-02 19:06:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Campi null/vuoti:** bando.data_scadenza, bando.fatturato_max
+- **Note:** Validazione OK
+
+### complesso_claude.pdf — 2026-07-02 19:39:30
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Campi null/vuoti:** bando.data_scadenza, bando.fatturato_max, bando.link_fonte_ufficiale
+- **Note:** Validazione OK
+
+### Bando 499 Assistenti informatici.pdf — 2026-07-07 14:46:21
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.ateco_aperto_a_tutti, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.data_scadenza, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
 - **Note:** Validazione OK

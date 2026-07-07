@@ -84,6 +84,9 @@ def infer_data_scadenza_from_text(text: str) -> str | None:
 
     if scored:
         best = max(scored, key=lambda x: x[0])[1]
+        # Scarta la data se è troppo vecchia: non può essere una scadenza valida
+        if (today - best).days > 180:
+            return None
         return best.strftime("%Y-%m-%d")
 
     if future_dates:

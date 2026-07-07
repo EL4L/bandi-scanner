@@ -134,20 +134,21 @@ def validate_format_fields(bando: dict[str, Any]) -> list[str]:
     return errors
 
 
-def validate_logical_fields(bando: dict[str, Any]) -> list[str]:
+def validate_logical_fields(bando: dict[str, Any]) -> tuple[list[str], list[str]]:
     errors: list[str] = []
+    warnings: list[str] = []
     raw = bando.get("data_scadenza")
     if raw is None or (isinstance(raw, str) and not raw.strip()):
-        return errors
+        return errors, warnings
     if not isinstance(raw, str) or not ISO_DATE_RE.match(raw.strip()):
-        return errors
+        return errors, warnings
     parsed = _parse_date(raw)
     if parsed is None:
         errors.append("bando.data_scadenza non è una data valida")
-        return errors
+        return errors, warnings
     if parsed.date() <= date.today():
-        errors.append("bando.data_scadenza deve essere successiva alla data odierna")
-    return errors
+        warnings.append("data_scadenza nel passato — verificare se il bando è ancora attivo")
+    return errors, warnings
 
 
 def calculate_null_percentage(bando: dict[str, Any]) -> float:
@@ -196,7 +197,9 @@ def validate_bando(
 
     wrapped["bando"] = bando
     errors.extend(validate_format_fields(bando))
-    errors.extend(validate_logical_fields(bando))
+    logical_errors, logical_warnings = validate_logical_fields(bando)
+    errors.extend(logical_errors)
+    warnings.extend(logical_warnings)
 
     null_pct = calculate_null_percentage(bando)
     needs_review = should_review_manually(bando)

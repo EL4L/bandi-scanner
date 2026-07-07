@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
+import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Breakdown {
   total: number
@@ -48,20 +49,6 @@ interface DashboardData {
   cards: BandoCard[]
 }
 
-function urgencyLabel(urgenza: string): string {
-  if (urgenza === 'alta') return 'Urgente'
-  if (urgenza === 'media') return 'In scadenza'
-  if (urgenza === 'bassa') return 'Regolare'
-  return urgenza
-}
-
-function urgencyClass(urgenza: string): string {
-  if (urgenza === 'alta') return 'badge-alta'
-  if (urgenza === 'media') return 'badge-media'
-  if (urgenza === 'bassa') return 'badge-bassa'
-  return 'badge-neutral'
-}
-
 const BLANK_VALUES = new Set(['n/d', 'null', 'none', 'undefined', ''])
 function isBlank(v: string | null | undefined): boolean {
   if (v == null) return true
@@ -78,71 +65,6 @@ function matchBadgeClass(cls: string): string {
   if (cls === 'match-score-high') return 'match-badge match-badge-high'
   if (cls === 'match-score-mid') return 'match-badge match-badge-mid'
   return 'match-badge match-badge-low'
-}
-
-function criterioIcon(s: string): string {
-  if (s.includes('non verificabile')) return '⚠️'
-  if (s.includes('OK')) return '✅'
-  return '•'
-}
-
-function pillClass(score: number, max: number): string {
-  if (score >= max) return 'breakdown-pill-full'
-  if (score > 0) return 'breakdown-pill-partial'
-  return 'breakdown-pill-zero'
-}
-
-function giorniText(giorni: number | null): string {
-  if (giorni === null) return ''
-  if (giorni < 0) return 'Scaduto'
-  if (giorni === 0) return 'Scade oggi'
-  return `${giorni} gg`
-}
-
-function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: React.ReactNode[] = []
-  let listItems: string[] = []
-  let listKey = 0
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={`ul-${listKey++}`}>
-          {listItems.map((item, i) => <li key={i}>{inlineParse(item)}</li>)}
-        </ul>
-      )
-      listItems = []
-    }
-  }
-
-  const inlineParse = (s: string): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*)/)
-    return parts.map((p, i) =>
-      p.startsWith('**') && p.endsWith('**')
-        ? <strong key={i}>{p.slice(2, -2)}</strong>
-        : p
-    )
-  }
-
-  lines.forEach((line, i) => {
-    if (line.startsWith('# ')) { flushList(); elements.push(<h1 key={i}>{line.slice(2)}</h1>) }
-    else if (line.startsWith('## ')) { flushList(); elements.push(<h2 key={i}>{line.slice(3)}</h2>) }
-    else if (line.startsWith('### ')) { flushList(); elements.push(<h3 key={i}>{line.slice(4)}</h3>) }
-    else if (line.startsWith('- ') || line.startsWith('* ')) { listItems.push(line.slice(2)) }
-    else if (line.trim() === '') { flushList() }
-    else { flushList(); elements.push(<p key={i}>{inlineParse(line)}</p>) }
-  })
-  flushList()
-  return <>{elements}</>
-}
-
-function IconChevron() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  )
 }
 
 function IconRefresh() {
@@ -184,55 +106,23 @@ function IconDedup() {
   )
 }
 
-function IconClose() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  )
-}
 
 function isExpiredCard(card: BandoCard): boolean {
   return card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza < 0
 }
 
-interface SchedaModal {
-  id: number
-  titolo: string
-  scheda: string
-  fonte_url: string | null
-}
+type SchedaModal = SchedaModalData
 
 function BandoCardItem({
   card,
-  expanded,
-  onToggle,
   onScheda,
 }: {
   card: BandoCard
-  expanded: boolean
-  onToggle: () => void
   onScheda: () => void
 }) {
-  const [expandedMatches, setExpandedMatches] = useState<Set<number>>(new Set())
-  const toggleMatch = (i: number) => {
-    setExpandedMatches(prev => {
-      const next = new Set(prev)
-      if (next.has(i)) next.delete(i); else next.add(i)
-      return next
-    })
-  }
-
-  const giorni = giorniText(card.giorni_alla_scadenza)
-  const expired = isExpiredCard(card)
-  const urgencyRail = expired
-    ? 'bando-card--scaduto'
-    : card.urgenza && !isBlank(card.urgenza)
-      ? `bando-card--${card.urgenza}`
-      : ''
-
   return (
-    <div className={`bando-card ${urgencyRail}`.trimEnd()}>
+    <div className="bando-card">
+      <div className="bando-card-inner">
       <div className="bando-card-top">
         <div style={{ flex: 1, minWidth: 0 }}>
           <p className="bando-card-title">{card.titolo || `Bando #${card.id}`}</p>
@@ -246,93 +136,36 @@ function BandoCardItem({
         </div>
       </div>
 
-      <div className="bando-card-meta">
-        {card.urgenza && !isBlank(card.urgenza) && (
-          <span className={`badge ${urgencyClass(card.urgenza)}`}>
-            {urgencyLabel(card.urgenza)}
-          </span>
-        )}
-        {giorni && (
-          <span className="bando-card-stat"><strong>{giorni}</strong></span>
-        )}
-        {!isBlank(card.scadenza) && (
-          <span className="bando-card-stat">Scade <strong>{card.scadenza}</strong></span>
-        )}
-        {!isBlank(card.contributo_max) && (
-          <span className="bando-card-stat"><strong>{card.contributo_max}</strong></span>
-        )}
-      </div>
+      {!isBlank(card.contributo_max) && (
+        <div className="bando-card-contributo-row">
+          <span className="bando-card-contributo-label">Contributo max</span>
+          <span className="bando-card-contributo">{card.contributo_max}</span>
+        </div>
+      )}
 
       {card.matches.length > 0 && (
-        <>
-          <button className={`expander-trigger${expanded ? ' open' : ''}`} onClick={onToggle}>
-            <span>{card.matches.length} {card.matches.length === 1 ? 'cliente compatibile' : 'clienti compatibili'}</span>
-            <IconChevron />
-          </button>
-          {expanded && (
-            <div className="match-list">
-              {card.matches.slice(0, 5).map((m, i) => {
-                const escluso = m.ammissibilita?.ammissibile === false
-                return (
-                  <div key={i}>
-                    <div className={`match-row${expandedMatches.has(i) ? ' match-row--open' : ''}${escluso ? ' match-excluded' : ''}`}>
-                      <span
-                        className="match-row-name match-row-name--clickable"
-                        onClick={() => toggleMatch(i)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggleMatch(i) }}
-                      >
-                        {m.nome}
-                      </span>
-                      <div className="match-row-right">
-                        {escluso && (
-                          <span className="badge badge-escluso">⛔ Non ammissibile</span>
-                        )}
-                        {m.settore_da_verificare && (
-                          <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>Settore da verificare</span>
-                        )}
-                        <span className={escluso ? 'match-badge match-badge-excluded' : matchBadgeClass(m.score_badge_class)}>
-                          {m.score}%
-                        </span>
-                      </div>
-                    </div>
-                    {expandedMatches.has(i) && (
-                      <div className="match-breakdown">
-                        {escluso && m.ammissibilita!.motivi_esclusione.length > 0 && (
-                          <div className="ammissibilita-box">
-                            <p className="ammissibilita-box-title">⛔ Questo cliente non soddisfa i requisiti minimi del bando</p>
-                            <ul>
-                              {m.ammissibilita!.motivi_esclusione.map((motivo, j) => (
-                                <li key={j}>{motivo}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        <div className="breakdown-pills">
-                          <span className={`breakdown-pill ${pillClass(m.breakdown.regione, 30)}`}>Regione {m.breakdown.regione}/30</span>
-                          <span className={`breakdown-pill ${pillClass(m.breakdown.ateco, 40)}`}>ATECO {m.breakdown.ateco}/40</span>
-                          <span className={`breakdown-pill ${pillClass(m.breakdown.dimensione, 20)}`}>Dimensione {m.breakdown.dimensione}/20</span>
-                          <span className={`breakdown-pill ${pillClass(m.breakdown.fatturato, 10)}`}>Fatturato {m.breakdown.fatturato}/10</span>
-                        </div>
-                        {m.spiegazione_score && (
-                          <p className="breakdown-spiegazione">{m.spiegazione_score}</p>
-                        )}
-                        {m.ammissibilita && m.ammissibilita.criteri_verificati.length > 0 && (
-                          <ul className="criteri-list">
-                            {m.ammissibilita.criteri_verificati.map((c, j) => (
-                              <li key={j}>{criterioIcon(c)} {c}</li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </>
+        <div className="match-list match-list--static">
+          <p className="match-list-label">
+            {card.matches.length} {card.matches.length === 1 ? 'cliente compatibile' : 'clienti compatibili'}
+          </p>
+          {card.matches.map((m, i) => {
+            const escluso = m.ammissibilita?.ammissibile === false
+            return (
+              <div key={i} className={`match-row${escluso ? ' match-excluded' : ''}`}>
+                <span className="match-row-name">{m.nome}</span>
+                <div className="match-row-right">
+                  {escluso ? (
+                    <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                  ) : (
+                    <span className={matchBadgeClass(m.score_badge_class)}>
+                      {m.score}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {card.matches.length === 0 && (
@@ -367,6 +200,7 @@ function BandoCardItem({
           </a>
         )}
       </div>
+      </div>
     </div>
   )
 }
@@ -377,7 +211,6 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [recalcLoading, setRecalcLoading] = useState(false)
   const [deduplicaLoading, setDeduplicaLoading] = useState(false)
-  const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [showExpiredSection, setShowExpiredSection] = useState(false)
 
@@ -447,15 +280,6 @@ export default function Dashboard() {
     } finally {
       setDeduplicaLoading(false)
     }
-  }
-
-  const toggleCard = (id: number) => {
-    setExpanded(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   }
 
   if (loading) {
@@ -560,8 +384,6 @@ export default function Dashboard() {
                   <BandoCardItem
                     key={card.id}
                     card={card}
-                    expanded={expanded.has(card.id)}
-                    onToggle={() => toggleCard(card.id)}
                     onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url })}
                   />
                 ))}
@@ -591,8 +413,6 @@ export default function Dashboard() {
                         <div key={card.id} className="bando-card-expired">
                           <BandoCardItem
                             card={card}
-                            expanded={expanded.has(card.id)}
-                            onToggle={() => toggleCard(card.id)}
                             onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url })}
                           />
                         </div>
@@ -607,38 +427,7 @@ export default function Dashboard() {
       })()}
 
       {openScheda && (
-        <div className="modal-backdrop" onClick={() => setOpenScheda(null)}>
-          <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <p className="modal-title">{openScheda.titolo || `Bando #${openScheda.id}`}</p>
-                <p className="modal-subtitle">Scheda di sintesi</p>
-              </div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
-                <a
-                  href={`/api/bandi/${openScheda.id}/scheda.md`}
-                  download
-                  className="btn btn-sm"
-                >
-                  <IconDownload /> Scarica
-                </a>
-                {openScheda.fonte_url && (
-                  <a href={openScheda.fonte_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm">
-                    <IconExternal /> Fonte
-                  </a>
-                )}
-                <button className="modal-close" onClick={() => setOpenScheda(null)} aria-label="Chiudi">
-                  <IconClose />
-                </button>
-              </div>
-            </div>
-            <div className="modal-body">
-              <div className="scheda-content">
-                {renderMarkdown(openScheda.scheda)}
-              </div>
-            </div>
-          </div>
-        </div>
+        <ModalScheda data={openScheda} onClose={() => setOpenScheda(null)} />
       )}
     </div>
   )

@@ -187,6 +187,7 @@ def _dashboard_payload() -> dict:
                 "fatturato": m.get("cliente_fatturato"), "dimensione_impresa": m.get("cliente_dimensione_impresa"),
                 "descrizione_attivita": m.get("cliente_descrizione_attivita"),
                 "data_costituzione": m.get("cliente_data_costituzione"),
+                "numero_dipendenti": m.get("cliente_numero_dipendenti"),
                 "forma_giuridica": m.get("cliente_forma_giuridica"),
             }
             try:
@@ -342,6 +343,22 @@ def api_bando_scheda_json(bando_id: int):
     return {"bando_id": bando_id, "scheda": scheda}
 
 
+@app.post("/api/bandi/{bando_id}/rigenera-scheda")
+def api_rigenera_scheda(bando_id: int):
+    with get_connection() as conn:
+        row = conn.execute("SELECT json_completo FROM bandi WHERE id = %s", (bando_id,)).fetchone()
+        if not row:
+            return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
+        try:
+            payload = json.loads(row["json_completo"])
+        except Exception:
+            return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
+        scheda = genera_scheda(payload)
+        conn.execute("UPDATE bandi SET scheda_cached = %s WHERE id = %s", (scheda, bando_id))
+        conn.commit()
+    return {"bando_id": bando_id, "scheda": scheda}
+
+
 @app.get("/api/bandi/{bando_id}/scheda.md")
 def api_download_scheda(bando_id: int):
     with get_connection() as conn:
@@ -368,6 +385,11 @@ def api_estrazione_submit(file: UploadFile = File(...)):
         "filename": safe_name,
         "size_kb": len(file_bytes) / 1024,
     }
+
+    if len(file_bytes) > 10_000_000:
+        return JSONResponse(status_code=400, content={
+            "errors": [f"File troppo grande ({result['size_kb']:.0f} KB). Limite massimo: 10 MB."]
+        })
 
     try:
         with open(file_path, "wb") as f:

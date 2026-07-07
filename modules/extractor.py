@@ -26,9 +26,10 @@ load_dotenv()
 ROOT = Path(__file__).resolve().parents[1]
 PROMPT_PATH = ROOT / "prompts" / "system_extraction.md"
 # Usiamo il modello DeepSeek reale, senza ":free"
-LLM_MODEL = "deepseek/deepseek-v4-flash"
+LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek/deepseek-v4-flash")
+LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "claude-haiku-4-5-20251001")
 RETRY_ATTEMPTS = 3
-RETRY_WAIT_SECONDS = 300
+RETRY_WAIT_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_SECONDS", "60"))
 _JSON_BLOCK_RE = re.compile(r'\{[\s\S]*\}')
 
 
@@ -163,10 +164,10 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     retry=retry_if_exception(_is_retryable_api_error),
     reraise=True,
 )
-def _call_llm_api(prompt: str) -> str:
+def _call_llm_api(prompt: str, model: str = LLM_MODEL) -> str:
     client = _get_client()
     response = client.chat.completions.create(
-        model=LLM_MODEL,
+        model=model,
         messages=[{"role": "user", "content": prompt}],
     )
     if not response.choices:
@@ -179,26 +180,23 @@ def extract_bando_data(raw_text: str) -> dict:
     prompt = _load_system_prompt(raw_text)
 
     try:
-        content = _call_llm_api(prompt)
-    except (APIConnectionError, APITimeoutError, RateLimitError, APIStatusError) as exc:
-        if not _is_retryable_api_error(exc):
-            log_error(f"Errore API non recuperabile: {exc}")
-            raise
-        msg = f"API OpenRouter non disponibile dopo {RETRY_ATTEMPTS} tentativi: {exc}"
-        log_error(msg)
-        log_incident(
-            description="API OpenRouter non risponde",
-            impact="Estrazione bando fallita",
-            cause=str(exc),
-            fix=f"Retry automatico ({RETRY_ATTEMPTS}x)",
-        )
-        raise
+        content = _call_llm_api(prompt, model=LLM_MODEL)
     except MissingAPIKeyError:
         raise
-    except Exception as exc:
-        msg = f"Errore imprevisto chiamata LLM: {exc}"
-        log_error(msg)
-        raise
+    except Exception as primary_exc:
+        log_error(f"Modello primario ({LLM_MODEL}) fallito: {primary_exc}. Tentativo con fallback {LLM_FALLBACK_MODEL}.")
+        try:
+            content = _call_llm_api(prompt, model=LLM_FALLBACK_MODEL)
+        except Exception as fallback_exc:
+            msg = f"Anche il modello fallback ({LLM_FALLBACK_MODEL}) ha fallito: {fallback_exc}"
+            log_error(msg)
+            log_incident(
+                description="Entrambi i modelli LLM non disponibili",
+                impact="Estrazione bando fallita",
+                cause=str(fallback_exc),
+                fix=f"Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL",
+            )
+            raise primary_exc from fallback_exc
 
     cleaned = _clean_json_response(content)
     try:

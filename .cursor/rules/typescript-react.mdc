@@ -1,0 +1,34 @@
+---
+name: typescript-react
+description: Best practice per React 19 + TypeScript per BandiScanner
+---
+
+# TypeScript + React Rules per BandiScanner
+
+## Regole generali
+- Usa sempre TypeScript strict — nessun `any` implicito
+- Ogni componente deve avere le props tipizzate con interface
+- Usa `const` per tutti i componenti funzionali
+- Nessuna libreria UI esterna (no shadcn, no MUI, no Ant Design)
+- Nessun localStorage o sessionStorage
+
+## Struttura componenti
+- Separa la logica di fetch dallo JSX
+- Usa `useState` e `useEffect` di React importati esplicitamente
+- I tipi per i dati API vanno definiti in cima al file
+- Nessun inline style tranne per valori dinamici (es. colori calcolati)
+
+## Stile e CSS
+- Usa classi CSS definite in styles.css — nessuna classe Tailwind
+- Le classi dinamiche si costruiscono con template literal o array.join
+- Nessun CSS-in-JS
+
+## Fetch e API
+- Il backend è sempre su porta 8000
+- Usa `/api/...` come base path — nessun URL hardcoded con localhost
+- Gestisci sempre i casi di errore e loading
+
+## Pattern da seguire
+- Toast notifications: usa il sistema già presente nel progetto
+- Modal: usa il pattern già presente in Clienti.tsx
+- Tabelle: segui il pattern già presente in Bandi.tsx

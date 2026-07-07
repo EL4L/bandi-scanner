@@ -1,24 +1,20 @@
-"""Scrittura su error_log.txt e logs/PROMPT_LOG.md."""
+"""Logging errori su stdout e audit log su INCIDENTS.md / PROMPT_LOG.md."""
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ERROR_LOG = ROOT / "error_log.txt"
 PROMPT_LOG = ROOT / "logs" / "PROMPT_LOG.md"
 INCIDENTS_LOG = ROOT / "logs" / "INCIDENTS.md"
 
+_logger = logging.getLogger("bandi_scanner")
+
 
 def log_error(message: str) -> None:
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{timestamp}] {message}\n"
-    try:
-        with open(ERROR_LOG, "a", encoding="utf-8") as f:
-            f.write(line)
-    except OSError as exc:
-        print(f"Impossibile scrivere error_log.txt: {exc}")
+    _logger.error(message)
 
 
 def log_incident(description: str, impact: str, cause: str, fix: str) -> None:
