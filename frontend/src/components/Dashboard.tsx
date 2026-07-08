@@ -185,6 +185,7 @@ function BandoCardItem({
             download
             className="btn btn-sm"
             title="Scarica scheda .md"
+            aria-label={`Scarica scheda di ${card.titolo || `Bando #${card.id}`}`}
           >
             <IconDownload />
           </a>
@@ -196,6 +197,7 @@ function BandoCardItem({
             rel="noopener noreferrer"
             className="btn btn-sm btn-ghost"
             title="Apri fonte"
+            aria-label={`Apri fonte ufficiale di ${card.titolo || `Bando #${card.id}`}`}
           >
             <IconExternal />
           </a>

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
 
@@ -178,6 +178,22 @@ export default function CaricaBando() {
   const [uploading, setUploading] = useState(false)
   const [result, setResult] = useState<ExtractionResult | null>(null)
   const [networkError, setNetworkError] = useState<string | null>(null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    if (!uploading) {
+      setElapsedSeconds(0)
+      return
+    }
+    const interval = setInterval(() => setElapsedSeconds(s => s + 1), 1000)
+    return () => clearInterval(interval)
+  }, [uploading])
+
+  const extractionWaitMessage = (): string => {
+    if (elapsedSeconds < 15) return 'Estrazione in corso — può richiedere fino a un minuto.'
+    if (elapsedSeconds < 45) return "L'analisi AI sta impiegando più del previsto, attendi ancora qualche secondo…"
+    return 'Il documento è più lungo o complesso del solito: la richiesta è ancora in corso, attendi.'
+  }
 
   const handleFile = (file: File) => {
     if (!file.name.toLowerCase().endsWith('.pdf')) {
@@ -273,6 +289,15 @@ export default function CaricaBando() {
                 onDragOver={e => { e.preventDefault(); setDragOver(true) }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
+                role="button"
+                tabIndex={0}
+                aria-label="Seleziona un file PDF da caricare, o trascinalo qui"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    fileInputRef.current?.click()
+                  }
+                }}
               >
                 <div className="upload-zone-icon">
                   <IconUpload />
@@ -330,7 +355,7 @@ export default function CaricaBando() {
                 <div style={{ marginTop: 24 }}>
                   <UploadProgress statuses={uploadStepStatuses(uploading, result)} />
                   <p className="text-sm text-muted" style={{ textAlign: 'center' }}>
-                    Estrazione in corso — può richiedere fino a 30 secondi.
+                    {extractionWaitMessage()}
                   </p>
                 </div>
               )}

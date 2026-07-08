@@ -44,6 +44,24 @@
     --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.09), 0 2px 4px rgba(15, 23, 42, 0.04);
     --shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.14), 0 4px 10px rgba(15, 23, 42, 0.06);
+
+    /* Stati semantici a 3 livelli (score/match/breakdown alto-medio-basso).
+       Centralizzati qui perché la stessa terna verde/giallo/rosso era duplicata
+       in .score-*, .match-badge-*, .breakdown-pill-*, .breakdown-bar-* (audit UI-6). */
+    --status-high: #16a34a;
+    --status-high-text: #166534;
+    --status-high-bg: #dcfce7;
+    --status-high-border: #bbf7d0;
+
+    --status-mid: #f59e0b;
+    --status-mid-text: #854d0e;
+    --status-mid-bg: #fef9c3;
+    --status-mid-border: #fde68a;
+
+    --status-low: #ef4444;
+    --status-low-text: #991b1b;
+    --status-low-bg: #fee2e2;
+    --status-low-border: #fecaca;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -352,17 +370,17 @@ a { color: var(--color-accent); }
 .badge-neutral { background: #F3F4F6; color: #374151; border-color: var(--color-border); }
 .badge-blue    { background: var(--color-surface); color: var(--color-accent); border-color: var(--color-border); font-family: var(--font-mono); letter-spacing: 0; }
 
-.badge-alta  { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
-.badge-media { background: #fff7ed; color: #ea580c; border-color: #fdba74; }
+.badge-alta  { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
+.badge-media { background: #fff7ed; color: #c2410c; border-color: #fdba74; }
 .badge-bassa { background: #ecfdf5; color: var(--color-success); border-color: #6ee7b7; }
 
 .match-badge {
     display: inline-block; padding: 2px 8px; border-radius: 8px;
     font-size: 0.75rem; font-weight: 700;
 }
-.match-badge-high { background: #dcfce7; color: #166534; }
-.match-badge-mid  { background: #fef9c3; color: #854d0e; }
-.match-badge-low  { background: #fee2e2; color: #991b1b; }
+.match-badge-high { background: var(--status-high-bg); color: var(--status-high-text); }
+.match-badge-mid  { background: var(--status-mid-bg); color: var(--status-mid-text); }
+.match-badge-low  { background: var(--status-low-bg); color: var(--status-low-text); }
 
 /* Notification-style circular count badge (es. "bandi compatibili") */
 .count-badge {
@@ -420,10 +438,39 @@ a { color: var(--color-accent); }
   font-size: 0.68rem; font-weight: 700;
   border: 1px solid transparent; white-space: nowrap;
 }
-.breakdown-pill-full    { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-.breakdown-pill-partial { background: #fef9c3; color: #854d0e; border-color: #fde68a; }
-.breakdown-pill-zero    { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.breakdown-pill-full    { background: var(--status-high-bg); color: var(--status-high-text); border-color: var(--status-high-border); }
+.breakdown-pill-partial { background: var(--status-mid-bg); color: var(--status-mid-text); border-color: var(--status-mid-border); }
+.breakdown-pill-zero    { background: var(--status-low-bg); color: var(--status-low-text); border-color: var(--status-low-border); }
 .breakdown-spiegazione  { font-size: 0.72rem; color: var(--color-text-muted); line-height: 1.5; margin: 0; }
+
+.breakdown-bars { display: flex; flex-direction: column; gap: 4px; max-width: 260px; }
+.breakdown-bar-row {
+  display: grid;
+  grid-template-columns: 78px 1fr 34px;
+  align-items: center;
+  gap: 6px;
+}
+.breakdown-bar-label {
+  font-size: 0.68rem; font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.breakdown-bar-track {
+  height: 6px; border-radius: 4px;
+  background: var(--color-border, #e5e7eb);
+  overflow: hidden;
+}
+.breakdown-bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 200ms ease;
+}
+.breakdown-bar-value {
+  font-size: 0.66rem; font-weight: 700; color: var(--color-text-muted);
+  text-align: right;
+}
+.breakdown-bar-row.breakdown-pill-full    .breakdown-bar-fill { background: var(--status-high); }
+.breakdown-bar-row.breakdown-pill-partial .breakdown-bar-fill { background: var(--status-mid); }
+.breakdown-bar-row.breakdown-pill-zero    .breakdown-bar-fill { background: var(--status-low); }
 
 /* ── AMMISSIBILITÀ ─────────────────────────────────────────── */
 .match-excluded { opacity: 0.6; }
@@ -647,6 +694,10 @@ a { color: var(--color-accent); }
     transition: border-color 200ms, background 200ms; background: #fafbfc;
 }
 .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--color-accent); background: var(--color-accent-soft);
+}
+.upload-zone:focus-visible {
+    outline: 2px solid var(--color-accent); outline-offset: 2px;
     border-color: var(--color-accent); background: var(--color-accent-soft);
 }
 .upload-zone-icon {

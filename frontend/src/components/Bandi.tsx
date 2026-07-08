@@ -135,7 +135,13 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
                 ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                 : 'Scheda'}
             </button>
-            <a href={apiHref(`/api/bandi/${b.id}/scheda.md`)} download className="btn btn-sm" title="Scarica .md">
+            <a
+              href={apiHref(`/api/bandi/${b.id}/scheda.md`)}
+              download
+              className="btn btn-sm"
+              title="Scarica .md"
+              aria-label={`Scarica scheda di ${b.titolo ?? `Bando #${b.id}`}`}
+            >
               <IconDownload />
             </a>
             <button
@@ -143,6 +149,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
               style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
               onClick={() => onDeleteRequest(b.id)}
               title="Elimina bando"
+              aria-label={`Elimina ${b.titolo ?? `Bando #${b.id}`}`}
             >
               <IconTrash />
             </button>
@@ -345,6 +352,7 @@ export default function Bandi() {
             <input
               type="text"
               placeholder="Cerca per titolo o ente…"
+              aria-label="Cerca bandi per titolo o ente"
               value={query}
               onChange={e => setQuery(e.target.value)}
             />

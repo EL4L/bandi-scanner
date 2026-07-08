@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { toast } from '../toast'
 import { withApiKey } from '../apiKey'
+import { useModalA11y } from '../useModalA11y'
+import { ClienteFormModal, EMPTY_CLIENTE_FORM, type ClienteForm } from './ClienteFormModal'
 
 interface Cliente {
   id: number
@@ -17,19 +19,6 @@ interface Cliente {
   match_count: number
 }
 
-interface ClienteForm {
-  ragione_sociale: string
-  p_iva: string
-  codice_ateco: string
-  regione: string
-  fatturato: string
-  dimensione_impresa: string
-  descrizione_attivita: string
-  data_costituzione: string
-  numero_dipendenti: string
-  forma_giuridica: string
-}
-
 interface BandoMatch {
   bando_id: number
   titolo: string | null
@@ -44,19 +33,6 @@ interface BandoMatch {
   }
   scadenza: string | null
   giorni_alla_scadenza: number | null
-}
-
-const EMPTY_FORM: ClienteForm = {
-  ragione_sociale: '',
-  p_iva: '',
-  codice_ateco: '',
-  regione: '',
-  fatturato: '',
-  dimensione_impresa: '',
-  descrizione_attivita: '',
-  data_costituzione: '',
-  numero_dipendenti: '',
-  forma_giuridica: '',
 }
 
 function formatEuro(val: number) {
@@ -80,6 +56,27 @@ function pillClass(score: number, max: number): string {
   if (score === max) return 'breakdown-pill-full'
   if (score >= max / 2) return 'breakdown-pill-partial'
   return 'breakdown-pill-zero'
+}
+
+function pillIcon(score: number, max: number): string {
+  if (score === max) return '✅'
+  if (score >= max / 2) return '⚠️'
+  return '❌'
+}
+
+function BreakdownBar({ label, score, max }: { label: string; score: number; max: number }) {
+  const pct = max > 0 ? Math.round((score / max) * 100) : 0
+  return (
+    <div className={`breakdown-bar-row ${pillClass(score, max)}`}>
+      <span className="breakdown-bar-label">
+        {pillIcon(score, max)} {label}
+      </span>
+      <div className="breakdown-bar-track" role="img" aria-label={`${label}: ${score} su ${max} punti`}>
+        <div className="breakdown-bar-fill" style={{ width: `${pct}%` }} />
+      </div>
+      <span className="breakdown-bar-value">{score}/{max}</span>
+    </div>
+  )
 }
 
 function scoreCircleClass(score: number): string {
@@ -136,7 +133,7 @@ export default function Clienti() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
-  const [form, setForm] = useState<ClienteForm>(EMPTY_FORM)
+  const [form, setForm] = useState<ClienteForm>(EMPTY_CLIENTE_FORM)
   const [formErrors, setFormErrors] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
 
@@ -163,23 +160,9 @@ export default function Clienti() {
 
   useEffect(() => { fetchClienti() }, [])
 
-  useEffect(() => {
-    if (!modalOpen) return
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [modalOpen])
-
-  useEffect(() => {
-    if (!detailCliente) return
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') closeDetail() }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [detailCliente])
-
   const openAdd = () => {
     setEditId(null)
-    setForm(EMPTY_FORM)
+    setForm(EMPTY_CLIENTE_FORM)
     setFormErrors([])
     setModalOpen(true)
   }
@@ -220,6 +203,8 @@ export default function Clienti() {
   }
 
   const closeDetail = () => { setDetailCliente(null); setDetailBandi([]) }
+
+  const detailModalRef = useModalA11y(closeDetail, !!detailCliente)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -386,10 +371,10 @@ export default function Clienti() {
                       </div>
                     ) : (
                       <div className="btn-group">
-                        <button className="btn btn-sm" onClick={() => openEdit(c)} title="Modifica">
+                        <button className="btn btn-sm" onClick={() => openEdit(c)} title="Modifica" aria-label={`Modifica ${c.ragione_sociale}`}>
                           <IconEdit />
                         </button>
-                        <button className="btn btn-sm btn-ghost" onClick={() => setDeleteConfirm(c.id)} title="Elimina">
+                        <button className="btn btn-sm btn-ghost" onClick={() => setDeleteConfirm(c.id)} title="Elimina" aria-label={`Elimina ${c.ragione_sociale}`}>
                           <IconTrash />
                         </button>
                       </div>
@@ -405,10 +390,17 @@ export default function Clienti() {
       {/* ── Detail modal ── */}
       {detailCliente && (
         <div className="modal-backdrop" onClick={closeDetail}>
-          <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
+          <div
+            className="modal modal-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-detail-title"
+            ref={detailModalRef}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div>
-                <p className="modal-title">{detailCliente.ragione_sociale}</p>
+                <p className="modal-title" id="modal-detail-title">{detailCliente.ragione_sociale}</p>
                 <p className="modal-subtitle">Bandi compatibili</p>
               </div>
               <button className="modal-close" onClick={closeDetail} aria-label="Chiudi">
@@ -451,11 +443,11 @@ export default function Clienti() {
                         <div className="cliente-bando-info">
                           <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
                           {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
-                          <div className="breakdown-pills" style={{ marginTop: 7 }}>
-                            <span className={`breakdown-pill ${pillClass(b.breakdown.regione, 30)}`}>Regione {b.breakdown.regione}/30</span>
-                            <span className={`breakdown-pill ${pillClass(b.breakdown.ateco, 40)}`}>ATECO {b.breakdown.ateco}/40</span>
-                            <span className={`breakdown-pill ${pillClass(b.breakdown.dimensione, 20)}`}>Dimensione {b.breakdown.dimensione}/20</span>
-                            <span className={`breakdown-pill ${pillClass(b.breakdown.fatturato, 10)}`}>Fatturato {b.breakdown.fatturato}/10</span>
+                          <div className="breakdown-bars" style={{ marginTop: 7 }}>
+                            <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
+                            <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
+                            <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
+                            <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
                           </div>
                         </div>
                         <div className="cliente-bando-right">
@@ -486,167 +478,18 @@ export default function Clienti() {
         </div>
       )}
 
-      {/* ── Edit / create form modal (unchanged) ── */}
       {modalOpen && (
-        <div className="modal-backdrop" onClick={closeModal}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <p className="modal-title">{editId ? 'Modifica cliente' : 'Nuovo cliente'}</p>
-                <p className="modal-subtitle">Compila i dati del profilo aziendale</p>
-              </div>
-              <button className="modal-close" onClick={closeModal} aria-label="Chiudi">
-                <IconClose />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                {formErrors.length > 0 && (
-                  <div className="alert alert-danger" style={{ marginBottom: 16 }}>
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      {formErrors.map((e, i) => <li key={i}>{e}</li>)}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="form-grid">
-                  <div className="field form-full">
-                    <label htmlFor="ragione_sociale">Ragione Sociale *</label>
-                    <input
-                      id="ragione_sociale"
-                      type="text"
-                      value={form.ragione_sociale}
-                      onChange={e => setField('ragione_sociale', e.target.value)}
-                      placeholder="Es. Rossi Srl"
-                      required
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="p_iva">Partita IVA *</label>
-                    <input
-                      id="p_iva"
-                      type="text"
-                      value={form.p_iva}
-                      onChange={e => setField('p_iva', e.target.value)}
-                      placeholder="11 cifre senza spazi"
-                      maxLength={11}
-                      required
-                    />
-                    <p className="help">Esattamente 11 cifre numeriche</p>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="codice_ateco">Codice ATECO *</label>
-                    <input
-                      id="codice_ateco"
-                      type="text"
-                      value={form.codice_ateco}
-                      onChange={e => setField('codice_ateco', e.target.value)}
-                      placeholder="Es. 62.01 o 62.01.09"
-                      required
-                    />
-                    <p className="help">Formato: XX.XX o XX.XX.XX</p>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="regione">Regione *</label>
-                    <select
-                      id="regione"
-                      value={form.regione}
-                      onChange={e => setField('regione', e.target.value)}
-                      required
-                    >
-                      <option value="">— Seleziona —</option>
-                      {regioni.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="dimensione_impresa">Dimensione impresa *</label>
-                    <select
-                      id="dimensione_impresa"
-                      value={form.dimensione_impresa}
-                      onChange={e => setField('dimensione_impresa', e.target.value)}
-                      required
-                    >
-                      <option value="">— Seleziona —</option>
-                      {dimensioni.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="fatturato">Fatturato annuo (€) *</label>
-                    <input
-                      id="fatturato"
-                      type="number"
-                      min="0"
-                      step="1000"
-                      value={form.fatturato}
-                      onChange={e => setField('fatturato', e.target.value)}
-                      placeholder="Es. 500000"
-                      required
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="data_costituzione">Data di costituzione</label>
-                    <input
-                      id="data_costituzione"
-                      type="date"
-                      value={form.data_costituzione}
-                      onChange={e => setField('data_costituzione', e.target.value)}
-                    />
-                    <p className="help">Per calcolo anzianità impresa (opzionale)</p>
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="numero_dipendenti">Numero dipendenti</label>
-                    <input
-                      id="numero_dipendenti"
-                      type="number"
-                      min="0"
-                      value={form.numero_dipendenti}
-                      onChange={e => setField('numero_dipendenti', e.target.value)}
-                      placeholder="Es. 25"
-                    />
-                  </div>
-
-                  <div className="field">
-                    <label htmlFor="forma_giuridica">Forma giuridica</label>
-                    <input
-                      id="forma_giuridica"
-                      type="text"
-                      value={form.forma_giuridica}
-                      onChange={e => setField('forma_giuridica', e.target.value)}
-                      placeholder="Es. s.r.l., s.p.a., ditta individuale"
-                    />
-                  </div>
-
-                  <div className="field form-full">
-                    <label htmlFor="descrizione_attivita">Descrizione attività</label>
-                    <textarea
-                      id="descrizione_attivita"
-                      value={form.descrizione_attivita}
-                      onChange={e => setField('descrizione_attivita', e.target.value)}
-                      placeholder="Breve descrizione dell'attività svolta (opzionale, migliora il matching)"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn" onClick={closeModal}>Annulla</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving
-                    ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Salvataggio…</>
-                    : editId ? 'Salva modifiche' : 'Aggiungi cliente'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ClienteFormModal
+          isEdit={editId !== null}
+          form={form}
+          formErrors={formErrors}
+          saving={saving}
+          regioni={regioni}
+          dimensioni={dimensioni}
+          onFieldChange={setField}
+          onSubmit={handleSubmit}
+          onClose={closeModal}
+        />
       )}
     </div>
   )

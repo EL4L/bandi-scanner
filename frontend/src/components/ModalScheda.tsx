@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { apiHref } from '../apiKey'
+import { useModalA11y } from '../useModalA11y'
 
 export interface SchedaModalData {
   id: number
@@ -62,18 +62,21 @@ interface Props {
 }
 
 export function ModalScheda({ data, onClose }: Props) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', h)
-    return () => document.removeEventListener('keydown', h)
-  }, [onClose])
+  const modalRef = useModalA11y(onClose)
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+      <div
+        className="modal modal-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-scheda-title"
+        ref={modalRef}
+        onClick={e => e.stopPropagation()}
+      >
         <div className="modal-header">
           <div>
-            <p className="modal-title">{data.titolo || `Bando #${data.id}`}</p>
+            <p className="modal-title" id="modal-scheda-title">{data.titolo || `Bando #${data.id}`}</p>
             <p className="modal-subtitle">Scheda di sintesi</p>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
