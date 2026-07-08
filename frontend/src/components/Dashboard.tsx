@@ -112,6 +112,22 @@ function isExpiredCard(card: BandoCard): boolean {
   return card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza < 0
 }
 
+function stripColorByGiorni(giorni: number | null): string {
+  if (giorni === null) return 'var(--color-border-strong, #D1D5DB)'
+  if (giorni < 0) return 'var(--color-text-muted, #6b7280)'
+  if (giorni < 30) return 'var(--color-danger, #ef4444)'
+  if (giorni < 90) return 'var(--color-warning, #f59e0b)'
+  return 'var(--color-success, #10b981)'
+}
+
+function scadenzaTextClass(giorni: number | null): string {
+  if (giorni === null) return ''
+  if (giorni < 0) return 'text-muted'
+  if (giorni < 30) return 'scadenza-giorni-red'
+  if (giorni < 90) return 'scadenza-giorni-orange'
+  return 'scadenza-giorni-green'
+}
+
 type SchedaModal = SchedaModalData
 
 function BandoCardItem({
@@ -123,6 +139,10 @@ function BandoCardItem({
 }) {
   return (
     <div className="bando-card">
+      <div
+        className="deadline-strip"
+        style={{ backgroundColor: stripColorByGiorni(card.giorni_alla_scadenza) }}
+      />
       <div className="bando-card-inner">
       <div className="bando-card-top">
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -136,6 +156,19 @@ function BandoCardItem({
           <span>{card.max_score > 0 ? `${card.max_score}%` : '—'}</span>
         </div>
       </div>
+
+      {card.scadenza && card.scadenza !== 'N/D' && (
+        <div className="bando-card-scadenza-row">
+          <span className={`scadenza-label ${scadenzaTextClass(card.giorni_alla_scadenza)}`}>
+            Scade {card.scadenza}
+            {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 &&
+              ` · ${card.giorni_alla_scadenza} gg`}
+          </span>
+          {card.urgenza && card.urgenza !== 'scaduto' && (
+            <span className={`badge badge-${card.urgenza}`}>{card.urgenza}</span>
+          )}
+        </div>
+      )}
 
       {!isBlank(card.contributo_max) && (
         <div className="bando-card-contributo-row">

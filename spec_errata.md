@@ -32,7 +32,7 @@ I consulenti gestiscono numerosi clienti e faticano a monitorare fonti PA disper
 
 -   **Utente primario:** Commercialista/Consulente con competenze digitali medie.
 
--   **Contesto:** Uso interno, senza autenticazione, accessibile via browser (SPA React servita da FastAPI).
+-   **Contesto:** Uso interno, autenticazione via API key statica (header X-API-Key), accessibile via browser (SPA React servita da FastAPI).
 
 -   **Scenario reale:** Il consulente carica manualmente un PDF di bando tramite drag&drop, il sistema estrae i dati via AI, calcola il matching con l'intera anagrafica clienti e mostra i risultati nella Dashboard, con la possibilità di scaricare una scheda `.md` per ogni bando.
 

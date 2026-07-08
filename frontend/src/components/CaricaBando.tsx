@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
+import { renderMarkdown } from '../lib/renderMarkdown'
 
 interface ExtractionResult {
   filename: string
@@ -28,44 +29,6 @@ function uploadStepStatuses(uploading: boolean, result: ExtractionResult | null)
   const extractionOk = !result.empty_pdf && !result.extraction_error
   const matchingDone = extractionOk && !!result.bando_id && !result.errors?.length && result.status !== 'duplicato'
   return ['done', extractionOk ? 'done' : 'pending', matchingDone ? 'done' : 'pending']
-}
-
-function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: React.ReactNode[] = []
-  let listItems: string[] = []
-  let listKey = 0
-
-  const inlineParse = (s: string): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*)/)
-    return parts.map((p, i) =>
-      p.startsWith('**') && p.endsWith('**')
-        ? <strong key={i}>{p.slice(2, -2)}</strong>
-        : p
-    )
-  }
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={`ul-${listKey++}`}>
-          {listItems.map((item, i) => <li key={i}>{inlineParse(item)}</li>)}
-        </ul>
-      )
-      listItems = []
-    }
-  }
-
-  lines.forEach((line, i) => {
-    if (line.startsWith('# '))      { flushList(); elements.push(<h1 key={i}>{line.slice(2)}</h1>) }
-    else if (line.startsWith('## ')){ flushList(); elements.push(<h2 key={i}>{line.slice(3)}</h2>) }
-    else if (line.startsWith('### ')){ flushList(); elements.push(<h3 key={i}>{line.slice(4)}</h3>) }
-    else if (line.startsWith('- ') || line.startsWith('* ')) { listItems.push(line.slice(2)) }
-    else if (line.trim() === '') { flushList() }
-    else { flushList(); elements.push(<p key={i}>{inlineParse(line)}</p>) }
-  })
-  flushList()
-  return <>{elements}</>
 }
 
 function IconUpload() {

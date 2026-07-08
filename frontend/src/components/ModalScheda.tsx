@@ -1,5 +1,6 @@
 import { apiHref } from '../apiKey'
 import { useModalA11y } from '../useModalA11y'
+import { renderMarkdown } from '../lib/renderMarkdown'
 
 export interface SchedaModalData {
   id: number
@@ -16,44 +17,6 @@ function IconExternal() {
 }
 function IconClose() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 16, height: 16 }}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-}
-
-export function renderMarkdown(text: string) {
-  const lines = text.split('\n')
-  const elements: React.ReactNode[] = []
-  let listItems: string[] = []
-  let listKey = 0
-
-  const inlineParse = (s: string): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*)/)
-    return parts.map((p, i) =>
-      p.startsWith('**') && p.endsWith('**')
-        ? <strong key={i}>{p.slice(2, -2)}</strong>
-        : p
-    )
-  }
-
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={`ul-${listKey++}`}>
-          {listItems.map((item, i) => <li key={i}>{inlineParse(item)}</li>)}
-        </ul>
-      )
-      listItems = []
-    }
-  }
-
-  lines.forEach((line, i) => {
-    if (line.startsWith('# '))       { flushList(); elements.push(<h1 key={i}>{line.slice(2)}</h1>) }
-    else if (line.startsWith('## ')) { flushList(); elements.push(<h2 key={i}>{line.slice(3)}</h2>) }
-    else if (line.startsWith('### ')) { flushList(); elements.push(<h3 key={i}>{line.slice(4)}</h3>) }
-    else if (line.startsWith('- ') || line.startsWith('* ')) { listItems.push(line.slice(2)) }
-    else if (line.trim() === '') { flushList() }
-    else { flushList(); elements.push(<p key={i}>{inlineParse(line)}</p>) }
-  })
-  flushList()
-  return <>{elements}</>
 }
 
 interface Props {

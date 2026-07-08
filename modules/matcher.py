@@ -427,6 +427,21 @@ def _chi_puo_accedere(bando: dict[str, Any]) -> str | None:
     if dim: parts.append("**Dimensioni impresa:** " + ", ".join(dim))
     return "\n\n".join(parts) if parts else None
 
+def _sezione_esclusioni(b: dict[str, Any]) -> str | None:
+    note = b.get("note_esclusioni")
+    if isinstance(note, str) and note.strip():
+        return f"## Esclusioni\n\n{note.strip()}"
+    if not isinstance(note, dict):
+        return None
+    parts: list[str] = []
+    testo = _norm_str(note.get("lista_testuale"))
+    if testo: parts.append(testo)
+    sezioni = _norm_list(note.get("sezioni_ateco_escluse"))
+    if sezioni: parts.append("**Sezioni ATECO escluse:** " + ", ".join(sezioni))
+    vietate = _norm_list(note.get("attivita_vietate"))
+    if vietate: parts.append("**Attività vietate:** " + ", ".join(vietate))
+    return "## Esclusioni\n\n" + "\n\n".join(parts) if parts else None
+
 def genera_scheda(bando: dict[str, Any]) -> str:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     lines = []
@@ -435,9 +450,23 @@ def genera_scheda(bando: dict[str, Any]) -> str:
     if titolo: lines.append(f"# {titolo}")
     if ente: lines.append(f"**Ente:** {ente}")
     scadenza = format_scadenza_italiana(b.get("data_scadenza"))
-    if scadenza: lines.append(f"**Scadenza:** {scadenza}")
+    if scadenza:
+        gg = giorni_alla_scadenza(b.get("data_scadenza"))
+        if gg is not None:
+            if gg < 0:
+                lines.append(f"**Scadenza:** {scadenza} — ⛔ **SCADUTO**")
+            elif gg < 30:
+                lines.append(f"**Scadenza:** {scadenza} — 🔴 **{gg} giorni** (urgenza alta)")
+            elif gg < 90:
+                lines.append(f"**Scadenza:** {scadenza} — 🟡 {gg} giorni")
+            else:
+                lines.append(f"**Scadenza:** {scadenza} — 🟢 {gg} giorni")
+        else:
+            lines.append(f"**Scadenza:** {scadenza}")
     accesso = _chi_puo_accedere(b)
     if accesso: lines.append("## Chi può accedere\n\n" + accesso)
+    esclusioni = _sezione_esclusioni(b)
+    if esclusioni: lines.append(esclusioni)
     anz_info = b.get("anzianita_impresa") or {}
     requisiti = []
     spesa_min = b.get("spesa_minima_ammissibile")
@@ -470,7 +499,15 @@ def genera_scheda(bando: dict[str, Any]) -> str:
     if spese: lines.append("## Spese ammissibili\n\n" + "\n".join(f"- {s}" for s in spese))
     link = _norm_str(b.get("url_fonte") or b.get("link_fonte_ufficiale") or b.get("link_fonte"))
     if link: lines.append(f"## Fonte ufficiale\n\n[{link}]({link})")
-    return "\n\n".join(lines) if lines else "*Scheda non disponibile — dati bando insufficienti.*"
+    if not lines:
+        return "*Scheda non disponibile — dati bando insufficienti.*"
+    lines.append("---")
+    lines.append(
+        "*Dati estratti automaticamente tramite AI e potenzialmente incompleti o imprecisi. "
+        "Verificare sempre scadenze, importi e requisiti sulla fonte ufficiale "
+        "prima di qualsiasi utilizzo.*"
+    )
+    return "\n\n".join(lines)
 
 def genera_spiegazione_score(
     bando: dict[str, Any],

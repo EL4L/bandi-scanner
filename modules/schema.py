@@ -52,6 +52,48 @@ def normalize_dimensione_impresa(value: object) -> dict[str, bool]:
     return {key: bool(value.get(key, False)) for key in DIMENSIONE_IMPRESA_KEYS}
 
 
+NUMERIC_FIELDS: frozenset[str] = frozenset({
+    "contributo_max",
+    "fatturato_max",
+    "percentuale_fondo_perduto",
+    "spesa_minima_ammissibile",
+    "spesa_massima_ammissibile",
+})
+
+
+def _to_bool(val: object) -> bool:
+    """Converte in bool in modo sicuro: "false" → False, "true" → True."""
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, str):
+        return val.strip().lower() in ("true", "sì", "si", "yes", "1")
+    return bool(val) if val is not None else False
+
+
+def _to_number(val: object) -> float | int | None:
+    """Converte in numero in modo sicuro, gestendo stringhe con %, €, punti migliaia."""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return val
+    if isinstance(val, str):
+        s = val.strip()
+        # rimuove simboli: %, €, spazi; normalizza separatori
+        s = s.replace("%", "").replace("€", "").replace(" ", "")
+        # il punto può essere separatore migliaia (1.000) o decimale (1.5):
+        # se c'è anche la virgola, il punto è migliaia → rimuovilo
+        if "," in s:
+            s = s.replace(".", "").replace(",", ".")
+        elif s.count(".") > 1 or (s.count(".") == 1 and len(s.split(".")[-1]) == 3):
+            s = s.replace(".", "")
+        try:
+            f = float(s)
+            return int(f) if f == int(f) else f
+        except ValueError:
+            return None
+    return None
+
+
 def normalize_response(data: dict) -> dict[str, object]:
     """Restituisce sempre {"bando": {...}} con tutte le chiavi schema."""
     if "bando" in data and isinstance(data["bando"], dict):
@@ -74,17 +116,22 @@ def normalize_response(data: dict) -> dict[str, object]:
         ):
             bando[key] = val if isinstance(val, list) else []
         elif key == "ateco_aperto_a_tutti":
-            bando[key] = bool(val) if val is not None else False
+            bando[key] = _to_bool(val)
         elif key == "anzianita_impresa":
             if isinstance(val, dict):
-                bando[key] = val
+                mesi_min = _to_number(val.get("mesi_minimi_dalla_costituzione"))
+                mesi_max = _to_number(val.get("mesi_massimi_dalla_costituzione"))
+                bando[key] = {
+                    "mesi_minimi_dalla_costituzione": int(mesi_min) if mesi_min is not None else None,
+                    "mesi_massimi_dalla_costituzione": int(mesi_max) if mesi_max is not None else None,
+                }
             else:
                 bando[key] = {
                     "mesi_minimi_dalla_costituzione": None,
                     "mesi_massimi_dalla_costituzione": None
                 }
         else:
-            bando[key] = val
+            bando[key] = _to_number(val) if key in NUMERIC_FIELDS else val
             
     # --- BLOCCO DI SICUREZZA FASE 5 ---
     # Forza la normalizzazione nel caso i nuovi campi non siano ancora in BANDO_SCHEMA

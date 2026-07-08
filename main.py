@@ -197,6 +197,15 @@ def _build_export_rows(rows: list[dict]) -> list[dict]:
     return export_rows
 
 
+def _scheda_or_cached(payload: dict, scheda_cached: str | None) -> str:
+    """Rigenera la scheda on-read (giorni/urgenza non devono fossilizzarsi in cache).
+    Usa scheda_cached solo come fallback se la generazione fallisce."""
+    try:
+        return genera_scheda(payload)
+    except Exception:
+        return scheda_cached or genera_scheda({})
+
+
 def _dashboard_payload() -> dict:
     with get_connection() as conn:
         n_bandi = count_bandi(conn)
@@ -294,7 +303,7 @@ def _dashboard_payload() -> dict:
             "color_class": get_color_class(max_sc),
             "has_constraints": bando_has_constraints(payload),
             "matches": matches,
-            "scheda": info.get("scheda_cached") or genera_scheda(payload),
+            "scheda": _scheda_or_cached(payload, info.get("scheda_cached")),
             "fonte_url": get_fonte_url(payload),
         })
 
@@ -404,7 +413,7 @@ def api_bando_scheda_json(bando_id: int):
     if not row:
         return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
     try:
-        scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+        scheda = _scheda_or_cached(json.loads(row["json_completo"]), row["scheda_cached"])
     except Exception:
         return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
     return {"bando_id": bando_id, "scheda": scheda}
@@ -432,7 +441,7 @@ def api_download_scheda(bando_id: int):
         row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
     if row:
         try:
-            scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+            scheda = _scheda_or_cached(json.loads(row["json_completo"]), row["scheda_cached"])
         except Exception:
             return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
     else:

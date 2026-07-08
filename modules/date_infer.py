@@ -28,6 +28,29 @@ _DATE_ISO = re.compile(
     r"\b(\d{4})-(\d{2})-(\d{2})\b"
 )
 
+_MESI_IT_MAP = {
+    "gennaio": 1, "febbraio": 2, "marzo": 3, "aprile": 4,
+    "maggio": 5, "giugno": 6, "luglio": 7, "agosto": 8,
+    "settembre": 9, "ottobre": 10, "novembre": 11, "dicembre": 12,
+}
+
+_DATE_TESTUALE = re.compile(
+    r"\b(\d{1,2})°?\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|"
+    r"agosto|settembre|ottobre|novembre|dicembre)\s+(\d{4})\b",
+    re.IGNORECASE,
+)
+
+_SPORTELLO_RE = re.compile(
+    r"(sportello\s+continuo|fino\s+ad\s+esaurimento|esaurimento\s+delle?\s+risorse"
+    r"|esaurimento\s+fondi|misura\s+permanente|a\s+sportello)",
+    re.IGNORECASE,
+)
+
+
+def _sembra_sportello_continuo(text: str) -> bool:
+    """True se il testo contiene marcatori di misura a sportello senza scadenza fissa."""
+    return bool(_SPORTELLO_RE.search(text))
+
 
 def _parse_dmy(day: str, month: str, year: str) -> date | None:
     try:
@@ -49,6 +72,12 @@ def _find_dates_with_positions(text: str) -> list[tuple[int, date]]:
             found.append((m.start(), d))
         except ValueError:
             continue
+    for m in _DATE_TESTUALE.finditer(text):
+        mese_num = _MESI_IT_MAP.get(m.group(2).lower())
+        if mese_num:
+            d = _parse_dmy(m.group(1), str(mese_num), m.group(3))
+            if d:
+                found.append((m.start(), d))
     return found
 
 
@@ -58,6 +87,9 @@ def infer_data_scadenza_from_text(text: str) -> str | None:
     Utile quando Claude lascia data_scadenza vuota ma la data è nel documento.
     """
     if not text or not text.strip():
+        return None
+
+    if _sembra_sportello_continuo(text):
         return None
 
     dates = _find_dates_with_positions(text)
@@ -80,7 +112,6 @@ def infer_data_scadenza_from_text(text: str) -> str | None:
             start = pos + len(kw)
 
     today = date.today()
-    future_dates = [d for _, d in dates if d > today]
 
     if scored:
         best = max(scored, key=lambda x: x[0])[1]
@@ -89,8 +120,5 @@ def infer_data_scadenza_from_text(text: str) -> str | None:
             return None
         return best.strftime("%Y-%m-%d")
 
-    if future_dates:
-        best_future = max(future_dates)
-        return best_future.strftime("%Y-%m-%d")
-
+    # Nessuna data trovata vicino a keyword di scadenza: non inventare
     return None

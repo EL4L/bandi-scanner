@@ -7,6 +7,7 @@ from modules.date_infer import (
     infer_data_scadenza_from_text,
     _parse_dmy,
     _find_dates_with_positions,
+    _sembra_sportello_continuo,
 )
 
 
@@ -128,14 +129,14 @@ def test_infer_keyword_data_limite():
 
 
 # ---------------------------------------------------------------------------
-# infer_data_scadenza_from_text — fallback a date future
+# infer_data_scadenza_from_text — nessun fallback su date future senza keyword
 # ---------------------------------------------------------------------------
 
-def test_infer_fallback_data_futura_senza_keyword():
-    """Senza keyword ma con una data futura, la restituisce."""
+def test_infer_senza_keyword_non_inventa_data():
+    """Senza keyword di scadenza vicine, non deve restituire alcuna data anche se futura."""
     text = "Il documento è stato redatto il 01/01/2020. Valido sino al 31/12/2099."
     result = infer_data_scadenza_from_text(text)
-    assert result == "2099-12-31"
+    assert result is None
 
 
 def test_infer_solo_date_passate_ritorna_none():
@@ -144,7 +145,79 @@ def test_infer_solo_date_passate_ritorna_none():
     assert infer_data_scadenza_from_text(text) is None
 
 
-def test_infer_data_futura_piu_lontana_selezionata():
-    """Tra due date future senza keyword, sceglie la più lontana."""
+def test_infer_due_date_future_senza_keyword_ritorna_none():
+    """Tra due date future senza keyword, non sceglie più la più lontana: restituisce None."""
     text = "Prima finestra: 01/06/2099. Termine ultimo: 31/12/2099."
-    assert infer_data_scadenza_from_text(text) == "2099-12-31"
+    assert infer_data_scadenza_from_text(text) is None
+
+
+# ---------------------------------------------------------------------------
+# _sembra_sportello_continuo
+# ---------------------------------------------------------------------------
+
+class TestSportelloContinuo:
+    def test_sportello_continuo(self):
+        assert _sembra_sportello_continuo("misura a sportello continuo") is True
+
+    def test_esaurimento_fondi(self):
+        assert _sembra_sportello_continuo("fino ad esaurimento fondi disponibili") is True
+
+    def test_testo_normale(self):
+        assert _sembra_sportello_continuo("scadenza domande entro il 30 giugno") is False
+
+
+# ---------------------------------------------------------------------------
+# Date in lettere
+# ---------------------------------------------------------------------------
+
+class TestDateInLettere:
+    def test_data_mese_letterale(self):
+        testo = "Le domande devono essere presentate entro il 31 dicembre 2026"
+        result = infer_data_scadenza_from_text(testo)
+        assert result == "2026-12-31"
+
+    def test_data_mese_letterale_minuscolo(self):
+        testo = "scadenza presentazione: 15 marzo 2027"
+        result = infer_data_scadenza_from_text(testo)
+        assert result == "2027-03-15"
+
+    def test_data_mese_letterale_maiuscolo(self):
+        testo = "termine per la presentazione entro il 28 Febbraio 2027"
+        result = infer_data_scadenza_from_text(testo)
+        assert result == "2027-02-28"
+
+
+# ---------------------------------------------------------------------------
+# Fallback rimosso + guardia sportello continuo (integrazione)
+# ---------------------------------------------------------------------------
+
+class TestFallbackRimosso:
+    def test_no_fallback_su_data_lontana(self):
+        """Senza alcun match di keyword vicino a nessuna data, non deve
+        restituire la data più lontana nel testo (nessun fallback cieco)."""
+        testo = (
+            "Il progetto viene realizzato in due fasi. Prima fase: 31 dicembre 2028. "
+            "Seconda fase: 30 giugno 2029."
+        )
+        result = infer_data_scadenza_from_text(testo)
+        assert result is None
+
+    def test_sportello_continuo_restituisce_none(self):
+        testo = (
+            "La misura è a sportello continuo fino ad esaurimento delle risorse. "
+            "Data di riferimento: 01/01/2025."
+        )
+        result = infer_data_scadenza_from_text(testo)
+        assert result is None
+
+
+class TestKeywordVicine:
+    def test_keyword_scadenza_con_data_numerica(self):
+        testo = "scadenza presentazione domande: 30/06/2027"
+        result = infer_data_scadenza_from_text(testo)
+        assert result == "2027-06-30"
+
+    def test_entro_il_con_data_letterale(self):
+        testo = "Le domande vanno inviate entro il 15 ottobre 2026"
+        result = infer_data_scadenza_from_text(testo)
+        assert result == "2026-10-15"

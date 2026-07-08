@@ -11,7 +11,8 @@ Questo progetto è un tool interno per il monitoraggio e il matching di bandi pu
 
 ## Documentazione di Riferimento
 - Contesto operativo completo: @CLAUDE.md (endpoint, schema DB, flussi, regole da seguire sempre)
-- Audit tecnico e roadmap: @AUDIT_BANDI_SCANNER.md
+- Roadmap interventi attiva: @ROADMAP.md
+- Audit tecnico dettagliato: @audit-bandi-scanner2.md
 
 ## Regole Operative
 1. **Contesto:** Prima di scrivere qualsiasi codice, leggi @CLAUDE.md per capire architettura, schema DB ed endpoint esistenti.

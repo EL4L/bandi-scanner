@@ -3,6 +3,25 @@
 Documento di riferimento per ogni nuova sessione. Contiene tutto il contesto necessario per lavorare su questo progetto senza esplorazioni iniziali.
 
 ---
+## Roadmap attiva
+Vedi `ROADMAP.md` in root. Gli interventi sono numerati #1–#22 e ordinati per priorità.
+Partire sempre dal primo ☐ non spuntato. Dopo ogni intervento aggiornare la checkbox in ROADMAP.md.
+
+Implementa l'intervento #1 della ROADMAP.md.
+
+Contesto: in `modules/schema.py`, la funzione `normalize_response` esegue
+`bool(val)` su `ateco_aperto_a_tutti` — questo fa sì che la stringa "false"
+diventi True. Stessa cosa per valori numerici come "50000" o "50%" che arrivano
+come stringhe dal modello LLM e non vengono coerciti.
+
+Cosa fare:
+1. Aggiungere funzioni `_to_bool(val)` e `_to_number(val)` in `schema.py`
+2. Usarle in `normalize_response` per `ateco_aperto_a_tutti`, `contributo_max`,
+   `fatturato_max`, `percentuale_fondo_perduto`, `spesa_minima_ammissibile`,
+   `spesa_massima_ammissibile`, e i mesi in `anzianita_impresa`
+3. Aggiungere un test in `tests/` che verifica che "false" → False e "50000" → 50000
+4. Spuntare #1 in ROADMAP.md
+
 
 ## Stack tecnologico
 
@@ -125,6 +144,8 @@ ANTHROPIC_API_KEY=     # Facoltativo — non usato in produzione
 | GET | `/api/bandi` | Lista bandi con urgenza e giorni alla scadenza |
 | GET | `/api/bandi/{id}/scheda` | Scheda bando in JSON |
 | GET | `/api/bandi/{id}/scheda.md` | Scarica scheda come markdown |
+| DELETE | `/api/bandi/{id}` | Elimina bando e relativi match |
+| POST | `/api/bandi/{id}/rigenera-scheda` | Rigenera la scheda markdown cached |
 
 ### Estrazione
 | Metodo | Path | Descrizione |
@@ -157,6 +178,7 @@ Risposta `POST /api/estrazione`:
 | POST | `/api/clienti` | Crea cliente (avvia matching automatico) |
 | PUT | `/api/clienti/{id}` | Aggiorna cliente |
 | DELETE | `/api/clienti/{id}` | Elimina cliente |
+| GET | `/api/clienti/{id}/bandi` | Lista bandi compatibili per un cliente con score, breakdown e scadenza |
 
 ### Export
 | Metodo | Path | Descrizione |
@@ -216,6 +238,7 @@ Score 0-100, calcolato da `calculate_score(bando, cliente)`:
     "spese_ammissibili": ["string"],
     "link_fonte_ufficiale": "string | null",
     "spesa_minima_ammissibile": null,
+    "spesa_massima_ammissibile": null,
     "anzianita_impresa": {
       "mesi_minimi_dalla_costituzione": null,
       "mesi_massimi_dalla_costituzione": null
@@ -294,7 +317,9 @@ python db/init_db.py
 - **Anti-duplicato:** Attivo — `strict=True` (titolo+ente) al salvataggio; `strict=False` (solo titolo) disponibile via API per pulizie manuali
 - **Bandi scaduti:** Separati visivamente nella dashboard con badge "Scaduto"
 - **OCR:** Non supportato — solo PDF con testo selezionabile
-- **Autenticazione:** Assente — app ad accesso libero (uso interno)
+- **Autenticazione:** API key statica su tutte le rotte /api/* via header
+  `X-API-Key` (variabile d'ambiente `APP_API_KEY`). Il frontend legge la
+  chiave da `VITE_APP_API_KEY`.
 
 ---
 
@@ -316,4 +341,10 @@ python db/init_db.py
 
 ## Riferimenti esterni
 
-- **`PROJECT_EVOLUTION_PIPELINE.md`** — documento di roadmap e backlog; leggerlo per capire le priorità di sviluppo prima di proporre o iniziare qualsiasi nuova feature.
+- **`ROADMAP.md`** — roadmap interventi attiva (22 interventi #1–#22,
+  ordinati per priorità P0→P3). Leggerla prima di qualsiasi modifica al codice.
+- **`audit-bandi-scanner2.md`** — audit tecnico completo (estrazione, scoring,
+  schede, frontend, design). Consultarlo per il dettaglio e il codice
+  di ogni intervento.
+- **`PROJECT_EVOLUTION_PIPELINE.md`** — roadmap strategica del 2026-06-26,
+  superata da ROADMAP.md per la pianificazione operativa. Solo per contesto storico.

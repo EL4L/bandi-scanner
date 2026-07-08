@@ -203,3 +203,13 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
 - **Note:** Validazione OK
+
+### prompts/system_extraction.md — v3.2 — 2026-07-08 16:14:06
+- **Campi estratti correttamente:** contributo_max
+- **Campi null/vuoti:** —
+- **Note:** Corretta la regola contributo_max: ora si calcola da spesa_massima_ammissibile × percentuale_fondo_perduto invece di copiare il massimale spese; istruzione esplicita a non usare il massimale spese come proxy del contributo (intervento #2 ROADMAP).
+
+### modules/date_infer.py — logica di inferenza post-estrazione — 2026-07-08 16:14:06
+- **Campi estratti correttamente:** data_scadenza (date in lettere), guardia sportello continuo
+- **Campi null/vuoti:** —
+- **Note:** Rimosso il fallback che sceglieva la data futura più lontana nel testo senza contesto (rischio di estrarre milestone PNRR o termini di rendicontazione al posto della scadenza domande). Aggiunto riconoscimento date in formato testuale italiano ("31 dicembre 2026") e guardia per misure a sportello continuo/permanenti, che ora restituiscono None invece di una data inventata (intervento #3 ROADMAP).

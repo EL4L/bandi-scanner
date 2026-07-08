@@ -70,8 +70,14 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
   - "attivita_vietate": (lista di stringhe) es: ["gioco d'azzardo", "tabacco", "silvicoltura", "pesca"].
 
 * "contributo_max": (numero o null).
-  - Per bandi che non hanno un contributo fisso ma hanno un massimale di spese ammissibili, usa il massimale di spese ammissibili come contributo_max.
-  - Esempio: se il bando dice "spese ammissibili non superiori a euro 5.000.000", metti contributo_max: 5000000.
+  - Usa SOLO l'importo massimo del contributo o agevolazione erogabile al beneficiario.
+  - Se il bando indica una percentuale di agevolazione E un massimale di spese,
+    calcola: contributo_max = spesa_massima × percentuale_fondo_perduto / 100.
+    Esempio: "spese ammissibili fino a €5.000.000, contributo del 50%" → 2500000.
+  - Se c'è una percentuale ma non un massimale di spese esplicito, lascia null.
+  - Se non c'è né un importo fisso né una percentuale calcolabile, lascia null.
+  - NON usare il massimale di spese ammissibili come contributo_max: sono due
+    campi distinti con semantica diversa.
 
 * "percentuale_fondo_perduto": (numero).
   - REGOLE MATEMATICHE: Se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), DEVI calcolare la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso scriverai 40). Usa `null` solo se non ci sono dati matematici sufficienti.

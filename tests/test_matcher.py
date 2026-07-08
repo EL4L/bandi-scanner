@@ -163,6 +163,53 @@ def test_genera_scheda_contiene_ente():
     assert "Ministero Test" in genera_scheda(bando)
 
 
+def test_genera_scheda_contiene_disclaimer():
+    bando = {"bando": {"titolo": "Bando Test"}}
+    result = genera_scheda(bando)
+    assert "estratti automaticamente tramite AI" in result
+    assert "fonte ufficiale" in result.lower()
+
+
+def test_genera_scheda_note_esclusioni_dict():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": "Escluse le imprese agricole",
+            "sezioni_ateco_escluse": ["A", "K"],
+            "attivita_vietate": ["Gioco d'azzardo"],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "## Esclusioni" in result
+    assert "Escluse le imprese agricole" in result
+    assert "Sezioni ATECO escluse:** A, K" in result
+    assert "Attività vietate:** Gioco d'azzardo" in result
+
+
+def test_genera_scheda_note_esclusioni_stringa():
+    bando = {"bando": {"titolo": "Bando Test", "note_esclusioni": "Escluse le start-up"}}
+    result = genera_scheda(bando)
+    assert "## Esclusioni" in result
+    assert "Escluse le start-up" in result
+
+
+def test_genera_scheda_scadenza_futura_mostra_giorni():
+    from datetime import date, timedelta
+    data_futura = (date.today() + timedelta(days=10)).isoformat()
+    bando = {"bando": {"titolo": "Bando Test", "data_scadenza": data_futura}}
+    result = genera_scheda(bando)
+    assert "giorni" in result
+    assert "urgenza alta" in result
+
+
+def test_genera_scheda_scadenza_passata_mostra_scaduto():
+    from datetime import date, timedelta
+    data_passata = (date.today() - timedelta(days=5)).isoformat()
+    bando = {"bando": {"titolo": "Bando Test", "data_scadenza": data_passata}}
+    result = genera_scheda(bando)
+    assert "SCADUTO" in result
+
+
 # ---------------------------------------------------------------------------
 # settore_da_verificare
 # ---------------------------------------------------------------------------
