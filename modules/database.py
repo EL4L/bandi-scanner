@@ -243,7 +243,7 @@ def deduplica_bandi(strict: bool = True) -> int:
                     array_agg(id ORDER BY id DESC) AS ids
                 FROM bandi
                 GROUP BY LOWER(COALESCE(titolo, '')), LOWER(COALESCE(ente, ''))
-                HAVING COUNT(*) > 1
+                HAVING COUNT(*) > 1 AND LOWER(COALESCE(titolo, '')) <> ''
                 """
             ).fetchall()
         else:
@@ -254,7 +254,7 @@ def deduplica_bandi(strict: bool = True) -> int:
                     array_agg(id ORDER BY id DESC) AS ids
                 FROM bandi
                 GROUP BY LOWER(TRIM(COALESCE(titolo, '')))
-                HAVING COUNT(*) > 1
+                HAVING COUNT(*) > 1 AND LOWER(TRIM(COALESCE(titolo, ''))) <> ''
                 """
             ).fetchall()
 

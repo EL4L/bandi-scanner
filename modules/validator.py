@@ -192,7 +192,7 @@ def validate_bando(
         if inferred:
             bando["data_scadenza"] = inferred
             warnings.append(
-                "bando.data_scadenza ricavata dal testo PDF (Claude non l'aveva compilata)"
+                "bando.data_scadenza ricavata dal testo PDF (il modello non l'aveva compilata)"
             )
 
     wrapped["bando"] = bando

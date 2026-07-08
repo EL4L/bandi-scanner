@@ -186,7 +186,7 @@ def _score_fatturato(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
         if fat_cli <= float(fatturato_max):
             return WEIGHT_FATTURATO
     except (TypeError, ValueError):
-        return WEIGHT_FATTURATO
+        return 0
     return 0
 
 def bando_has_constraints(payload: dict[str, Any]) -> bool:
@@ -520,7 +520,7 @@ def genera_spiegazione_score(
 
     # Fatturato
     score_fat = score_dettaglio.get("fatturato", 0)
-    has_fat_constraint = b.get("fatturato_max") is not None or b.get("contributo_max") is not None
+    has_fat_constraint = b.get("fatturato_max") is not None
     if not has_fat_constraint:
         parts.append("✅ Fatturato: nessun vincolo")
     elif score_fat == WEIGHT_FATTURATO:

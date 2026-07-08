@@ -24,7 +24,7 @@ def log_incident(description: str, impact: str, cause: str, fix: str) -> None:
     )
     try:
         path = INCIDENTS_LOG
-        if path.stat().st_size < 200:
+        if not path.exists() or path.stat().st_size < 200:
             with open(path, "a", encoding="utf-8") as f:
                 f.write(
                     "\n| Data | Descrizione | Impatto | Causa | Fix |\n"

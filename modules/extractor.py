@@ -16,7 +16,7 @@ from openai import (
     RateLimitError,
 )
 from dotenv import load_dotenv
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from modules.log_utils import log_error, log_incident
 from modules.schema import BANDO_SCHEMA, MAX_TEXT_CHARS, MIN_TEXT_CHARS, normalize_response
@@ -33,7 +33,14 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek/deepseek-v4-flash")
 # causava 404 silenziosi su ogni tentativo di fallback (audit D-2 / error_log.txt storico).
 LLM_FALLBACK_MODEL = os.environ.get("LLM_FALLBACK_MODEL", "anthropic/claude-haiku-4.5")
 RETRY_ATTEMPTS = 3
-RETRY_WAIT_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_SECONDS", "60"))
+# Backoff esponenziale (2s, 4s, 8s) invece del precedente wait_fixed(60s):
+# l'endpoint /api/estrazione è sincrono e su Render free un'attesa fissa di
+# 60s per tentativo rischiava timeout del proxy e richieste appese (audit D-9).
+RETRY_WAIT_MULTIPLIER = int(os.environ.get("LLM_RETRY_WAIT_MULTIPLIER", "2"))
+RETRY_WAIT_MAX_SECONDS = int(os.environ.get("LLM_RETRY_WAIT_MAX_SECONDS", "8"))
+# Timeout esplicito sulla chiamata HTTP al provider: senza questo il client
+# usa il default della libreria (molto più lungo), sommandosi ai retry.
+LLM_REQUEST_TIMEOUT_SECONDS = int(os.environ.get("LLM_REQUEST_TIMEOUT_SECONDS", "30"))
 # Senza un limite esplicito il client richiede il massimo output del modello
 # (es. 64.000 token su Claude Haiku 4.5): con saldo OpenRouter basso questo
 # fa fallire con 402 anche chiamate legittime. Il JSON di un bando estratto
@@ -82,6 +89,7 @@ def _get_client() -> OpenAI:
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=api_key,
+        timeout=LLM_REQUEST_TIMEOUT_SECONDS,
     )
 
 
@@ -206,7 +214,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
 @retry(
     stop=stop_after_attempt(RETRY_ATTEMPTS),
-    wait=wait_fixed(RETRY_WAIT_SECONDS),
+    wait=wait_exponential(multiplier=RETRY_WAIT_MULTIPLIER, max=RETRY_WAIT_MAX_SECONDS),
     retry=retry_if_exception(_is_retryable_api_error),
     reraise=True,
 )

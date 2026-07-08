@@ -6,6 +6,7 @@ import os
 import re
 import threading
 import time
+import uuid
 from collections import defaultdict, deque
 from pathlib import Path
 
@@ -402,7 +403,10 @@ def api_bando_scheda_json(bando_id: int):
         row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
     if not row:
         return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
-    scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+    try:
+        scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+    except Exception:
+        return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
     return {"bando_id": bando_id, "scheda": scheda}
 
 
@@ -426,7 +430,13 @@ def api_rigenera_scheda(bando_id: int):
 def api_download_scheda(bando_id: int):
     with get_connection() as conn:
         row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
-    scheda = (row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))) if row else genera_scheda({})
+    if row:
+        try:
+            scheda = row["scheda_cached"] or genera_scheda(json.loads(row["json_completo"]))
+        except Exception:
+            return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
+    else:
+        scheda = genera_scheda({})
     return Response(
         content=scheda,
         media_type="text/markdown",
@@ -444,7 +454,7 @@ PDF_MAGIC = b"%PDF"
 @app.post("/api/estrazione", dependencies=[Depends(verify_api_key), Depends(rate_limit_estrazione)])
 def api_estrazione_submit(file: UploadFile = File(...)):
     safe_name = Path(file.filename).name
-    file_path = TEMP_DIR / safe_name
+    file_path = TEMP_DIR / f"{uuid.uuid4().hex}_{safe_name}"
     file_bytes = file.file.read()
 
     result = {
