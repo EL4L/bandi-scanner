@@ -32,13 +32,13 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 ## Fase 2 — P1 · Incoerenze tra pagine
 > Verdetti, dati e comportamenti che cambiano a seconda di dove guardi. Minano la fiducia nel tool.
 
-- [ ] **#7 — Esclusioni ATECO nello scoring: mappa sezioni → divisioni** `M` `Scoring`
+- [x] **#7 — Esclusioni ATECO nello scoring: mappa sezioni → divisioni** `M` `Scoring`
   `sezioni_ateco_escluse` non è mai letto dal matcher. Un cliente in Sez. K su un bando che esclude la Sez. K prende 20/40 invece di 0. Implementare la mappa sezione→divisioni e usarla in `_score_ateco` e `check_ammissibilita`.
 
-- [ ] **#8 — Dimensione + fatturato come esclusioni binarie in `check_ammissibilita`** `S` `Scoring`
+- [x] **#8 — Dimensione + fatturato come esclusioni binarie in `check_ammissibilita`** `S` `Scoring`
   Un'impresa "grande" su un bando solo-PMI può totalizzare 80% e apparire in verde. Spostare questi criteri (quando il dato cliente è noto) in `check_ammissibilita` come criteri di esclusione, non pesi. La spesa minima da esclusione definitiva a warning.
 
-- [ ] **#9 — Fix debounce ricerca `Bandi.tsx`** `XS` `Frontend`
+- [x] **#9 — Fix debounce ricerca `Bandi.tsx`** `XS` `Frontend`
   Il `useMemo` ha `query` nelle deps ma usa `debouncedQuery` dentro: il filtro applica sempre il valore precedente. Cambiare la dipendenza a `debouncedQuery` e rimuovere `query`.
 
 - [ ] **#10 — Prompt injection: delimitatori attorno a `{raw_text}`** `S` `Estrazione`

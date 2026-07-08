@@ -305,7 +305,7 @@ export default function Bandi() {
       sortedAttivi: filtered.filter(b => !isExpired(b)).sort(sortFn),
       sortedScaduti: filtered.filter(isExpired).sort(sortFn),
     }
-  }, [bandi, query, regioneFilter, sortKey, sortDir])
+  }, [bandi, debouncedQuery, regioneFilter, sortKey, sortDir])
 
   const handleDeleteRequest = useCallback((id: number) => setConfirmDeleteId(id), [])
   const handleDeleteCancel = useCallback(() => setConfirmDeleteId(null), [])

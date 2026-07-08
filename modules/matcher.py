@@ -83,6 +83,51 @@ _FORMA_GIURIDICA_CHIAVI_ORDINATE = sorted(FORMA_GIURIDICA_CATEGORIE, key=len, re
 # giuridiche iscritte al Registro Imprese" (nessun vincolo reale di forma)
 _REGISTRO_IMPRESE_MARKER = "registroimprese"
 
+# ── Mappa sezioni ATECO → intervallo divisioni (classificazione ATECO 2007/2025) ──
+# Usata per confrontare `note_esclusioni.sezioni_ateco_escluse` (lettere di sezione,
+# es. "K") con il codice ATECO del cliente (divisione a 2 cifre, es. "64.19" → 64).
+ATECO_SEZIONI_DIVISIONI: dict[str, tuple[int, int]] = {
+    "A": (1, 3), "B": (5, 9), "C": (10, 33), "D": (35, 35), "E": (36, 39),
+    "F": (41, 43), "G": (45, 47), "H": (49, 53), "I": (55, 56), "J": (58, 63),
+    "K": (64, 66), "L": (68, 68), "M": (69, 75), "N": (77, 82), "O": (84, 84),
+    "P": (85, 85), "Q": (86, 88), "R": (90, 93), "S": (94, 96), "T": (97, 98),
+    "U": (99, 99),
+}
+_SEZIONE_LETTERA_RE = re.compile(r"\b([A-U])\b")
+
+def _sezione_da_divisione(div: int) -> str | None:
+    for sezione, (lo, hi) in ATECO_SEZIONI_DIVISIONI.items():
+        if lo <= div <= hi:
+            return sezione
+    return None
+
+def _divisione_da_codice(codice_ateco: str | None) -> int | None:
+    pref = _ateco_prefix_two(codice_ateco)
+    if not pref or not pref.isdigit():
+        return None
+    return int(pref)
+
+def _estrai_lettera_sezione(voce: str) -> str | None:
+    """Estrae la lettera di sezione ATECO (A-U) da una voce come "K" o "Sezione K - Attività finanziarie"."""
+    m = _SEZIONE_LETTERA_RE.search(voce.strip().upper())
+    return m.group(1) if m else None
+
+def _sezione_cliente_esclusa(bando: dict[str, Any], cliente: dict[str, Any]) -> bool:
+    """True se la sezione ATECO del cliente rientra tra le sezioni escluse dal bando."""
+    note = bando.get("note_esclusioni")
+    sezioni_escluse = _norm_list(note.get("sezioni_ateco_escluse")) if isinstance(note, dict) else []
+    if not sezioni_escluse:
+        return False
+    codice_cliente = _norm_str(cliente.get("codice_ateco") or cliente.get("ateco"))
+    div_cliente = _divisione_da_codice(codice_cliente)
+    if div_cliente is None:
+        return False
+    sezione_cliente = _sezione_da_divisione(div_cliente)
+    if sezione_cliente is None:
+        return False
+    lettere_escluse = {l for v in sezioni_escluse if (l := _estrai_lettera_sezione(v))}
+    return sezione_cliente in lettere_escluse
+
 
 def _unwrap_bando(bando: dict[str, Any]) -> dict[str, Any]:
     inner = bando.get("bando")
@@ -155,6 +200,7 @@ def _score_regione(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     return WEIGHT_REGIONE if cliente_regione.lower() in lowered else 0
 
 def _score_ateco(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
+    if _sezione_cliente_esclusa(bando, cliente): return 0
     if bando.get("ateco_aperto_a_tutti") is True: return WEIGHT_ATECO
     codici = _codici_ateco_bando(bando)
     attivita = _attivita_ammesse_bando(bando)
@@ -289,6 +335,19 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
         else:
             criteri_verificati.append(f"Anzianità massima: OK ({mesi_dalla_cost} mesi, limite {mesi_max})")
 
+    # Criterio 2bis: Sezione ATECO esclusa
+    # Confronta la sezione ATECO del cliente (dedotta dalla divisione, es. "64.19" → K)
+    # con `note_esclusioni.sezioni_ateco_escluse`: un'esclusione di sezione è un
+    # criterio binario, non un semplice sconto di punteggio come in _score_ateco.
+    if _sezione_cliente_esclusa(b, c):
+        codice_cliente = _norm_str(c.get("codice_ateco") or c.get("ateco"))
+        div_cliente = _divisione_da_codice(codice_cliente)
+        sezione_cliente = _sezione_da_divisione(div_cliente) if div_cliente is not None else None
+        ammissibile = False
+        motivi_esclusione.append(
+            f"Codice ATECO {codice_cliente} (Sezione {sezione_cliente}) escluso dal bando"
+        )
+
     # Criterio 3: Forma giuridica
     # Confronto per categoria generica (es. "S.r.l." → "società di capitali"),
     # non per uguaglianza letterale: il bando spesso ammette categorie ampie
@@ -355,10 +414,58 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
         if fat_num == 0:
             criteri_verificati.append("Spesa minima: non verificabile")
         elif fat_num < spesa_min:
-            ammissibile = False
-            motivi_esclusione.append(f"Fatturato € {fat_num:,.0f} potrebbe non coprire la spesa minima richiesta di € {spesa_min:,.0f}")
+            criteri_verificati.append(
+                f"⚠️ Attenzione: fatturato € {fat_num:,.0f} inferiore alla spesa "
+                f"minima di € {spesa_min:,.0f} — verificare la capacità di investimento"
+            )
         else:
             criteri_verificati.append(f"Spesa minima: OK (€ {fat_num:,.0f} >= € {spesa_min:,.0f})")
+
+    # Criterio 5: dimensione impresa
+    dim_bando_raw = b.get("dimensione_impresa")
+    if isinstance(dim_bando_raw, dict):
+        ammesse = [k for k, v in dim_bando_raw.items() if v is True]
+        if ammesse:
+            dim_cliente = _norm_str(
+                c.get("dimensione_impresa") or c.get("dimensione")
+            )
+            if not dim_cliente:
+                criteri_verificati.append(
+                    "Dimensione impresa: non verificabile (dato cliente assente)"
+                )
+            elif dim_cliente.lower() not in {d.lower() for d in ammesse}:
+                ammissibile = False
+                motivi_esclusione.append(
+                    f"Dimensione '{dim_cliente}' non ammessa dal bando "
+                    f"(ammesse: {', '.join(ammesse)})"
+                )
+            else:
+                criteri_verificati.append(f"Dimensione impresa: OK ({dim_cliente})")
+
+    # Criterio 6: fatturato massimo
+    fat_max = b.get("fatturato_max")
+    if fat_max is not None:
+        try:
+            fat_max_num = float(fat_max)
+            fat_cliente = c.get("fatturato")
+            if fat_cliente is not None:
+                fat_cliente_num = float(fat_cliente)
+                if fat_cliente_num > fat_max_num:
+                    ammissibile = False
+                    motivi_esclusione.append(
+                        f"Fatturato € {fat_cliente_num:,.0f} supera il limite "
+                        f"di € {fat_max_num:,.0f}"
+                    )
+                else:
+                    criteri_verificati.append(
+                        f"Fatturato: OK (€ {fat_cliente_num:,.0f} ≤ € {fat_max_num:,.0f})"
+                    )
+            else:
+                criteri_verificati.append(
+                    "Fatturato massimo: non verificabile (dato cliente assente)"
+                )
+        except (TypeError, ValueError):
+            criteri_verificati.append("Fatturato massimo: non verificabile (dato non numerico)")
 
     return {
         "ammissibile": ammissibile,
