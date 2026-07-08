@@ -1,6 +1,4 @@
 [run]
-omit =
-    modules/extractor.py
 
 [report]
 fail_under = 60

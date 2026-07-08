@@ -274,6 +274,115 @@ def test_post_estrazione_senza_apikey_configurata_ritorna_500(mock_db):
 # Rate limit /api/estrazione (D-3)
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# POST /api/estrazione — rami di successo/estrazione (J-1), con extract_text_from_pdf
+# ed extract_bando_data mockati: nessuna chiamata reale a PyMuPDF/OpenRouter.
+# ---------------------------------------------------------------------------
+
+VALID_PDF_BYTES = b"%PDF-1.4\n" + b"contenuto finto" * 5
+
+BANDO_ESTRATTO = {
+    "bando": {
+        "titolo": "Bando Test",
+        "ente": "Regione Test",
+        "data_pubblicazione": None,
+        "data_scadenza": "2026-12-31",
+        "codici_ateco_ammessi": [],
+        "attivita_ammesse": [],
+        "ateco_aperto_a_tutti": True,
+        "regioni_ammesse": [],
+        "dimensione_impresa": {"micro": True, "piccola": True, "media": True, "grande": True},
+        "fatturato_max": None,
+        "contributo_max": 50000.0,
+        "percentuale_fondo_perduto": None,
+        "spese_ammissibili": [],
+        "link_fonte_ufficiale": None,
+        "note_esclusioni": None,
+        "spesa_minima_ammissibile": None,
+        "anzianita_impresa": {"mesi_minimi_dalla_costituzione": None, "mesi_massimi_dalla_costituzione": None},
+        "forme_giuridiche_ammesse": [],
+        "urgenza": "bassa",
+    }
+}
+
+
+def test_post_estrazione_pdf_vuoto(client):
+    """extract_text_from_pdf solleva EmptyPDFException -> risposta con empty_pdf=True."""
+    from modules.extractor import EmptyPDFException
+
+    with patch("main.extract_text_from_pdf", side_effect=EmptyPDFException("vuoto")):
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("vuoto.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+    assert response.status_code == 200
+    assert response.json()["empty_pdf"] is True
+
+
+def test_post_estrazione_successo(client, mock_db):
+    """Flusso completo: estrazione ok, nessun duplicato, salvataggio riuscito."""
+    with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=None), \
+         patch("main.save_bando_from_json", return_value=123), \
+         patch("main.run_matching_for_bando"):
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("bando.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bando_id"] == 123
+    assert "scheda" in data
+    assert data["errors"] == []
+
+
+def test_post_estrazione_duplicato(client, mock_db):
+    with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=42):
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("bando.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "duplicato"
+    assert data["bando_id"] == 42
+
+
+def test_post_estrazione_json_invalido_dal_llm(client):
+    """extract_bando_data solleva InvalidJSONResponse -> extraction_error sanificato, no stacktrace."""
+    from modules.extractor import InvalidJSONResponse
+
+    with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", side_effect=InvalidJSONResponse("non e' JSON")):
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("bando.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert "extraction_error" in data
+    assert "non e' JSON" not in data["extraction_error"]
+
+
+def test_post_estrazione_errore_salvataggio(client, mock_db):
+    """save_bando_from_json fallisce -> save_error sanificato, non extraction_error."""
+    with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=None), \
+         patch("main.save_bando_from_json", side_effect=RuntimeError("dettaglio interno db")):
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("bando.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert "save_error" in data
+    assert "dettaglio interno db" not in data["save_error"]
+
+
 def test_estrazione_rate_limit_oltre_soglia_ritorna_429(client):
     import main
 

@@ -1,20 +1,22 @@
 # Regole di Sviluppo - Bandi AI Scanner
 
-Questo progetto è un AI-Agent per il monitoraggio e il matching di bandi pubblici.
+Questo progetto è un tool interno per il monitoraggio e il matching di bandi pubblici.
 
 ## Stack Tecnologico
-- Linguaggio: Python 3.12
-- Framework UI: Streamlit
-- Database: SQLite
-- AI Provider: Anthropic (Claude)
+- Backend: Python 3.11 + FastAPI/Uvicorn
+- Frontend: React 19 + TypeScript + Vite
+- Database: PostgreSQL serverless (Neon) via psycopg2 (nessun ORM)
+- AI Provider: OpenRouter, modello `deepseek/deepseek-v4-flash` (fallback `anthropic/claude-haiku-4.5`)
+- Deploy: Docker multi-stage su Render.com
 
 ## Documentazione di Riferimento
-- Specifica Tecnica: @Specifica_v1.3.md
-- Roadmap/Breakdown: @Breakdown.md
+- Contesto operativo completo: @CLAUDE.md (endpoint, schema DB, flussi, regole da seguire sempre)
+- Audit tecnico e roadmap: @AUDIT_BANDI_SCANNER.md
 
 ## Regole Operative
-1. **Contesto:** Prima di scrivere qualsiasi codice, analizza sempre lo stato attuale rispetto al piano definito in @Breakdown.md.
-2. **Coerenza:** Assicurati che ogni nuovo codice sia coerente con le definizioni nello schema JSON indicato in @Specifica_v1.3.md.
-3. **Validazione:** Ogni task completato deve soddisfare i criteri di accettazione (RF) elencati nella specifica.
-4. **Logging:** Ricorda all'utente di aggiornare @logs/PROMPT_LOG.md e @logs/INCIDENTS.md dopo ogni modifica significativa al modulo AI o alla logica di estrazione.
-5. **Standard:** Segui la struttura di cartelle definita nella Fase 1 del Breakdown. Non creare file fuori posizione.
+1. **Contesto:** Prima di scrivere qualsiasi codice, leggi @CLAUDE.md per capire architettura, schema DB ed endpoint esistenti.
+2. **Coerenza:** Ogni nuovo codice deve essere coerente con lo schema JSON del bando descritto in @CLAUDE.md.
+3. **Placeholder SQL:** usare sempre `%s` (psycopg2/PostgreSQL), mai `?` (SQLite).
+4. **Nessuna libreria UI esterna nel frontend** (niente Material UI, Ant Design, Chakra, ecc.): solo React + CSS custom.
+5. **Logging:** aggiornare @logs/PROMPT_LOG.md e @logs/INCIDENTS.md dopo ogni modifica significativa al modulo AI o alla logica di estrazione, tramite le funzioni in `modules/log_utils.py`.
+6. **Non aggiungere feature non richieste:** il progetto è in produzione su Render e ogni modifica impatta utenti reali.

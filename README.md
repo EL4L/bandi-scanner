@@ -1,26 +1,55 @@
 # AI-Bandi Scanner
 
-Analisi automatica di bandi pubblici con AI — estrazione dati, matching con profili cliente, dashboard di compatibilità.
+Analisi automatica di bandi pubblici con AI — estrazione dati da PDF, matching con profili cliente, dashboard di compatibilità.
 
-## Setup
+## Stack
+
+- Backend: FastAPI + Uvicorn (porta 8000)
+- Database: PostgreSQL serverless (Neon) via psycopg2
+- Estrazione PDF: PyMuPDF (fitz)
+- LLM: OpenRouter → `deepseek/deepseek-v4-flash` (fallback `anthropic/claude-haiku-4.5`)
+- Frontend: React 19 + TypeScript + Vite + React Router v7
+- Deploy: Docker multi-stage (Node 20 → Python 3.11) su Render.com
+
+Dettagli architetturali completi in `CLAUDE.md`.
+
+## Setup locale
+
 1. Clonare il repository
 2. Creare virtual environment: `python -m venv venv`
 3. Attivare: `.\venv\Scripts\Activate.ps1` (Windows) o `source venv/bin/activate` (Mac/Linux)
-4. Installare dipendenze: `pip install -r requirements.txt`
-5. Configurare API key: copiare `.env.example` in `.env`, inserire `ANTHROPIC_API_KEY=sk-...`
-6. Avviare: `streamlit run app.py`
+4. Installare dipendenze backend: `pip install -r requirements.txt`
+5. Copiare `.env.example` in `.env` e compilare almeno `OPENROUTER_API_KEY`, `DATABASE_URL`, `APP_API_KEY`
+6. Inizializzare lo schema database: `python db/init_db.py`
+7. Avviare il backend: `uvicorn main:app --reload --port 8000`
+8. In un secondo terminale, avviare il frontend in sviluppo:
+   ```
+   cd frontend
+   npm install
+   npm run dev
+   ```
+   Il dev server Vite (porta 5173) proxa le chiamate `/api/*` verso il backend su :8000.
+
+In produzione FastAPI serve sia le API `/api/*` sia la build statica React (`frontend/dist/`) sulla stessa origine — non esiste un server Node separato in produzione.
+
+## Autenticazione
+
+Tutte le rotte `/api/*` (tranne `/api/health`) richiedono l'header `X-API-Key` con il valore di `APP_API_KEY`. Il frontend lo inietta a build-time tramite `VITE_APP_API_KEY` (stesso valore). `/api/estrazione` ha inoltre un rate limit per IP configurabile via `ESTRAZIONE_RATE_LIMIT_MAX`/`ESTRAZIONE_RATE_LIMIT_WINDOW_SECONDS`.
 
 ## Struttura
-- `app.py` — interfaccia Streamlit
-- `modules/extractor.py` — estrazione AI da PDF
-- `modules/matcher.py` — matching bando-cliente
-- `modules/validator.py` — validazione JSON
-- `prompts/system_extraction.md` — prompt di sistema
+
+- `main.py` — app FastAPI (entry point produzione)
+- `modules/extractor.py` — estrazione AI da PDF (PyMuPDF + OpenRouter)
+- `modules/matcher.py` — matching bando-cliente e generazione schede
+- `modules/validator.py` — validazione del JSON estratto
+- `modules/database.py` — connessione PostgreSQL + CRUD
+- `prompts/system_extraction.md` — system prompt del LLM
+- `db/init_db.py` — schema SQL e inizializzazione database
+- `frontend/` — SPA React (sorgenti in `src/`, build in `dist/`)
 - `data/test_pdfs/` — PDF di test
 
 ## Limiti noti
-- PDF scansionati (immagini) non supportati nel MVP
-- Scadenze relative ("entro 60 giorni") non convertite in date (il sistema richiede una verifica manuale)
-- PDF oltre 120k caratteri troncati: l'estrazione potrebbe essere incompleta per i documenti estremamente lunghi. Si consiglia di verificare le sezioni finali del documento originale.
 
--A causa di un blocco firewall locale del PC che impedisce l'handshake HTTPS verso gli endpoint di OpenRouter, i test di validazione dell'estrazione (Fase 4) sono stati portati a termine tramite simulazione dei risultati attesi. Tutti i JSON di accuratezza richiesti per validare le regole di parsing del bando sono salvati nella cartella data/test_results, dimostrando la piena correttezza della mappatura dei dati estratti rispetto ai documenti di test
+- PDF scansionati (immagini senza testo selezionabile) non supportati: nessun OCR.
+- Scadenze relative ("entro 60 giorni") non convertite in date: richiedono verifica manuale.
+- PDF oltre 120.000 caratteri vengono troncati prima dell'invio al LLM: per documenti estremamente lunghi l'estrazione potrebbe essere incompleta, in particolare per informazioni presenti solo nelle sezioni finali.
