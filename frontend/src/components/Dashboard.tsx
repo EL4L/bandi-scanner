@@ -64,6 +64,12 @@ function scoreClass(colorClass: string): string {
   return 'score-red'
 }
 
+function circleColorClass(score: number): string {
+  if (score > 70) return 'circle-green'
+  if (score >= 40) return 'circle-yellow'
+  return 'circle-red'
+}
+
 function matchBadgeClass(cls: string): string {
   if (cls === 'match-score-high') return 'match-badge match-badge-high'
   if (cls === 'match-score-mid') return 'match-badge match-badge-mid'
@@ -139,6 +145,12 @@ function BandoCardItem({
   card: BandoCard
   onScheda: () => void
 }) {
+  const validMatches = card.matches.filter(m => m.breakdown.status !== 'da_verificare')
+  const allDaVerificare = card.matches.length > 0 && validMatches.length === 0
+  const effectiveMaxScore = validMatches.length > 0
+    ? Math.max(...validMatches.map(m => m.score))
+    : card.max_score
+
   return (
     <div className="bando-card">
       <div
@@ -151,12 +163,18 @@ function BandoCardItem({
           <p className="bando-card-title">{card.titolo || `Bando #${card.id}`}</p>
           {card.ente && <p className="bando-card-ente">{card.ente}</p>}
         </div>
-        <div
-          className={`score-circle ${scoreClass(card.color_class)}`}
-          style={{ '--score': card.max_score } as React.CSSProperties}
-        >
-          <span>{card.max_score > 0 ? `${card.max_score}%` : '—'}</span>
-        </div>
+        {allDaVerificare ? (
+          <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
+            ⚠️ Da verificare
+          </span>
+        ) : (
+          <div
+            className={`score-circle ${scoreClass(circleColorClass(effectiveMaxScore))}`}
+            style={{ '--score': effectiveMaxScore } as React.CSSProperties}
+          >
+            <span>{effectiveMaxScore > 0 ? `${effectiveMaxScore}%` : '—'}</span>
+          </div>
+        )}
       </div>
 
       {card.scadenza && card.scadenza !== 'N/D' && (

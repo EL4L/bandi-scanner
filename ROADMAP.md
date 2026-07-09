@@ -52,6 +52,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 
 - [x] **#13 — Stato "Da verificare" per bandi ambigui al posto dello score 0** `M` `Scoring`
   Score 0 comunica "incompatibile", non "dati insufficienti". Fix anche per `bando_has_constraints` che ignora le `attivita_ammesse` testuali, generando falsi ambigui. Restituire uno stato terzo esplicito con badge dedicato in UI.
+  - Affinamento UX: badge Da verificare sostituisce lo score (non affianca)
 
 ---
 
