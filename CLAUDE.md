@@ -233,6 +233,8 @@ Score 0-100, calcolato da `calculate_score(bando, cliente)`:
       "grande": false
     },
     "fatturato_max": null,
+    "numero_dipendenti_min": null,
+    "numero_dipendenti_max": null,
     "contributo_max": 100000.0,
     "percentuale_fondo_perduto": 50.0,
     "spese_ammissibili": ["string"],

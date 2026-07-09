@@ -79,6 +79,19 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
   - NON usare il massimale di spese ammissibili come contributo_max: sono due
     campi distinti con semantica diversa.
 
+* "numero_dipendenti_min": (numero intero o null).
+  - Numero minimo di dipendenti richiesto per accedere al bando.
+  - Esempio: "almeno 5 dipendenti", "più di 10 addetti" → 5 o 10.
+  - Se non è indicato un minimo, restituisci null.
+
+* "numero_dipendenti_max": (numero intero o null).
+  - Numero massimo di dipendenti per accedere al bando.
+  - Esempio: "fino a 50 dipendenti", "meno di 250 addetti" → 50 o 249.
+  - Se non è indicato un massimo, restituisci null.
+  - Attenzione: i limiti dimensionali UE (micro <10, piccola <50,
+    media <250) vanno in dimensione_impresa, NON qui — questo campo
+    è solo per limiti espliciti numerici sul numero di dipendenti.
+
 * "percentuale_fondo_perduto": (numero).
   - REGOLE MATEMATICHE: Se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), DEVI calcolare la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso scriverai 40). Usa `null` solo se non ci sono dati matematici sufficienti.
   - Se il bando prevede un'agevolazione mista (parte a fondo perduto + parte come finanziamento agevolato), estrai SOLO la percentuale del contributo a fondo perduto. Aggiungi in `note_esclusioni.lista_testuale` una nota esplicita sulla quota di finanziamento agevolato (es. "Il restante 40% è erogato come finanziamento agevolato a tasso zero").

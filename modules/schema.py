@@ -21,6 +21,8 @@ BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "regioni_ammesse": list,
     "dimensione_impresa": dict,
     "fatturato_max": (int, float, type(None)),
+    "numero_dipendenti_min": (int, float, type(None)),
+    "numero_dipendenti_max": (int, float, type(None)),
     "contributo_max": (int, float, type(None)),
     "percentuale_fondo_perduto": (int, float, type(None)),
     "spese_ammissibili": list,
@@ -58,6 +60,8 @@ NUMERIC_FIELDS: frozenset[str] = frozenset({
     "percentuale_fondo_perduto",
     "spesa_minima_ammissibile",
     "spesa_massima_ammissibile",
+    "numero_dipendenti_min",
+    "numero_dipendenti_max",
 })
 
 

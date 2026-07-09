@@ -477,6 +477,40 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
         except (TypeError, ValueError):
             criteri_verificati.append("Fatturato massimo: non verificabile (dato non numerico)")
 
+    # Criterio 7: numero dipendenti
+    dip_min = b.get("numero_dipendenti_min")
+    dip_max = b.get("numero_dipendenti_max")
+    dip_cliente = c.get("numero_dipendenti")
+
+    if dip_min is not None or dip_max is not None:
+        if dip_cliente is None:
+            criteri_verificati.append(
+                "Numero dipendenti: non verificabile (dato cliente assente)"
+            )
+        else:
+            try:
+                dip_num = int(dip_cliente)
+                if dip_min is not None and dip_num < int(dip_min):
+                    ammissibile = False
+                    motivi_esclusione.append(
+                        f"Numero dipendenti insufficiente: {dip_num} "
+                        f"(richiesti almeno {int(dip_min)})"
+                    )
+                elif dip_max is not None and dip_num > int(dip_max):
+                    ammissibile = False
+                    motivi_esclusione.append(
+                        f"Numero dipendenti troppo alto: {dip_num} "
+                        f"(massimo {int(dip_max)})"
+                    )
+                else:
+                    criteri_verificati.append(
+                        f"Numero dipendenti: OK ({dip_num})"
+                    )
+            except (TypeError, ValueError):
+                criteri_verificati.append(
+                    "Numero dipendenti: non verificabile (dato non numerico)"
+                )
+
     return {
         "ammissibile": ammissibile,
         "motivi_esclusione": motivi_esclusione,
