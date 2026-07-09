@@ -561,6 +561,27 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
                     "Numero dipendenti: non verificabile (dato non numerico)"
                 )
 
+    # Criterio 8: regione
+    regioni_bando = _regioni_bando(b)
+    if regioni_bando:
+        lowered = {r.lower() for r in regioni_bando}
+        if "tutte" not in lowered and "tutta italia" not in lowered:
+            regione_cliente = _norm_str(c.get("regione"))
+            if not regione_cliente:
+                criteri_verificati.append(
+                    "Regione: non verificabile (dato cliente assente)"
+                )
+            elif regione_cliente.lower() not in lowered:
+                ammissibile = False
+                motivi_esclusione.append(
+                    f"Regione '{regione_cliente}' non ammessa dal bando "
+                    f"(ammesse: {', '.join(regioni_bando)})"
+                )
+            else:
+                criteri_verificati.append(
+                    f"Regione: OK ({regione_cliente})"
+                )
+
     return {
         "ammissibile": ammissibile,
         "motivi_esclusione": motivi_esclusione,

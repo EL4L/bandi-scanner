@@ -37,6 +37,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 
 - [x] **#8 — Dimensione + fatturato come esclusioni binarie in `check_ammissibilita`** `S` `Scoring`
   Un'impresa "grande" su un bando solo-PMI può totalizzare 80% e apparire in verde. Spostare questi criteri (quando il dato cliente è noto) in `check_ammissibilita` come criteri di esclusione, non pesi. La spesa minima da esclusione definitiva a warning.
+  - Aggiunto Criterio 8: regione come esclusione binaria (analogo a dimensione/fatturato)
 
 - [x] **#9 — Fix debounce ricerca `Bandi.tsx`** `XS` `Frontend`
   Il `useMemo` ha `query` nelle deps ma usa `debouncedQuery` dentro: il filtro applica sempre il valore precedente. Cambiare la dipendenza a `debouncedQuery` e rimuovere `query`.

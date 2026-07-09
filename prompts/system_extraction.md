@@ -64,6 +64,10 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
   - NON deve contenere le categorie di impresa beneficiaria (es. NON scrivere "PMI", "imprese manifatturiere", "startup"). Quelle informazioni vanno in `dimensione_impresa` o `forme_giuridiche_ammesse`.
   - Lascia la lista vuota `[]` se il bando non descrive interventi specifici finanziabili.
 
+* "regioni_ammesse": (lista di stringhe).
+  - Elenca le regioni italiane per cui il bando è valido, se il testo specifica un ambito geografico limitato (es. bandi regionali o POR/PSR).
+  - Se il bando è valido su tutto il territorio nazionale, lascia regioni_ammesse come lista vuota []. NON scrivere "tutte le regioni" o "Italia" come valore — una lista vuota è il segnale che il bando non ha vincoli geografici.
+
 * "note_esclusioni": (oggetto JSON). Invece di un testo lungo, crea un oggetto strutturato che contiene:
   - "lista_testuale": (stringa) il riassunto delle esclusioni. IMPORTANTE: Se il bando è su base nazionale ma menziona "Riserve di fondi" per specifiche aree (es. Riserva PNRR SUD), DEVI segnalarlo all'inizio di questa stringa.
   - "sezioni_ateco_escluse": (lista di stringhe) es: ["Sez. K", "Sez. L"].
