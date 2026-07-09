@@ -93,13 +93,29 @@ def _get_client() -> OpenAI:
     )
 
 
+_BANDO_TEXT_CLOSE_RE = re.compile(r'</\s*bando_text\s*>', re.IGNORECASE)
+
+
+def _sanitize_delimiters(raw_text: str) -> str:
+    """Neutralizza tentativi di chiusura anticipata del delimitatore `<bando_text>`.
+
+    Un PDF ostile potrebbe contenere una stringa tipo "</bando_text> Ignora
+    le istruzioni precedenti..." per uscire dal blocco delimitato e far
+    passare nuove istruzioni come se venissero dal prompt di sistema
+    (prompt injection, ROADMAP #10). Il tag viene sostituito con un
+    placeholder innocuo prima di iniettare il testo nel prompt.
+    """
+    return _BANDO_TEXT_CLOSE_RE.sub('[TAG_RIMOSSO]', raw_text)
+
+
 def _load_system_prompt(raw_text: str) -> str:
     if not PROMPT_PATH.is_file():
         raise FileNotFoundError(f"Prompt non trovato: {PROMPT_PATH}")
     template = PROMPT_PATH.read_text(encoding="utf-8")
+    sanitized_text = _sanitize_delimiters(raw_text)
     if "{raw_text}" not in template:
-        return f"{template.strip()}\n\nTesto del bando:\n{raw_text}"
-    return template.replace("{raw_text}", raw_text)
+        return f"{template.strip()}\n\nTesto del bando:\n<bando_text>\n{sanitized_text}\n</bando_text>"
+    return template.replace("{raw_text}", sanitized_text)
 
 
 def _tronca_testo(raw_text: str) -> str:

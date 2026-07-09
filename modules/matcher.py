@@ -239,33 +239,43 @@ def bando_has_constraints(payload: dict[str, Any]) -> bool:
     bando = _unwrap_bando(payload)
     ateco_aperto = bando.get("ateco_aperto_a_tutti", False)
     codici_ateco = _codici_ateco_bando(bando)
+    attivita_ammesse = _attivita_ammesse_bando(bando)
     regioni = _regioni_bando(bando)
     fatturato_max = bando.get("fatturato_max")
     dimensioni = _dimensioni_ammesse(bando)
     if codici_ateco and not ateco_aperto: return True
+    if attivita_ammesse and not ateco_aperto: return True
     if regioni and len(regioni) > 0 and "Tutta Italia" not in [r.title() for r in regioni]: return True
     if fatturato_max: return True
     if dimensioni and len(dimensioni) > 0 and len(dimensioni) < 4: return True
     return False
 
+def bando_ambiguo(payload: dict[str, Any]) -> bool:
+    """True se dal bando non è stato estratto alcun dato utile a valutare la
+    compatibilità (nessun vincolo di settore/regione/dimensione/fatturato e
+    non dichiarato esplicitamente aperto a tutti): il match non è "incompatibile",
+    sono "dati insufficienti" per esprimere un verdetto (ROADMAP #13)."""
+    bando = _unwrap_bando(payload if isinstance(payload, dict) else {})
+    return not bando_has_constraints(payload) and not bando.get("ateco_aperto_a_tutti")
+
 def calculate_score(bando: dict[str, Any], cliente: dict[str, Any]) -> int:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     c = cliente if isinstance(cliente, dict) else {}
-    # Bando vuoto/ambiguo (nessun vincolo e non dichiarato aperto a tutti) → score 0
-    if not bando_has_constraints(bando) and not b.get("ateco_aperto_a_tutti"):
-        return 0
     total = _score_regione(b, c) + _score_ateco(b, c) + _score_dimensione(b, c) + _score_fatturato(b, c)
     return max(0, min(100, int(total)))
 
-def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dict[str, int]:
+def get_score_breakdown(payload: dict[str, Any], cliente: dict[str, Any]) -> dict[str, Any]:
     bando = _unwrap_bando(payload)
     score_regione = _score_regione(bando, cliente)
     score_ateco = _score_ateco(bando, cliente)
     score_dim = _score_dimensione(bando, cliente)
     score_fat = _score_fatturato(bando, cliente)
-    ambiguo = not bando_has_constraints(payload) and not bando.get("ateco_aperto_a_tutti")
-    totale = 0 if ambiguo else (score_regione + score_ateco + score_dim + score_fat)
-    return {"regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat, "total": max(0, min(100, int(totale)))}
+    totale = score_regione + score_ateco + score_dim + score_fat
+    return {
+        "regione": score_regione, "ateco": score_ateco, "dimensione": score_dim, "fatturato": score_fat,
+        "total": max(0, min(100, int(totale))),
+        "status": "da_verificare" if bando_ambiguo(payload) else "ok",
+    }
 
 _ACCENTI_TRANS = str.maketrans("àèéìòùÀÈÉÌÒÙ", "aeeiouAEEIOU")
 

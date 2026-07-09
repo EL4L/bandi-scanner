@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { toast } from '../toast'
-import { withApiKey } from '../apiKey'
+import { apiHref, withApiKey } from '../apiKey'
 import { useModalA11y } from '../useModalA11y'
 import { ClienteFormModal, EMPTY_CLIENTE_FORM, type ClienteForm } from './ClienteFormModal'
+import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Cliente {
   id: number
@@ -19,6 +20,12 @@ interface Cliente {
   match_count: number
 }
 
+interface Ammissibilita {
+  ammissibile: boolean
+  motivi_esclusione: string[]
+  criteri_verificati: string[]
+}
+
 interface BandoMatch {
   bando_id: number
   titolo: string | null
@@ -30,9 +37,12 @@ interface BandoMatch {
     dimensione: number
     fatturato: number
     total: number
+    status?: 'ok' | 'da_verificare'
   }
   scadenza: string | null
   giorni_alla_scadenza: number | null
+  ammissibilita?: Ammissibilita
+  fonte_url?: string | null
 }
 
 function formatEuro(val: number) {
@@ -144,6 +154,9 @@ export default function Clienti() {
   const [detailBandi, setDetailBandi] = useState<BandoMatch[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
 
+  const [openScheda, setOpenScheda] = useState<SchedaModalData | null>(null)
+  const [schedaLoading, setSchedaLoading] = useState<number | null>(null)
+
   const fetchClienti = async () => {
     try {
       const res = await fetch('/api/clienti', withApiKey())
@@ -205,6 +218,19 @@ export default function Clienti() {
   const closeDetail = () => { setDetailCliente(null); setDetailBandi([]) }
 
   const detailModalRef = useModalA11y(closeDetail, !!detailCliente)
+
+  const handleScheda = async (b: BandoMatch) => {
+    setSchedaLoading(b.bando_id)
+    try {
+      const res = await fetch(`/api/bandi/${b.bando_id}/scheda`, withApiKey())
+      const d = await res.json()
+      setOpenScheda({ id: b.bando_id, titolo: b.titolo ?? `Bando #${b.bando_id}`, scheda: d.scheda ?? '', fonte_url: b.fonte_url })
+    } catch {
+      toast.error('Impossibile caricare la scheda del bando.')
+    } finally {
+      setSchedaLoading(null)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -436,42 +462,99 @@ export default function Clienti() {
                 <p className="text-muted text-sm">Nessun bando compatibile trovato per questo cliente.</p>
               ) : (
                 <div className="cliente-bandi-list">
-                  {detailBandi.map(b => (
-                    <div key={b.bando_id} className="cliente-bando-row">
-                      <div className="deadline-strip" style={{ '--deadline-color': stripColorByGiorni(b.giorni_alla_scadenza) } as React.CSSProperties} />
-                      <div className="cliente-bando-row-inner">
-                        <div className="cliente-bando-info">
-                          <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
-                          {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
-                          <div className="breakdown-bars" style={{ marginTop: 7 }}>
-                            <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
-                            <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
-                            <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
-                            <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
-                          </div>
-                        </div>
-                        <div className="cliente-bando-right">
-                          <div
-                            className={`score-circle ${scoreCircleClass(b.score)}`}
-                            style={{ '--score': b.score } as React.CSSProperties}
-                          >
-                            <span>{b.score}%</span>
-                          </div>
-                          {b.scadenza && (
-                            <div style={{ textAlign: 'center', marginTop: 6 }}>
-                              <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
-                              {b.giorni_alla_scadenza !== null && (
-                                <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
-                                  {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
-                                </p>
+                  {detailBandi.map(b => {
+                    const escluso = b.ammissibilita?.ammissibile === false
+                    const daVerificare = !escluso && b.breakdown.status === 'da_verificare'
+                    return (
+                      <div key={b.bando_id} className={`cliente-bando-row${escluso ? ' match-excluded' : ''}`}>
+                        <div className="deadline-strip" style={{ '--deadline-color': stripColorByGiorni(b.giorni_alla_scadenza) } as React.CSSProperties} />
+                        <div className="cliente-bando-row-inner">
+                          <div className="cliente-bando-info">
+                            <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
+                            {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
+                            {daVerificare && (
+                              <span
+                                className="badge badge-warning"
+                                style={{ marginTop: 6 }}
+                                title="Il bando non contiene dati sufficienti per valutare la compatibilità"
+                              >
+                                ⚠️ Da verificare
+                              </span>
+                            )}
+                            {escluso && (
+                              <div style={{ marginTop: 6 }}>
+                                <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                                {b.ammissibilita!.motivi_esclusione.length > 0 && (
+                                  <ul className="td-muted text-sm" style={{ marginTop: 4, paddingLeft: 18 }}>
+                                    {b.ammissibilita!.motivi_esclusione.map((motivo, i) => (
+                                      <li key={i}>{motivo}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
+                            <div className="breakdown-bars" style={{ marginTop: 7 }}>
+                              <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
+                              <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
+                              <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
+                              <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
+                            </div>
+                            <div className="btn-group" style={{ marginTop: 8 }}>
+                              <button
+                                className="btn btn-sm"
+                                onClick={() => handleScheda(b)}
+                                disabled={schedaLoading === b.bando_id}
+                              >
+                                {schedaLoading === b.bando_id ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : 'Scheda'}
+                              </button>
+                              <a
+                                href={apiHref(`/api/bandi/${b.bando_id}/scheda.md`)}
+                                download
+                                className="btn btn-sm btn-ghost"
+                                aria-label={`Scarica scheda di ${b.titolo ?? `Bando #${b.bando_id}`}`}
+                              >
+                                Scarica
+                              </a>
+                              {b.fonte_url && (
+                                <a
+                                  href={b.fonte_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-sm btn-ghost"
+                                  aria-label={`Apri fonte ufficiale di ${b.titolo ?? `Bando #${b.bando_id}`}`}
+                                >
+                                  Fonte
+                                </a>
                               )}
                             </div>
-                          )}
+                          </div>
+                          <div className="cliente-bando-right">
+                            <div
+                              className={`score-circle ${scoreCircleClass(b.score)}`}
+                              style={{ '--score': b.score } as React.CSSProperties}
+                            >
+                              <span>{b.score}%</span>
+                            </div>
+                            {b.scadenza && (
+                              <div style={{ textAlign: 'center', marginTop: 6 }}>
+                                <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
+                                {b.giorni_alla_scadenza !== null && (
+                                  <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
+                                    {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
+              )}
+
+              {openScheda && (
+                <ModalScheda data={openScheda} onClose={() => setOpenScheda(null)} />
               )}
             </div>
           </div>

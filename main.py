@@ -206,6 +206,50 @@ def _scheda_or_cached(payload: dict, scheda_cached: str | None) -> str:
         return scheda_cached or genera_scheda({})
 
 
+def _dedupe_cards(cards: list[dict]) -> tuple[list[dict], int]:
+    """Raggruppa le card per coppia (titolo, ente) case-insensitive, fondendo i match.
+
+    La dedup lato client confrontava solo titolo+ente sulle card già costruite,
+    ma non fondeva i match: un cliente con match solo sul duplicato scartato
+    spariva del tutto dalla dashboard, mentre le KPI restavano calcolate sulle
+    card raw. Qui la card mantenuta è quella con id più alto; i match dei
+    duplicati vengono uniti a quelli della card mantenuta (per cliente,
+    tenendo lo score più alto) (ROADMAP #11).
+    """
+    groups: dict[str, list[dict]] = {}
+    order: list[str] = []
+    for card in cards:
+        key = f"{(card['titolo'] or '').strip().lower()}|||{(card['ente'] or '').strip().lower()}"
+        if key not in groups:
+            groups[key] = []
+            order.append(key)
+        groups[key].append(card)
+
+    merged_cards = []
+    duplicates_count = 0
+    for key in order:
+        group = groups[key]
+        duplicates_count += len(group) - 1
+        primary = max(group, key=lambda c: c["id"])
+        if len(group) > 1:
+            matches_by_cliente: dict[str, dict] = {}
+            for card in group:
+                for m in card["matches"]:
+                    nome = m.get("nome")
+                    existing = matches_by_cliente.get(nome)
+                    if not existing or m["score"] > existing["score"]:
+                        matches_by_cliente[nome] = m
+            merged_matches = sorted(matches_by_cliente.values(), key=lambda m: m["score"], reverse=True)
+            primary = dict(primary)
+            primary["matches"] = merged_matches
+            primary["max_score"] = max((m["score"] for m in merged_matches), default=primary["max_score"])
+            primary["color_class"] = get_color_class(primary["max_score"])
+        merged_cards.append(primary)
+
+    merged_cards.sort(key=lambda c: c["max_score"], reverse=True)
+    return merged_cards, duplicates_count
+
+
 def _dashboard_payload() -> dict:
     with get_connection() as conn:
         n_bandi = count_bandi(conn)
@@ -264,7 +308,7 @@ def _dashboard_payload() -> dict:
                 bd = get_score_breakdown(payload, cliente_row)
                 bd_error = None
             except Exception as e:
-                bd = {"total": 0, "ateco": 0, "regione": 0, "dimensione": 0, "fatturato": 0}
+                bd = {"total": 0, "ateco": 0, "regione": 0, "dimensione": 0, "fatturato": 0, "status": "ok"}
                 bd_error = str(e)
 
             cliente_match = {"codice_ateco": m.get("cliente_codice_ateco"), "descrizione_attivita": m.get("cliente_descrizione_attivita")}
@@ -307,11 +351,14 @@ def _dashboard_payload() -> dict:
             "fonte_url": get_fonte_url(payload),
         })
 
+    cards, duplicates_count = _dedupe_cards(cards)
+
     return {
         "n_bandi": n_bandi,
         "totale_abbinamenti": len(rows) if rows else 0,
         "has_export_data": bool(export_rows),
         "cards": cards,
+        "duplicates_count": duplicates_count,
     }
 
 
@@ -625,6 +672,10 @@ def api_cliente_bandi(cliente_id: int):
         except Exception:
             payload = {}
         bd = get_score_breakdown(payload, cliente)
+        try:
+            ammissibilita = check_ammissibilita(payload, cliente)
+        except Exception:
+            ammissibilita = {"ammissibile": True, "motivi_esclusione": [], "criteri_verificati": []}
         result.append({
             "bando_id": d["bando_id"],
             "titolo": d["titolo"],
@@ -633,6 +684,8 @@ def api_cliente_bandi(cliente_id: int):
             "breakdown": bd,
             "scadenza": format_scadenza_italiana(d.get("data_scadenza")),
             "giorni_alla_scadenza": giorni_alla_scadenza(d.get("data_scadenza")),
+            "ammissibilita": ammissibilita,
+            "fonte_url": get_fonte_url(payload),
         })
     return {"cliente_id": cliente_id, "bandi": result}
 

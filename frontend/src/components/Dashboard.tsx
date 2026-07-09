@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
@@ -9,6 +9,7 @@ interface Breakdown {
   regione: number
   dimensione: number
   fatturato: number
+  status?: 'ok' | 'da_verificare'
 }
 
 interface Ammissibilita {
@@ -48,6 +49,7 @@ interface DashboardData {
   totale_abbinamenti: number
   has_export_data: boolean
   cards: BandoCard[]
+  duplicates_count: number
 }
 
 const BLANK_VALUES = new Set(['n/d', 'null', 'none', 'undefined', ''])
@@ -184,12 +186,17 @@ function BandoCardItem({
           </p>
           {card.matches.map((m, i) => {
             const escluso = m.ammissibilita?.ammissibile === false
+            const daVerificare = !escluso && m.breakdown.status === 'da_verificare'
             return (
               <div key={i} className={`match-row${escluso ? ' match-excluded' : ''}`}>
                 <span className="match-row-name">{m.nome}</span>
                 <div className="match-row-right">
                   {escluso ? (
                     <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                  ) : daVerificare ? (
+                    <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
+                      ⚠️ Da verificare
+                    </span>
                   ) : (
                     <span className={matchBadgeClass(m.score_badge_class)}>
                       {m.score}%
@@ -250,19 +257,9 @@ export default function Dashboard() {
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [showExpiredSection, setShowExpiredSection] = useState(false)
 
-  // Raggruppa per coppia (titolo, ente), mantiene l'id più alto in caso di duplicati
-  const uniqueCards = useMemo(() => {
-    const cards = data?.cards ?? []
-    const seen = new Map<string, BandoCard>()
-    for (const card of cards) {
-      const key = `${(card.titolo ?? '').toLowerCase().trim()}|||${(card.ente ?? '').toLowerCase().trim()}`
-      const existing = seen.get(key)
-      if (!existing || card.id > existing.id) seen.set(key, card)
-    }
-    return Array.from(seen.values()).sort((a, b) => b.max_score - a.max_score)
-  }, [data])
-
-  const duplicatesCount = (data?.cards.length ?? 0) - uniqueCards.length
+  // Dedup e merge dei match per bandi duplicati (titolo+ente) già eseguiti lato server
+  const uniqueCards = data?.cards ?? []
+  const duplicatesCount = data?.duplicates_count ?? 0
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true)

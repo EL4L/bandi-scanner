@@ -104,6 +104,43 @@ def test_get_bandi_200(client):
 
 
 # ---------------------------------------------------------------------------
+# GET /api/clienti/{id}/bandi
+# ---------------------------------------------------------------------------
+
+def test_get_cliente_bandi_include_ammissibilita_e_fonte_url(client, mock_db, cliente_matching):
+    import json as jsonlib
+
+    bando_payload = {
+        "bando": {
+            "titolo": "Bando Grandi Imprese",
+            "ente": "MIMIT",
+            "dimensione_impresa": {"micro": False, "piccola": False, "media": False, "grande": True},
+            "link_fonte_ufficiale": "https://www.mimit.gov.it/bando",
+        }
+    }
+    row = {
+        "score": 80,
+        "bando_id": 1,
+        "titolo": "Bando Grandi Imprese",
+        "ente": "MIMIT",
+        "data_scadenza": None,
+        "json_completo": jsonlib.dumps(bando_payload),
+    }
+    mock_db.execute.return_value.fetchall.return_value = [row]
+
+    with patch("main.get_cliente", return_value=cliente_matching):
+        response = client.get(f"/api/clienti/{cliente_matching['id']}/bandi")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["bandi"]) == 1
+    entry = data["bandi"][0]
+    assert "ammissibilita" in entry
+    assert entry["ammissibilita"]["ammissibile"] is False
+    assert entry["fonte_url"] == "https://www.mimit.gov.it/bando"
+
+
+# ---------------------------------------------------------------------------
 # GET /api/dashboard
 # ---------------------------------------------------------------------------
 

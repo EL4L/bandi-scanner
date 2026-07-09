@@ -9,6 +9,8 @@ from modules.matcher import (
     _score_fatturato,
     calculate_score,
     bando_has_constraints,
+    bando_ambiguo,
+    get_score_breakdown,
     settore_da_verificare,
     genera_scheda,
     WEIGHT_REGIONE,
@@ -109,10 +111,12 @@ def test_score_fatturato_oltre_limite():
 # calculate_score e bando_has_constraints
 # ---------------------------------------------------------------------------
 
-def test_calculate_score_bando_senza_vincoli_ritorna_zero():
-    """bando_has_constraints=False → calculate_score cortocircuita e restituisce 0.
-    Questo è il comportamento atteso: un bando aperto a tutti non ha senso matcharlo.
-    """
+def test_calculate_score_bando_senza_vincoli_non_forza_piu_zero():
+    """ROADMAP #13: un bando senza alcun dato di vincolo estratto non è più
+    forzato a score 0 (che comunicava "incompatibile" invece di "dati
+    insufficienti"). Lo score riflette i punteggi di default dei singoli
+    criteri; l'ambiguità è segnalata separatamente da bando_ambiguo()/
+    get_score_breakdown()["status"]."""
     bando = {"bando": {"titolo": "Avviso generico"}}
     cliente = {
         "codice_ateco": "62.01",
@@ -120,7 +124,31 @@ def test_calculate_score_bando_senza_vincoli_ritorna_zero():
         "dimensione_impresa": "piccola",
         "fatturato": 50_000,
     }
-    assert calculate_score(bando, cliente) == 0
+    assert calculate_score(bando, cliente) > 0
+    assert bando_ambiguo(bando) is True
+
+
+def test_get_score_breakdown_status_da_verificare_per_bando_ambiguo():
+    bando = {"bando": {"titolo": "Avviso generico"}}
+    cliente = {"codice_ateco": "62.01", "regione": "Lombardia"}
+    bd = get_score_breakdown(bando, cliente)
+    assert bd["status"] == "da_verificare"
+
+
+def test_get_score_breakdown_status_ok_per_bando_con_vincoli():
+    bando = {"bando": {"titolo": "Bando Lombardia", "regioni_ammesse": ["Lombardia"]}}
+    cliente = {"codice_ateco": "62.01", "regione": "Lombardia"}
+    bd = get_score_breakdown(bando, cliente)
+    assert bd["status"] == "ok"
+
+
+def test_bando_has_constraints_riconosce_attivita_ammesse_testuali():
+    """ROADMAP #13: un bando con sole attivita_ammesse testuali (nessun codice
+    ATECO, nessuna dichiarazione aperto_a_tutti) ha comunque un vincolo
+    settoriale reale e non deve essere trattato come ambiguo."""
+    bando = {"bando": {"attivita_ammesse": ["Digitalizzazione processi"]}}
+    assert bando_has_constraints(bando) is True
+    assert bando_ambiguo(bando) is False
 
 
 def test_calculate_score_bando_con_vincoli(bando_con_ateco, cliente_matching):

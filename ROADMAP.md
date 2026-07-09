@@ -41,16 +41,16 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 - [x] **#9 — Fix debounce ricerca `Bandi.tsx`** `XS` `Frontend`
   Il `useMemo` ha `query` nelle deps ma usa `debouncedQuery` dentro: il filtro applica sempre il valore precedente. Cambiare la dipendenza a `debouncedQuery` e rimuovere `query`.
 
-- [ ] **#10 — Prompt injection: delimitatori attorno a `{raw_text}`** `S` `Estrazione`
+- [x] **#10 — Prompt injection: delimitatori attorno a `{raw_text}`** `S` `Estrazione`
   Il testo del PDF ha la stessa autorità delle regole nel prompt. Aggiungere tag `<bando_text>` con istruzione anti-override e, idealmente, separare le regole in `role: system` e il testo in `role: user`.
 
-- [ ] **#11 — Dedup lato server in `_dashboard_payload` con merge dei match** `M` `Frontend`
+- [x] **#11 — Dedup lato server in `_dashboard_payload` con merge dei match** `M` `Frontend`
   La dedup client (titolo+ente) non combacia con quella server, produce KPI incoerenti e può nascondere match di un duplicato. Spostare il raggruppamento nel server e restituire `duplicates_count` come campo.
 
-- [ ] **#12 — Ammissibilità + motivi esclusione visibili nel modal Clienti** `S` `UX/Design`
+- [x] **#12 — Ammissibilità + motivi esclusione visibili nel modal Clienti** `S` `UX/Design`
   Lo stesso cliente escluso appare con ⛔ in Dashboard e con score normale in Clienti. Propagare `ammissibilita` nell'API `/clienti/{id}/bandi` e mostrare motivi di esclusione e azioni Scheda/Fonte sulle righe.
 
-- [ ] **#13 — Stato "Da verificare" per bandi ambigui al posto dello score 0** `M` `Scoring`
+- [x] **#13 — Stato "Da verificare" per bandi ambigui al posto dello score 0** `M` `Scoring`
   Score 0 comunica "incompatibile", non "dati insufficienti". Fix anche per `bando_has_constraints` che ignora le `attivita_ammesse` testuali, generando falsi ambigui. Restituire uno stato terzo esplicito con badge dedicato in UI.
 
 ---
@@ -105,10 +105,10 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 | 7 | Esclusioni ATECO nello scoring | Scoring | M | P1 |
 | 8 | Dimensione + fatturato come esclusioni binarie | Scoring | S | P1 |
 | 9 | Fix debounce ricerca `Bandi.tsx` | Frontend | XS | P1 |
-| 10 | Prompt injection: delimitatori `{raw_text}` | Estrazione | S | P1 |
-| 11 | Dedup lato server con merge dei match | Frontend | M | P1 |
-| 12 | Ammissibilità visibile nel modal Clienti | UX/Design | S | P1 |
-| 13 | Stato "Da verificare" per bandi ambigui | Scoring | M | P1 |
+| 10 | ~~Prompt injection: delimitatori `{raw_text}`~~ | Estrazione | S | P1 |
+| 11 | ~~Dedup lato server con merge dei match~~ | Frontend | M | P1 |
+| 12 | ~~Ammissibilità visibile nel modal Clienti~~ | UX/Design | S | P1 |
+| 13 | ~~Stato "Da verificare" per bandi ambigui~~ | Scoring | M | P1 |
 | 14 | React Query per fetch e cache | Frontend | M | P2 |
 | 15 | Font-size scale + spacing + token colori | UX/Design | M | P2 |
 | 16 | Campo URL bando + `/api/estrazione-url` | UX/Design | M | P2 |

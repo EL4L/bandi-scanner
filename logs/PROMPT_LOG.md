@@ -213,3 +213,48 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** data_scadenza (date in lettere), guardia sportello continuo
 - **Campi null/vuoti:** —
 - **Note:** Rimosso il fallback che sceglieva la data futura più lontana nel testo senza contesto (rischio di estrarre milestone PNRR o termini di rendicontazione al posto della scadenza domande). Aggiunto riconoscimento date in formato testuale italiano ("31 dicembre 2026") e guardia per misure a sportello continuo/permanenti, che ora restituiscono None invece di una data inventata (intervento #3 ROADMAP).
+
+### modules/extractor.py + prompts/system_extraction.md — 2026-07-09 11:45:48
+- **Campi estratti correttamente:** delimitatori <bando_text>, sanitizzazione tag chiusura iniettati, istruzione anti-injection nel prompt
+- **Campi null/vuoti:** —
+- **Note:** Aggiunti _sanitize_delimiters() e wrapping <bando_text>...</bando_text> in _load_system_prompt(); il template del prompt spiega esplicitamente che il testo delimitato non e mai unistruzione (ROADMAP #10)
+
+### bando.pdf — 2026-07-09 11:48:21
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### main.py + frontend/src/components/Dashboard.tsx — 2026-07-09 11:48:57
+- **Campi estratti correttamente:** _dedupe_cards() con merge match, duplicates_count nel payload /api/dashboard
+- **Campi null/vuoti:** —
+- **Note:** Dedup client-side sostituita da dedup server-side che fonde i match dei bandi duplicati invece di scartarli (ROADMAP #11)
+
+### bando.pdf — 2026-07-09 11:51:42
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-09 11:52:26
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### main.py + frontend/src/components/Clienti.tsx — 2026-07-09 11:53:02
+- **Campi estratti correttamente:** ammissibilita in /api/clienti/{id}/bandi, fonte_url in /api/clienti/{id}/bandi, azioni Scheda/Fonte per riga nel modal Clienti
+- **Campi null/vuoti:** —
+- **Note:** Coerenza tra Dashboard e Clienti sul verdetto di ammissibilita di un match (ROADMAP #12)
+
+### bando.pdf — 2026-07-09 11:56:09
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-09 11:57:07
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### modules/matcher.py + main.py + frontend/src/components/{Dashboard,Clienti}.tsx — 2026-07-09 11:59:03
+- **Campi estratti correttamente:** bando_ambiguo(), breakdown.status, badge Da verificare in Dashboard e Clienti, attivita_ammesse in bando_has_constraints
+- **Campi null/vuoti:** —
+- **Note:** Fase 2 (P1) della ROADMAP completata: interventi #7-#13 tutti implementati e testati (ROADMAP #13)
