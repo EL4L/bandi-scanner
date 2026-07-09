@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from modules.log_utils import log_error, log_incident
-from modules.schema import BANDO_SCHEMA, MAX_TEXT_CHARS, MIN_TEXT_CHARS, normalize_response
+from modules.schema import MAX_TEXT_CHARS, MIN_TEXT_CHARS, normalize_response
 
 load_dotenv()
 
@@ -172,25 +172,6 @@ def calcola_urgenza(data_scadenza: str | None) -> str | None:
     return "bassa"
 
 
-def calcola_null_percentage(bando_dict: dict) -> float:
-    """Percentuale di campi null/vuoti rispetto allo schema bando."""
-    if not isinstance(bando_dict, dict):
-        return 100.0
-    total = len(BANDO_SCHEMA)
-    if total == 0:
-        return 0.0
-    vuoti = 0
-    for key in BANDO_SCHEMA:
-        val = bando_dict.get(key)
-        if val is None:
-            vuoti += 1
-        elif isinstance(val, str) and not val.strip():
-            vuoti += 1
-        elif isinstance(val, list) and not val:
-            vuoti += 1
-    return (vuoti / total) * 100.0
-
-
 def extract_text_from_pdf(pdf_path: str) -> str:
     """Estrae testo grezzo da tutte le pagine del PDF.
 
@@ -285,8 +266,10 @@ def extract_bando_data(raw_text: str) -> dict:
     bando = result.get("bando", {})
     if isinstance(bando, dict):
         bando["urgenza"] = calcola_urgenza(bando.get("data_scadenza"))
-        null_pct = calcola_null_percentage(bando)
-        if null_pct > 50.0:
-            result["warning"] = "Da revisionare manualmente - troppi campi mancanti"
+        # La % di campi null e il flag "da revisionare" sono calcolati da
+        # modules.validator.validate_bando (unica fonte di verità, vedi #18):
+        # qui si duplicava la stessa logica con un bug (i dict come
+        # anzianita_impresa non venivano mai contati come vuoti) e il
+        # risultato non veniva letto da nessun chiamante a valle.
 
     return result

@@ -72,8 +72,12 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 - [ ] **#17 — Nuovi campi estrazione: modalità, tipo agevolazione, % per fascia** `L` `Estrazione`
   Mancano: `modalita_presentazione` (sportello/click day/graduatoria), `tipo_agevolazione` (enum), `percentuale_fondo_perduto` per fascia dimensionale (micro/piccola/media separati), `cumulabilita`. Richiede schema + prompt + scheda + UI.
 
-- [ ] **#18 — Soglia revisione su campi critici + fix `_is_empty` su dict** `S` `Estrazione`
+- [x] **#18 — Soglia revisione su campi critici + fix `_is_empty` su dict** `S` `Estrazione`
   La soglia 50% conta tutti i campi con lo stesso peso e sottostima i null perché i dict con valori tutti null passano come "pieni". Usare soglie su campi critici (titolo, scadenza, contributo, ATECO) e correggere `_is_empty`.
+  - `_is_empty` ora considera vuoto un dict generico se tutti i suoi valori sono a loro volta vuoti (fix per `anzianita_impresa`, `note_esclusioni`); invariato il caso speciale `dimensione_impresa`.
+  - Nuova `critical_gaps()`: segnala mancanza di titolo, data_scadenza (salvo sportello continuo rilevato nel testo), contributo_max/percentuale_fondo_perduto, ATECO (codici/aperto_a_tutti/attività) — indipendentemente dalla % globale, che resta come segnale secondario.
+  - Rimossa la `calcola_null_percentage()` duplicata in `extractor.py` (bug: non gestiva affatto i campi dict) e il relativo `result["warning"]`, mai letto da `main.py`: `validate_bando()` in `validator.py` resta l'unica fonte di verità.
+  - +12 test in `tests/test_validator.py` (_is_empty su dict, critical_gaps, should_review_manually). Suite: 212 test verdi.
 
 - [ ] **#19 — A11y: sort tastierabile, `aria-expanded`, `aria-label` score circle** `S` `Frontend`
   Header ordinabili senza bottone (non raggiungibili da tastiera, nessun `aria-sort`). Toggle collassabili senza `aria-expanded`/`aria-controls`. Score circle muto per screen reader (mostra "92%" senza contesto).
@@ -115,7 +119,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 | 15 | Font-size scale + spacing + token colori | UX/Design | M | P2 |
 | 16 | Campo URL bando + `/api/estrazione-url` | UX/Design | M | P2 |
 | 17 | Nuovi campi estrazione: modalità, tipo, % fascia | Estrazione | L | P2 |
-| 18 | Soglia revisione su campi critici + `_is_empty` | Estrazione | S | P2 |
+| 18 | ~~Soglia revisione su campi critici + `_is_empty`~~ | Estrazione | S | P2 |
 | 19 | A11y: sort, `aria-expanded`, score circle | Frontend | S | P2 |
 | 20 | Refactoring `lib/icons`, `lib/format`, cartelle | Frontend | M | P3 |
 | 21 | Colonna match/score e regioni in tabella Bandi | UX/Design | M | P3 |

@@ -6,7 +6,7 @@ import re
 from datetime import date, datetime
 from typing import Any
 
-from modules.date_infer import infer_data_scadenza_from_text
+from modules.date_infer import _sembra_sportello_continuo, infer_data_scadenza_from_text
 from modules.schema import (
     BANDO_SCHEMA,
     DATE_FIELDS,
@@ -36,9 +36,13 @@ def _is_empty(value: Any) -> bool:
     if isinstance(value, list) and len(value) == 0:
         return True
     if isinstance(value, dict):
+        if len(value) == 0:
+            return True
         if set(value.keys()) >= set(DIMENSIONE_IMPRESA_KEYS):
             return not any(value.get(k) for k in DIMENSIONE_IMPRESA_KEYS)
-        return len(value) == 0
+        # dict generico (es. anzianita_impresa, note_esclusioni): vuoto se
+        # tutti i suoi valori sono a loro volta vuoti (ricorsivo).
+        return all(_is_empty(v) for v in value.values())
     return False
 
 
@@ -159,7 +163,44 @@ def calculate_null_percentage(bando: dict[str, Any]) -> float:
     return (empty / total) * 100.0
 
 
-def should_review_manually(bando: dict[str, Any]) -> bool:
+def critical_gaps(bando: dict[str, Any], raw_text: str | None = None) -> list[str]:
+    """Campi critici mancanti: titolo, scadenza (salvo sportello continuo),
+    contributo/percentuale, ATECO. La soglia sulla % globale sottostima i
+    bandi con pochi campi minori valorizzati ma i dati chiave assenti — questi
+    quattro gruppi vengono quindi controllati esplicitamente, indipendentemente
+    dalla percentuale complessiva di null.
+    """
+    if not isinstance(bando, dict):
+        return ["titolo", "data_scadenza", "contributo_max/percentuale_fondo_perduto",
+                "codici_ateco_ammessi/ateco_aperto_a_tutti/attivita_ammesse"]
+
+    gaps: list[str] = []
+
+    if _is_empty(bando.get("titolo")):
+        gaps.append("titolo")
+
+    if _is_empty(bando.get("data_scadenza")):
+        sportello = bool(raw_text) and _sembra_sportello_continuo(raw_text)
+        if not sportello:
+            gaps.append("data_scadenza")
+
+    if _is_empty(bando.get("contributo_max")) and _is_empty(bando.get("percentuale_fondo_perduto")):
+        gaps.append("contributo_max/percentuale_fondo_perduto")
+
+    ateco_presente = (
+        not _is_empty(bando.get("codici_ateco_ammessi"))
+        or bando.get("ateco_aperto_a_tutti") is True
+        or not _is_empty(bando.get("attivita_ammesse"))
+    )
+    if not ateco_presente:
+        gaps.append("codici_ateco_ammessi/ateco_aperto_a_tutti/attivita_ammesse")
+
+    return gaps
+
+
+def should_review_manually(bando: dict[str, Any], raw_text: str | None = None) -> bool:
+    if critical_gaps(bando, raw_text):
+        return True
     return calculate_null_percentage(bando) > MANUAL_REVIEW_THRESHOLD
 
 
@@ -202,9 +243,15 @@ def validate_bando(
     warnings.extend(logical_warnings)
 
     null_pct = calculate_null_percentage(bando)
-    needs_review = should_review_manually(bando)
+    gaps = critical_gaps(bando, raw_text)
+    needs_review = should_review_manually(bando, raw_text)
     if needs_review:
-        warnings.append("Da revisionare manualmente")
+        if gaps:
+            warnings.append(
+                "Da revisionare manualmente — campi critici mancanti: " + ", ".join(gaps)
+            )
+        else:
+            warnings.append("Da revisionare manualmente — troppi campi non estratti")
 
     return {
         "data": wrapped,

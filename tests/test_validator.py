@@ -8,6 +8,9 @@ from modules.validator import (
     validate_logical_fields,
     calculate_null_percentage,
     validate_bando,
+    critical_gaps,
+    should_review_manually,
+    _is_empty,
 )
 
 
@@ -79,13 +82,15 @@ def test_validate_logical_data_futura(bando_minimo):
 # ---------------------------------------------------------------------------
 
 def test_calculate_null_percentage_tutto_null(bando_minimo):
-    """Bando con tutti i campi a null/vuoto → percentuale alta (>80%).
-    Due campi non sono mai "vuoti" per definizione: ateco_aperto_a_tutti=False
-    e anzianita_impresa (dict non vuoto con 2 chiavi).
+    """Bando con tutti i campi a null/vuoto → percentuale altissima (100%).
+    Un solo campo non è mai "vuoto" per definizione: ateco_aperto_a_tutti=False
+    (è un booleano valido, non un dato mancante). anzianita_impresa, pur
+    essendo un dict non vuoto con 2 chiavi, viene ora contato come vuoto
+    perché entrambi i suoi valori sono null (fix _is_empty, #18).
     """
     bando = bando_minimo()
     pct = calculate_null_percentage(bando)
-    assert pct > 80.0
+    assert pct > 90.0
 
 
 def test_calculate_null_percentage_parziale(bando_minimo):
@@ -119,3 +124,131 @@ def test_validate_bando_needs_manual_review_true(bando_minimo):
     data = {"bando": bando_minimo()}
     result = validate_bando(data)
     assert result["needs_manual_review"] is True
+
+
+# ---------------------------------------------------------------------------
+# _is_empty — fix dict generici (#18)
+# ---------------------------------------------------------------------------
+
+def test_is_empty_dict_generico_valori_tutti_null():
+    """Bug storico: un dict non vuoto (len > 0) con soli valori None passava
+    come 'pieno'. anzianita_impresa con entrambi i campi a null deve essere
+    considerato vuoto."""
+    valore = {"mesi_minimi_dalla_costituzione": None, "mesi_massimi_dalla_costituzione": None}
+    assert _is_empty(valore) is True
+
+
+def test_is_empty_dict_generico_con_un_valore_presente():
+    valore = {"mesi_minimi_dalla_costituzione": 12, "mesi_massimi_dalla_costituzione": None}
+    assert _is_empty(valore) is False
+
+
+def test_is_empty_dict_vuoto():
+    assert _is_empty({}) is True
+
+
+def test_is_empty_dimensione_impresa_tutti_false():
+    """Caso già gestito prima del fix: non deve essere toccato dalla modifica."""
+    valore = {"micro": False, "piccola": False, "media": False, "grande": False}
+    assert _is_empty(valore) is True
+
+
+def test_is_empty_dimensione_impresa_con_true():
+    valore = {"micro": False, "piccola": True, "media": False, "grande": False}
+    assert _is_empty(valore) is False
+
+
+# ---------------------------------------------------------------------------
+# critical_gaps / should_review_manually — soglia su campi critici (#18)
+# ---------------------------------------------------------------------------
+
+def test_critical_gaps_tutti_mancanti(bando_minimo):
+    bando = bando_minimo()
+    gaps = critical_gaps(bando)
+    assert "titolo" in gaps
+    assert "data_scadenza" in gaps
+    assert "contributo_max/percentuale_fondo_perduto" in gaps
+    assert "codici_ateco_ammessi/ateco_aperto_a_tutti/attivita_ammesse" in gaps
+
+
+def test_critical_gaps_bando_completo_su_campi_critici(bando_minimo):
+    bando = bando_minimo(
+        titolo="Bando Digitalizzazione PMI",
+        data_scadenza="2099-12-31",
+        contributo_max=100_000.0,
+        codici_ateco_ammessi=["62.01"],
+    )
+    assert critical_gaps(bando) == []
+
+
+def test_critical_gaps_ateco_aperto_a_tutti_conta_come_presente(bando_minimo):
+    """ateco_aperto_a_tutti=True è un dato esplicito, non un campo mancante."""
+    bando = bando_minimo(
+        titolo="Bando Digitalizzazione PMI",
+        data_scadenza="2099-12-31",
+        contributo_max=100_000.0,
+        ateco_aperto_a_tutti=True,
+    )
+    assert "codici_ateco_ammessi/ateco_aperto_a_tutti/attivita_ammesse" not in critical_gaps(bando)
+
+
+def test_critical_gaps_percentuale_sostituisce_contributo(bando_minimo):
+    bando = bando_minimo(
+        titolo="Bando Digitalizzazione PMI",
+        data_scadenza="2099-12-31",
+        percentuale_fondo_perduto=50.0,
+        codici_ateco_ammessi=["62.01"],
+    )
+    assert "contributo_max/percentuale_fondo_perduto" not in critical_gaps(bando)
+
+
+def test_critical_gaps_sportello_continuo_non_conta_scadenza_come_gap(bando_minimo):
+    """Se il testo indica sportello continuo, data_scadenza=null è atteso e
+    non deve generare un gap critico."""
+    bando = bando_minimo(
+        titolo="Nuova Sabatini",
+        contributo_max=100_000.0,
+        codici_ateco_ammessi=["62.01"],
+    )
+    raw_text = "Il presente bando opera a sportello continuo fino ad esaurimento fondi."
+    assert "data_scadenza" not in critical_gaps(bando, raw_text)
+
+
+def test_should_review_manually_pochi_campi_minori_mancanti_non_serve_revisione(bando_minimo):
+    """Bando con tutti i campi critici presenti e la maggior parte dei campi
+    minori valorizzati: non deve finire in revisione (né per campi critici
+    né per soglia percentuale globale)."""
+    bando = bando_minimo(
+        titolo="Bando Digitalizzazione PMI",
+        ente="Regione Lombardia",
+        data_pubblicazione="2026-01-15",
+        data_scadenza="2099-12-31",
+        contributo_max=100_000.0,
+        percentuale_fondo_perduto=50.0,
+        codici_ateco_ammessi=["62.01"],
+        regioni_ammesse=["Lombardia"],
+        spese_ammissibili=["Consulenza", "Formazione"],
+        link_fonte_ufficiale="https://example.org/bando",
+        fatturato_max=5_000_000.0,
+        dimensione_impresa={"micro": True, "piccola": True, "media": False, "grande": False},
+    )
+    assert should_review_manually(bando) is False
+
+
+def test_should_review_manually_campo_critico_mancante_anche_con_pochi_null(bando_minimo):
+    """Anche con la maggior parte dei campi valorizzati, l'assenza del titolo
+    (campo critico) deve comunque far scattare la revisione manuale."""
+    bando = bando_minimo(
+        titolo=None,
+        ente="Regione Lombardia",
+        data_scadenza="2099-12-31",
+        contributo_max=100_000.0,
+        percentuale_fondo_perduto=50.0,
+        codici_ateco_ammessi=["62.01"],
+        regioni_ammesse=["Lombardia"],
+        spese_ammissibili=["Consulenza"],
+        link_fonte_ufficiale="https://example.org/bando",
+        dimensione_impresa={"micro": True, "piccola": True, "media": False, "grande": False},
+    )
+    assert should_review_manually(bando) is True
+    assert "titolo" in critical_gaps(bando)
