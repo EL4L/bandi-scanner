@@ -79,10 +79,10 @@ function matchCountBadgeClass(count: number): string {
 }
 
 function stripColorByGiorni(giorni: number | null): string {
-  if (giorni === null || giorni < 0) return '#D1D5DB'
-  if (giorni < 30) return '#EF4444'
-  if (giorni <= 90) return '#F59E0B'
-  return '#10B981'
+  if (giorni === null || giorni < 0) return 'var(--color-border-strong)'
+  if (giorni < 30) return 'var(--status-low)'
+  if (giorni <= 90) return 'var(--status-mid)'
+  return 'var(--status-high)'
 }
 
 function pillClass(score: number, max: number): string {
@@ -387,7 +387,7 @@ export default function Clienti() {
                       </p>
                     )}
                   </td>
-                  <td className="td-muted" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '0.82rem' }}>
+                  <td className="td-muted" style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--text-sm)' }}>
                     {c.p_iva}
                   </td>
                   <td>
@@ -500,7 +500,7 @@ export default function Clienti() {
                         <div className="cliente-bando-row-inner">
                           <div className="cliente-bando-info">
                             <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
-                            {b.ente && <p className="td-muted" style={{ fontSize: '0.78rem', marginTop: 2 }}>{b.ente}</p>}
+                            {b.ente && <p className="td-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>{b.ente}</p>}
                             {daVerificare && (
                               <span
                                 className="badge badge-warning"
@@ -566,7 +566,7 @@ export default function Clienti() {
                             </div>
                             {b.scadenza && (
                               <div style={{ textAlign: 'center', marginTop: 6 }}>
-                                <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
+                                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
                                 {b.giorni_alla_scadenza !== null && (
                                   <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
                                     {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}

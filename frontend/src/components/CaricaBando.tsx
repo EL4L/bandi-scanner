@@ -376,7 +376,7 @@ export default function CaricaBando() {
               <IconWarning />
               <div style={{ flex: 1 }}>
                 <strong>Bando già presente in archivio</strong>
-                <p style={{ margin: '4px 0 10px', fontSize: '0.875rem' }}>
+                <p style={{ margin: '4px 0 10px', fontSize: 'var(--text-sm)' }}>
                   Un bando con lo stesso titolo ed ente è già stato salvato (ID #{result.bando_id}).
                   Non è stato creato un duplicato.
                 </p>
@@ -437,13 +437,13 @@ export default function CaricaBando() {
                 <IconFile />
               </div>
               <div>
-                <p className="font-bold" style={{ fontSize: '0.9rem' }}>{result.filename}</p>
+                <p className="font-bold" style={{ fontSize: 'var(--text-base)' }}>{result.filename}</p>
                 <p className="text-muted text-sm">{result.size_kb.toFixed(0)} KB</p>
               </div>
               {result.null_percentage !== undefined && (
                 <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   <p className="text-xs text-muted">Campi compilati</p>
-                  <p className="font-bold" style={{ fontSize: '1.1rem', color: result.null_percentage > 40 ? 'var(--color-warning)' : 'var(--color-success)' }}>
+                  <p className="font-bold" style={{ fontSize: 'var(--text-lg)', color: result.null_percentage > 40 ? 'var(--color-warning)' : 'var(--color-success)' }}>
                     {100 - Math.round(result.null_percentage)}%
                   </p>
                 </div>

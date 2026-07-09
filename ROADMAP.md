@@ -63,8 +63,13 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 - [ ] **#14 — React Query per fetch, cache e invalidation cross-pagina** `M` `Frontend`
   Oggi ogni pagina rifetcha a ogni mount (spinner full-page a ogni navigazione). React Query fornisce cache, navigazione istantanea e `invalidateQueries` per allineare tutte le viste dopo una modifica.
 
-- [ ] **#15 — Font-size scale (min 0.75rem) + spacing scale + migrazione token colori** `M` `UX/Design`
+- [x] **#15 — Font-size scale (min 0.75rem) + spacing scale + migrazione token colori** `M` `UX/Design`
   Oltre 20 font-size diverse nel CSS, alcune a 9–11px (sotto il minimo leggibile per il target 40–55 anni). Colori hardcoded in `Clienti.tsx`, `Bandi.tsx` e nel `.score-circle` invece dei token `--status-*` già creati.
+  - Scala `--text-xs..3xl` (7 gradini, minimo 0.75rem) in `:root`; tutti i 23 valori font-size distinti in `styles.css` + 11 inline in `Bandi.tsx`/`CaricaBando.tsx`/`Clienti.tsx`/`Dashboard.tsx` rimappati al gradino più vicino.
+  - Scala `--space-1..7` (4/8/12/16/24/32/64px); tutti i valori px di `margin`/`padding`/`gap` rimappati (1px/3px esclusi: nudge ottici, non spaziatura di layout).
+  - `stripColorByGiorni` (Clienti.tsx), `.score-green/-yellow/-red`, bottone elimina inline (Bandi.tsx) e `.alert-info` migrati ai token `--status-*`/`--color-danger`/`--color-accent` esistenti, eliminando gli esadecimali hardcoded (nuova classe `.btn-danger-solid` per la variante piena, stesso token `--color-danger`).
+  - `index.css`/`App.css` (111+184 righe): verificato che sono file morti del template Vite, mai importati — non toccati, segnalati come candidati alla rimozione in #20.
+  - Nessun test Python impattato (212 verdi), `npm run build` pulito.
 
 - [ ] **#16 — Campo URL bando in `CaricaBando` + endpoint `/api/estrazione-url`** `M` `UX/Design`
   Molti bandi regionali esistono solo come pagina web. Aggiungere tab "Da URL" con input, endpoint backend che scarica e converte HTML→testo, poi riusa la pipeline esistente. Richiede allow-list schemi e timeout.
@@ -116,7 +121,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 | 12 | ~~Ammissibilità visibile nel modal Clienti~~ | UX/Design | S | P1 |
 | 13 | ~~Stato "Da verificare" per bandi ambigui~~ | Scoring | M | P1 |
 | 14 | React Query per fetch e cache | Frontend | M | P2 |
-| 15 | Font-size scale + spacing + token colori | UX/Design | M | P2 |
+| 15 | ~~Font-size scale + spacing + token colori~~ | UX/Design | M | P2 |
 | 16 | Campo URL bando + `/api/estrazione-url` | UX/Design | M | P2 |
 | 17 | Nuovi campi estrazione: modalità, tipo, % fascia | Estrazione | L | P2 |
 | 18 | ~~Soglia revisione su campi critici + `_is_empty`~~ | Estrazione | S | P2 |

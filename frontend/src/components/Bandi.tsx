@@ -85,7 +85,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
   const scadenzaStr = formatDateIT(b.data_scadenza)
   return (
     <tr style={dimmed ? { opacity: 0.52, color: 'var(--color-text-muted)' } : undefined}>
-      <td className="td-muted" style={{ fontSize: '0.75rem' }}>{b.id}</td>
+      <td className="td-muted" style={{ fontSize: 'var(--text-xs)' }}>{b.id}</td>
       <td>
         <button
           className="td-title-link"
@@ -100,7 +100,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
       <td>
         {scadenzaStr && (
           <div>
-            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{scadenzaStr}</span>
+            <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{scadenzaStr}</span>
             {b.giorni_alla_scadenza !== null && (
               <div className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`}>
                 {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
@@ -113,10 +113,9 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
       <td>
         {isConfirming ? (
           <div className="btn-group" style={{ alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>Sei sicuro?</span>
+            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>Sei sicuro?</span>
             <button
-              className="btn btn-sm"
-              style={{ background: '#dc2626', color: '#fff', border: 'none' }}
+              className="btn btn-sm btn-danger-solid"
               onClick={() => onDeleteConfirm(b.id)}
               disabled={deleting === b.id}
             >

@@ -381,7 +381,7 @@ export default function Dashboard() {
             {duplicatesCount > 0 && (
               <span style={{
                 background: 'var(--color-warning)', color: '#fff',
-                borderRadius: 10, fontSize: '0.65rem', fontWeight: 700,
+                borderRadius: 10, fontSize: 'var(--text-xs)', fontWeight: 700,
                 padding: '1px 6px', marginLeft: 2,
               }}>{duplicatesCount}</span>
             )}
@@ -447,7 +447,7 @@ export default function Dashboard() {
                   className={`section-scaduti-header${showExpiredSection ? ' open' : ''}`}
                   onClick={() => setShowExpiredSection(v => !v)}
                 >
-                  <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
                     Bandi scaduti
                   </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
