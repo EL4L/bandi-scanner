@@ -263,3 +263,23 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
 - **Note:** Validazione OK
+
+### modules/matcher.py + frontend/src/components/ClienteFormModal.tsx — 2026-07-09 16:20:00
+- **Campi estratti correttamente:** SOGLIE_DIMENSIONE_UE, valida_coerenza_dimensione(), SOGLIE_UE, validaDimensione()
+- **Campi null/vuoti:** —
+- **Note:** Non riguarda l'estrazione LLM: aggiunta validazione di coerenza tra `dimensione_impresa` del cliente e le soglie dimensionali UE (dipendenti/fatturato), sia server-side (`modules/matcher.py`) sia client-side nel form clienti. Include soglia `dip_min=250` per "grande". Test in `tests/test_dimensione_ue.py` (8 casi, tutti verdi).
+
+### main.py + frontend/src/components/ClienteFormModal.tsx — 2026-07-09 16:35:00
+- **Campi estratti correttamente:** _validate_cliente_form() ora chiama valida_coerenza_dimensione(), validazione dimErrors in tempo reale (useMemo) con bottone Salva disabilitato
+- **Campi null/vuoti:** —
+- **Note:** Completamento intervento precedente: `valida_coerenza_dimensione()` era isolata e non collegata a nessun endpoint. Ora `POST/PUT /api/clienti` rifiuta con 400 un cliente con dimensione incoerente rispetto a dipendenti/fatturato. Lato client la validazione non è più solo al submit ma ricalcolata ad ogni modifica di dimensione/dipendenti/fatturato, disabilitando il bottone Salva finché incoerente. Aggiunti 3 test di integrazione in `tests/test_dimensione_ue.py` (11 totali, tutti verdi).
+
+### bando.pdf — 2026-07-09 16:20:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-09 16:21:29
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.anzianita_impresa
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK

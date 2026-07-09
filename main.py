@@ -47,6 +47,7 @@ from modules.matcher import (
     giorni_alla_scadenza,
     load_dashboard_rows,
     run_matching_for_all_bandi,
+    valida_coerenza_dimensione,
     run_matching_for_bando,
     settore_da_verificare,
 )
@@ -159,6 +160,16 @@ def _validate_cliente_form(form_values: dict) -> list[str]:
         errori.append("Il Codice ATECO è obbligatorio.")
     elif not ATECO_RE.fullmatch(codice_ateco):
         errori.append("Il Codice ATECO non è valido. Usa il formato corretto, es: 62.01 o 62.01.12")
+
+    try:
+        fatturato = float(form_values["fatturato"]) if form_values.get("fatturato") not in (None, "") else None
+    except (TypeError, ValueError):
+        fatturato = None
+    errori.extend(valida_coerenza_dimensione(
+        form_values.get("dimensione_impresa"),
+        fatturato,
+        form_values.get("numero_dipendenti"),
+    ))
 
     return errori
 

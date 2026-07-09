@@ -17,6 +17,56 @@ SCORE_ATECO_ATTIVITA_BUONO = 30
 _TOKEN_RE = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 _MESI_IT = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre")
 
+# ── Soglie dimensionali UE (Raccomandazione 2003/361/CE) ────────────────────
+# Usate per verificare la coerenza tra dimensione_impresa dichiarata dal
+# cliente e i suoi dati numerici (dipendenti, fatturato).
+SOGLIE_DIMENSIONE_UE: dict[str, dict] = {
+    "micro":   {"dip_min": None, "dip_max": 9,   "fatturato_max": 2_000_000},
+    "piccola": {"dip_min": None, "dip_max": 49,  "fatturato_max": 10_000_000},
+    "media":   {"dip_min": None, "dip_max": 249, "fatturato_max": 50_000_000},
+    "grande":  {"dip_min": 250,  "dip_max": None, "fatturato_max": None},
+}
+
+
+def valida_coerenza_dimensione(
+    dimensione: str | None,
+    fatturato: float | None,
+    numero_dipendenti: int | None,
+) -> list[str]:
+    """Verifica la coerenza tra la dimensione_impresa dichiarata e le soglie
+    UE (dipendenti/fatturato). Ritorna una lista di messaggi di errore, vuota
+    se coerente o se i dati non sono sufficienti per una verifica."""
+    dim = _norm_str(dimensione).lower()
+    soglie = SOGLIE_DIMENSIONE_UE.get(dim)
+    if soglie is None:
+        return []
+
+    errori: list[str] = []
+
+    dip_max = soglie.get("dip_max")
+    if dip_max is not None and numero_dipendenti is not None and numero_dipendenti > dip_max:
+        errori.append(
+            f"Un'impresa '{dimensione}' non può avere più di "
+            f"{dip_max} dipendenti (inseriti: {numero_dipendenti})"
+        )
+
+    dip_min = soglie.get("dip_min")
+    if dip_min is not None and numero_dipendenti is not None:
+        if numero_dipendenti < dip_min:
+            errori.append(
+                f"Un'impresa '{dimensione}' deve avere almeno "
+                f"{dip_min} dipendenti (inseriti: {numero_dipendenti})"
+            )
+
+    fatturato_max = soglie.get("fatturato_max")
+    if fatturato_max is not None and fatturato is not None and fatturato > fatturato_max:
+        errori.append(
+            f"Un'impresa '{dimensione}' non può avere fatturato superiore a "
+            f"€ {fatturato_max:,.0f} (inserito: € {fatturato:,.0f})"
+        )
+
+    return errori
+
 # ── Mappatura forme giuridiche specifiche → categoria generica ──────────────
 # Usata da check_ammissibilita() per confrontare la forma giuridica del cliente
 # (es. "S.r.l.") con le categorie generiche che il bando può ammettere

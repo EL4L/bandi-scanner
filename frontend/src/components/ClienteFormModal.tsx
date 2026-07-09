@@ -1,4 +1,45 @@
+import { useMemo } from 'react'
 import { useModalA11y } from '../useModalA11y'
+
+const SOGLIE_UE: Record<string, {
+  dipMin?: number; dipMax?: number; fattMax?: number
+}> = {
+  micro:   { dipMax: 9,   fattMax: 2_000_000 },
+  piccola: { dipMax: 49,  fattMax: 10_000_000 },
+  media:   { dipMax: 249, fattMax: 50_000_000 },
+  grande:  { dipMin: 250 },
+}
+
+function validaDimensione(dimensione: string, dipendenti: number | null, fatturato: number | null): string[] {
+  const soglie = SOGLIE_UE[dimensione]
+  if (!soglie) return []
+
+  const errori: string[] = []
+
+  if (soglie.dipMax !== undefined && dipendenti !== null && dipendenti > soglie.dipMax) {
+    errori.push(
+      `Un'impresa "${dimensione}" non può avere più di `
+      + `${soglie.dipMax} dipendenti (inseriti: ${dipendenti})`
+    )
+  }
+
+  if (soglie.dipMin !== undefined && dipendenti !== null
+      && dipendenti < soglie.dipMin) {
+    errori.push(
+      `Un'impresa "grande" deve avere almeno `
+      + `${soglie.dipMin} dipendenti (inseriti: ${dipendenti})`
+    )
+  }
+
+  if (soglie.fattMax !== undefined && fatturato !== null && fatturato > soglie.fattMax) {
+    errori.push(
+      `Un'impresa "${dimensione}" non può avere fatturato superiore a `
+      + `€ ${soglie.fattMax.toLocaleString('it-IT')} (inserito: € ${fatturato.toLocaleString('it-IT')})`
+    )
+  }
+
+  return errori
+}
 
 export interface ClienteForm {
   ragione_sociale: string
@@ -51,6 +92,14 @@ export function ClienteFormModal({
 }: Props) {
   const modalRef = useModalA11y(onClose)
 
+  const dimErrors = useMemo(() => {
+    const dipendenti = form.numero_dipendenti.trim() ? parseInt(form.numero_dipendenti, 10) : null
+    const fatturato = form.fatturato.trim() ? parseFloat(form.fatturato) : null
+    return validaDimensione(form.dimensione_impresa, dipendenti, fatturato)
+  }, [form.dimensione_impresa, form.numero_dipendenti, form.fatturato])
+
+  const allErrors = [...formErrors, ...dimErrors]
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -73,10 +122,10 @@ export function ClienteFormModal({
 
         <form onSubmit={onSubmit}>
           <div className="modal-body">
-            {formErrors.length > 0 && (
+            {allErrors.length > 0 && (
               <div className="alert alert-danger" style={{ marginBottom: 16 }}>
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {formErrors.map((e, i) => <li key={i}>{e}</li>)}
+                  {allErrors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
               </div>
             )}
@@ -216,7 +265,7 @@ export function ClienteFormModal({
 
           <div className="modal-footer">
             <button type="button" className="btn" onClick={onClose}>Annulla</button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button type="submit" className="btn btn-primary" disabled={saving || dimErrors.length > 0}>
               {saving
                 ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> Salvataggio…</>
                 : isEdit ? 'Salva modifiche' : 'Aggiungi cliente'}
