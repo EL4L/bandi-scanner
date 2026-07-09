@@ -69,6 +69,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
   - Scala `--space-1..7` (4/8/12/16/24/32/64px); tutti i valori px di `margin`/`padding`/`gap` rimappati (1px/3px esclusi: nudge ottici, non spaziatura di layout).
   - `stripColorByGiorni` (Clienti.tsx), `.score-green/-yellow/-red`, bottone elimina inline (Bandi.tsx) e `.alert-info` migrati ai token `--status-*`/`--color-danger`/`--color-accent` esistenti, eliminando gli esadecimali hardcoded (nuova classe `.btn-danger-solid` per la variante piena, stesso token `--color-danger`).
   - `index.css`/`App.css` (111+184 righe): verificato che sono file morti del template Vite, mai importati — non toccati, segnalati come candidati alla rimozione in #20.
+  - Estesa la conversione anche ai ~42 valori numerici di margin/padding/gap hardcoded inline nei componenti TSX (Bandi.tsx, CaricaBando.tsx, ClienteFormModal.tsx, Clienti.tsx, Dashboard.tsx, ModalScheda.tsx).
   - Nessun test Python impattato (212 verdi), `npm run build` pulito.
 
 - [ ] **#16 — Campo URL bando in `CaricaBando` + endpoint `/api/estrazione-url`** `M` `UX/Design`

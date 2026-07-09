@@ -296,11 +296,11 @@ export default function CaricaBando() {
               </div>
 
               {networkError && (
-                <div className="alert alert-danger" style={{ marginTop: 16 }}>{networkError}</div>
+                <div className="alert alert-danger" style={{ marginTop: 'var(--space-4)' }}>{networkError}</div>
               )}
 
               {selectedFile && (
-                <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)', justifyContent: 'flex-end' }}>
                   <button className="btn" onClick={handleReset}>Annulla</button>
                   <button
                     className="btn btn-primary"
@@ -315,7 +315,7 @@ export default function CaricaBando() {
               )}
 
               {uploading && (
-                <div style={{ marginTop: 24 }}>
+                <div style={{ marginTop: 'var(--space-5)' }}>
                   <UploadProgress statuses={uploadStepStatuses(uploading, result)} />
                   <p className="text-sm text-muted" style={{ textAlign: 'center' }}>
                     {extractionWaitMessage()}
@@ -372,7 +372,7 @@ export default function CaricaBando() {
 
           {/* Status banner */}
           {isDuplicate && result.bando_id && (
-            <div className="alert alert-warning" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 20 }}>
+            <div className="alert alert-warning" style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <IconWarning />
               <div style={{ flex: 1 }}>
                 <strong>Bando già presente in archivio</strong>
@@ -380,7 +380,7 @@ export default function CaricaBando() {
                   Un bando con lo stesso titolo ed ente è già stato salvato (ID #{result.bando_id}).
                   Non è stato creato un duplicato.
                 </p>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   <a
                     href={apiHref(`/api/bandi/${result.bando_id}/scheda.md`)}
                     download
@@ -396,31 +396,31 @@ export default function CaricaBando() {
             </div>
           )}
           {result.empty_pdf && (
-            <div className="alert alert-danger" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div className="alert alert-danger" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <IconX />
               Il PDF è vuoto o non contiene testo leggibile. Prova con un PDF non scansionato.
             </div>
           )}
           {result.extraction_error && (
-            <div className="alert alert-danger" style={{ marginBottom: 20 }}>
+            <div className="alert alert-danger" style={{ marginBottom: 'var(--space-5)' }}>
               <strong>Errore di estrazione:</strong> {result.extraction_error}
             </div>
           )}
           {result.save_error && (
-            <div className="alert alert-warning" style={{ marginBottom: 20 }}>
+            <div className="alert alert-warning" style={{ marginBottom: 'var(--space-5)' }}>
               <strong>Errore di salvataggio:</strong> {result.save_error}
             </div>
           )}
           {result.errors && result.errors.length > 0 && (
-            <div className="alert alert-danger" style={{ marginBottom: 20 }}>
+            <div className="alert alert-danger" style={{ marginBottom: 'var(--space-5)' }}>
               <strong>Errori di validazione:</strong>
-              <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
+              <ul style={{ margin: '6px 0 0', paddingLeft: 'var(--space-4)' }}>
                 {result.errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
             </div>
           )}
           {success && (
-            <div className="alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div className="alert alert-success" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <IconCheck />
               Bando salvato con successo (ID #{result.bando_id}).
               {result.scadenza_estratta && <> Scadenza: <strong>{result.scadenza_estratta}</strong>.</>}
@@ -428,8 +428,8 @@ export default function CaricaBando() {
           )}
 
           {/* File info */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
               <div style={{
                 width: 40, height: 40, background: 'var(--color-accent-soft)',
                 borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
@@ -453,9 +453,9 @@ export default function CaricaBando() {
 
           {/* Warnings */}
           {result.warnings && result.warnings.length > 0 && (
-            <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <p className="result-section-title">Avvertenze</p>
-              <ul style={{ margin: 0, paddingLeft: 20 }}>
+              <ul style={{ margin: 0, paddingLeft: 'var(--space-5)' }}>
                 {result.warnings.map((w, i) => (
                   <li key={i} className="text-sm" style={{ color: 'var(--color-warning)', marginBottom: 3 }}>{w}</li>
                 ))}
@@ -465,7 +465,7 @@ export default function CaricaBando() {
 
           {/* Scheda */}
           {result.scheda && (
-            <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <p className="result-section-title">Scheda estratta</p>
               <div className="scheda-content">
                 {renderMarkdown(result.scheda)}
@@ -474,7 +474,7 @@ export default function CaricaBando() {
           )}
 
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-2)' }}>
             <button className="btn btn-primary" onClick={handleReset}>
               <IconUpload /> Carica un altro bando
             </button>

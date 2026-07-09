@@ -382,7 +382,7 @@ export default function Clienti() {
                       {c.ragione_sociale}
                     </button>
                     {c.descrizione_attivita && (
-                      <p className="td-muted" style={{ marginTop: 2, maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p className="td-muted" style={{ marginTop: 'var(--space-1)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {c.descrizione_attivita}
                       </p>
                     )}
@@ -479,7 +479,7 @@ export default function Clienti() {
 
               <hr className="divider" />
 
-              <p className="result-section-title" style={{ marginBottom: 10 }}>
+              <p className="result-section-title" style={{ marginBottom: 'var(--space-3)' }}>
                 {detailLoading ? 'Caricamento…' : `${detailBandi.length} bando${detailBandi.length !== 1 ? 'i' : ''} compatibil${detailBandi.length !== 1 ? 'i' : 'e'}`}
               </p>
 
@@ -500,21 +500,21 @@ export default function Clienti() {
                         <div className="cliente-bando-row-inner">
                           <div className="cliente-bando-info">
                             <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
-                            {b.ente && <p className="td-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 2 }}>{b.ente}</p>}
+                            {b.ente && <p className="td-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>{b.ente}</p>}
                             {daVerificare && (
                               <span
                                 className="badge badge-warning"
-                                style={{ marginTop: 6 }}
+                                style={{ marginTop: 'var(--space-2)' }}
                                 title="Il bando non contiene dati sufficienti per valutare la compatibilità"
                               >
                                 ⚠️ Da verificare
                               </span>
                             )}
                             {escluso && (
-                              <div style={{ marginTop: 6 }}>
+                              <div style={{ marginTop: 'var(--space-2)' }}>
                                 <span className="badge badge-escluso">⛔ Non ammissibile</span>
                                 {b.ammissibilita!.motivi_esclusione.length > 0 && (
-                                  <ul className="td-muted text-sm" style={{ marginTop: 4, paddingLeft: 18 }}>
+                                  <ul className="td-muted text-sm" style={{ marginTop: 'var(--space-1)', paddingLeft: 'var(--space-4)' }}>
                                     {b.ammissibilita!.motivi_esclusione.map((motivo, i) => (
                                       <li key={i}>{motivo}</li>
                                     ))}
@@ -522,13 +522,13 @@ export default function Clienti() {
                                 )}
                               </div>
                             )}
-                            <div className="breakdown-bars" style={{ marginTop: 7 }}>
+                            <div className="breakdown-bars" style={{ marginTop: 'var(--space-2)' }}>
                               <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
                               <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
                               <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
                               <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
                             </div>
-                            <div className="btn-group" style={{ marginTop: 8 }}>
+                            <div className="btn-group" style={{ marginTop: 'var(--space-2)' }}>
                               <button
                                 className="btn btn-sm"
                                 onClick={() => handleScheda(b)}
@@ -565,10 +565,10 @@ export default function Clienti() {
                               <span>{b.score}%</span>
                             </div>
                             {b.scadenza && (
-                              <div style={{ textAlign: 'center', marginTop: 6 }}>
+                              <div style={{ textAlign: 'center', marginTop: 'var(--space-2)' }}>
                                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
                                 {b.giorni_alla_scadenza !== null && (
-                                  <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 2 }}>
+                                  <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 'var(--space-1)' }}>
                                     {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
                                   </p>
                                 )}

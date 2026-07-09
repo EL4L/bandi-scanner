@@ -112,7 +112,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
       <td>{b.contributo_max !== null ? <span className="font-medium">{formatEuro(b.contributo_max)}</span> : <span className="td-muted">—</span>}</td>
       <td>
         {isConfirming ? (
-          <div className="btn-group" style={{ alignItems: 'center', gap: 6 }}>
+          <div className="btn-group" style={{ alignItems: 'center', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>Sei sicuro?</span>
             <button
               className="btn btn-sm btn-danger-solid"
@@ -374,7 +374,7 @@ export default function Bandi() {
         </div>
       ) : (
         <>
-          <div className="filter-bar" style={{ marginBottom: 16 }}>
+          <div className="filter-bar" style={{ marginBottom: 'var(--space-4)' }}>
             <div className="quick-filter">
               <button
                 className={`quick-filter-btn${quickFilter === 'tutti' ? ' active' : ''}`}
@@ -426,7 +426,7 @@ export default function Bandi() {
                     <span className="scaduti-count">{sortedScaduti.length}</span>
                   </button>
                   {showScaduti && (
-                    <div style={{ marginTop: 8 }}>
+                    <div style={{ marginTop: 'var(--space-2)' }}>
                       <BandoTable
                         rows={sortedScaduti}
                         dimmed={true}

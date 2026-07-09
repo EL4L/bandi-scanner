@@ -42,7 +42,7 @@ export function ModalScheda({ data, onClose }: Props) {
             <p className="modal-title" id="modal-scheda-title">{data.titolo || `Bando #${data.id}`}</p>
             <p className="modal-subtitle">Scheda di sintesi</p>
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexShrink: 0 }}>
             <a href={apiHref(`/api/bandi/${data.id}/scheda.md`)} download className="btn btn-sm">
               <IconDownload /> Scarica
             </a>

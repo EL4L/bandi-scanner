@@ -123,8 +123,8 @@ export function ClienteFormModal({
         <form onSubmit={onSubmit}>
           <div className="modal-body">
             {allErrors.length > 0 && (
-              <div className="alert alert-danger" style={{ marginBottom: 16 }}>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>
+              <div className="alert alert-danger" style={{ marginBottom: 'var(--space-4)' }}>
+                <ul style={{ margin: 0, paddingLeft: 'var(--space-4)' }}>
                   {allErrors.map((e, i) => <li key={i}>{e}</li>)}
                 </ul>
               </div>
