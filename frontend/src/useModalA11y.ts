@@ -8,6 +8,8 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled
 export function useModalA11y(onClose: () => void, active: boolean = true) {
   const modalRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!active) return
@@ -16,7 +18,7 @@ export function useModalA11y(onClose: () => void, active: boolean = true) {
     first?.focus()
 
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Escape') { onCloseRef.current(); return }
       if (e.key !== 'Tab' || !modalRef.current) return
       const focusable = Array.from(modalRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
       if (focusable.length === 0) return
@@ -33,7 +35,7 @@ export function useModalA11y(onClose: () => void, active: boolean = true) {
       document.removeEventListener('keydown', handler)
       previouslyFocused.current?.focus()
     }
-  }, [onClose, active])
+  }, [active])
 
   return modalRef
 }

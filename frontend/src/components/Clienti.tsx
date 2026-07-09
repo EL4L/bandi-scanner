@@ -49,6 +49,29 @@ function formatEuro(val: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
 }
 
+const FORMA_GIURIDICA_LABELS: Record<string, string> = {
+  srl: 'S.r.l.',
+  spa: 'S.p.A.',
+  snc: 'S.n.c.',
+  sas: 'S.a.s.',
+  'ditta individuale': 'Ditta individuale',
+  cooperativa: 'Cooperativa',
+  associazione: 'Associazione',
+}
+
+function formatFormaGiuridica(val?: string | null): string | null {
+  if (!val) return null
+  return FORMA_GIURIDICA_LABELS[val] ?? val
+}
+
+function formatDataCostituzione(val?: string | null): string | null {
+  if (!val) return null
+  const parts = val.split('T')[0].split('-')
+  if (parts.length !== 3) return val
+  const [year, month, day] = parts
+  return `${day}/${month}/${year}`
+}
+
 function matchCountBadgeClass(count: number): string {
   if (count > 5) return 'count-badge-high'
   if (count > 0) return 'count-badge-mid'
@@ -441,6 +464,12 @@ export default function Clienti() {
                 {detailCliente.fatturato ? (
                   <span className="text-sm">{formatEuro(detailCliente.fatturato)}</span>
                 ) : null}
+                {formatFormaGiuridica(detailCliente.forma_giuridica) && (
+                  <span className="badge badge-neutral">{formatFormaGiuridica(detailCliente.forma_giuridica)}</span>
+                )}
+                {formatDataCostituzione(detailCliente.data_costituzione) && (
+                  <span className="td-muted text-sm">Costituita il {formatDataCostituzione(detailCliente.data_costituzione)}</span>
+                )}
                 {detailCliente.descrizione_attivita && (
                   <span className="td-muted text-sm" style={{ gridColumn: '1 / -1' }}>
                     {detailCliente.descrizione_attivita}

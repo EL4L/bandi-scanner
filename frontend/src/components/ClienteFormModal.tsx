@@ -100,7 +100,7 @@ export function ClienteFormModal({
                   id="p_iva"
                   type="text"
                   value={form.p_iva}
-                  onChange={e => onFieldChange('p_iva', e.target.value)}
+                  onChange={e => onFieldChange('p_iva', e.target.value.replace(/\D/g, ''))}
                   placeholder="11 cifre senza spazi"
                   maxLength={11}
                   required
@@ -186,13 +186,20 @@ export function ClienteFormModal({
 
               <div className="field">
                 <label htmlFor="forma_giuridica">Forma giuridica</label>
-                <input
+                <select
                   id="forma_giuridica"
-                  type="text"
                   value={form.forma_giuridica}
                   onChange={e => onFieldChange('forma_giuridica', e.target.value)}
-                  placeholder="Es. s.r.l., s.p.a., ditta individuale"
-                />
+                >
+                  <option value="">— Non specificata —</option>
+                  <option value="srl">S.r.l.</option>
+                  <option value="spa">S.p.A.</option>
+                  <option value="snc">S.n.c.</option>
+                  <option value="sas">S.a.s.</option>
+                  <option value="ditta individuale">Ditta individuale</option>
+                  <option value="cooperativa">Cooperativa</option>
+                  <option value="associazione">Associazione</option>
+                </select>
               </div>
 
               <div className="field form-full">
