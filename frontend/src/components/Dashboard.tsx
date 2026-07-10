@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
+import { useDashboard, useApiMutation } from '../lib/queries'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Breakdown {
@@ -267,33 +268,20 @@ function BandoCardItem({
 }
 
 export default function Dashboard() {
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [recalcLoading, setRecalcLoading] = useState(false)
-  const [deduplicaLoading, setDeduplicaLoading] = useState(false)
+  const { data, isLoading: loading, error: queryError } = useDashboard<DashboardData>()
+  const error = queryError ? 'Impossibile caricare la dashboard. Verifica che il server sia in esecuzione.' : null
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [showExpiredSection, setShowExpiredSection] = useState(false)
+
+  const recalcMutation = useApiMutation(() => fetch('/api/bandi/recalc', withApiKey({ method: 'POST' })))
+  const deduplicaMutation = useApiMutation(async () => {
+    const res = await fetch('/api/bandi/deduplica', withApiKey({ method: 'POST' }))
+    return res.json()
+  })
 
   // Dedup e merge dei match per bandi duplicati (titolo+ente) già eseguiti lato server
   const uniqueCards = data?.cards ?? []
   const duplicatesCount = data?.duplicates_count ?? 0
-
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch('/api/dashboard', withApiKey())
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      setData(await res.json())
-    } catch {
-      setError('Impossibile caricare la dashboard. Verifica che il server sia in esecuzione.')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => { fetchDashboard() }, [fetchDashboard])
 
   useEffect(() => {
     if (!openScheda) return
@@ -303,33 +291,24 @@ export default function Dashboard() {
   }, [openScheda])
 
   const handleRecalc = async () => {
-    setRecalcLoading(true)
     try {
-      await fetch('/api/bandi/recalc', withApiKey({ method: 'POST' }))
-      await fetchDashboard()
+      await recalcMutation.mutateAsync()
       toast.success('Match ricalcolati.')
     } catch {
       toast.error('Ricalcolo non riuscito. Riprova.')
-    } finally {
-      setRecalcLoading(false)
     }
   }
 
   const handleDeduplica = async () => {
-    setDeduplicaLoading(true)
     try {
-      const res = await fetch('/api/bandi/deduplica', withApiKey({ method: 'POST' }))
-      const d = await res.json()
+      const d = await deduplicaMutation.mutateAsync()
       if (d.eliminati > 0) {
         toast.success(`${d.eliminati} duplicat${d.eliminati === 1 ? 'o eliminato' : 'i eliminati'}.`)
-        await fetchDashboard()
       } else {
         toast.info('Nessun duplicato trovato.')
       }
     } catch {
       toast.error('Deduplica non riuscita. Riprova.')
-    } finally {
-      setDeduplicaLoading(false)
     }
   }
 
@@ -371,10 +350,10 @@ export default function Dashboard() {
           <button
             className="btn"
             onClick={handleDeduplica}
-            disabled={deduplicaLoading}
+            disabled={deduplicaMutation.isPending}
             title="Rimuove dal DB i bandi con stesso titolo e ente, mantenendo il più recente"
           >
-            {deduplicaLoading
+            {deduplicaMutation.isPending
               ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
               : <IconDedup />}
             Deduplica
@@ -386,8 +365,8 @@ export default function Dashboard() {
               }}>{duplicatesCount}</span>
             )}
           </button>
-          <button className="btn btn-primary" onClick={handleRecalc} disabled={recalcLoading}>
-            {recalcLoading ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : <IconRefresh />}
+          <button className="btn btn-primary" onClick={handleRecalc} disabled={recalcMutation.isPending}>
+            {recalcMutation.isPending ? <div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} /> : <IconRefresh />}
             Ricalcola match
           </button>
         </div>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Dashboard from './components/Dashboard'
 import Bandi from './components/Bandi'
 import Clienti from './components/Clienti'
@@ -87,21 +88,27 @@ function Sidebar() {
   )
 }
 
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { staleTime: 60_000, retry: 1 } },
+})
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="layout">
-        <Sidebar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/bandi" element={<Bandi />} />
-            <Route path="/clienti" element={<Clienti />} />
-            <Route path="/carica" element={<CaricaBando />} />
-          </Routes>
-        </main>
-        <ToastHost />
-      </div>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <div className="layout">
+          <Sidebar />
+          <main className="main-content">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/bandi" element={<Bandi />} />
+              <Route path="/clienti" element={<Clienti />} />
+              <Route path="/carica" element={<CaricaBando />} />
+            </Routes>
+          </main>
+          <ToastHost />
+        </div>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
+import { useClienti, useApiMutation } from '../lib/queries'
 import { useModalA11y } from '../useModalA11y'
 import { ClienteFormModal, EMPTY_CLIENTE_FORM, type ClienteForm } from './ClienteFormModal'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
@@ -158,11 +159,26 @@ function IconClose() {
 }
 
 export default function Clienti() {
-  const [clienti, setClienti] = useState<Cliente[]>([])
-  const [regioni, setRegioni] = useState<string[]>([])
-  const [dimensioni, setDimensioni] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, isLoading: loading, error: queryError } = useClienti<{
+    clienti: Cliente[]; regioni: string[]; dimensioni: string[]
+  }>()
+  const clienti = data?.clienti ?? []
+  const regioni = data?.regioni ?? []
+  const dimensioni = data?.dimensioni ?? []
+  const error = queryError ? 'Impossibile caricare i clienti.' : null
+
+  const saveMutation = useApiMutation(async (payload: { url: string; method: string; body: unknown }) => {
+    const res = await fetch(payload.url, withApiKey({
+      method: payload.method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload.body),
+    }))
+    const d = await res.json()
+    if (!res.ok) throw { errors: d.errors ?? ['Errore sconosciuto.'] }
+    return d
+  })
+  const deleteMutation = useApiMutation((id: number) =>
+    fetch(`/api/clienti/${id}`, withApiKey({ method: 'DELETE' })))
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
@@ -179,22 +195,6 @@ export default function Clienti() {
 
   const [openScheda, setOpenScheda] = useState<SchedaModalData | null>(null)
   const [schedaLoading, setSchedaLoading] = useState<number | null>(null)
-
-  const fetchClienti = async () => {
-    try {
-      const res = await fetch('/api/clienti', withApiKey())
-      const d = await res.json()
-      setClienti(d.clienti ?? [])
-      setRegioni(d.regioni ?? [])
-      setDimensioni(d.dimensioni ?? [])
-    } catch {
-      setError('Impossibile caricare i clienti.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { fetchClienti() }, [])
 
   const openAdd = () => {
     setEditId(null)
@@ -289,22 +289,13 @@ export default function Clienti() {
     try {
       const url = editId ? `/api/clienti/${editId}` : '/api/clienti'
       const method = editId ? 'PUT' : 'POST'
-      const res = await fetch(url, withApiKey({
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }))
-      const d = await res.json()
-      if (!res.ok) {
-        setFormErrors(d.errors ?? ['Errore sconosciuto.'])
-      } else {
-        const wasEdit = editId !== null
-        closeModal()
-        await fetchClienti()
-        toast.success(wasEdit ? 'Cliente aggiornato.' : 'Cliente aggiunto.')
-      }
-    } catch {
-      setFormErrors(['Errore di rete. Riprova.'])
+      const wasEdit = editId !== null
+      await saveMutation.mutateAsync({ url, method, body: payload })
+      closeModal()
+      toast.success(wasEdit ? 'Cliente aggiornato.' : 'Cliente aggiunto.')
+    } catch (err) {
+      const errors = (err as { errors?: string[] })?.errors
+      setFormErrors(errors ?? ['Errore di rete. Riprova.'])
     } finally {
       setSaving(false)
     }
@@ -313,9 +304,8 @@ export default function Clienti() {
   const handleDelete = async (id: number) => {
     setDeleting(true)
     try {
-      await fetch(`/api/clienti/${id}`, withApiKey({ method: 'DELETE' }))
+      await deleteMutation.mutateAsync(id)
       setDeleteConfirm(null)
-      await fetchClienti()
       toast.success('Cliente eliminato.')
     } catch {
       toast.error('Eliminazione non riuscita. Riprova.')

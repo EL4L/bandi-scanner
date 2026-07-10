@@ -60,8 +60,12 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 ## Fase 3 — P2 · Qualità e robustezza
 > Miglioramenti all'esperienza, alla solidità tecnica e alla copertura dei casi reali. Non urgenti ma importanti.
 
-- [ ] **#14 — React Query per fetch, cache e invalidation cross-pagina** `M` `Frontend`
+- [x] **#14 — React Query per fetch, cache e invalidation cross-pagina** `M` `Frontend`
   Oggi ogni pagina rifetcha a ogni mount (spinner full-page a ogni navigazione). React Query fornisce cache, navigazione istantanea e `invalidateQueries` per allineare tutte le viste dopo una modifica.
+  - Nuovo `lib/queries.ts`: hook `useDashboard`/`useBandi`/`useClienti` (staleTime 1 minuto) + `useApiMutation`/`useInvalidateAll` per le mutazioni.
+  - Migrate le 3 fetch di lista (`/api/dashboard` in Dashboard.tsx, `/api/bandi` in Bandi.tsx, `/api/clienti` in Clienti.tsx); scope esplicitamente limitato — le fetch puntuali (scheda bando on-demand, dettaglio bandi-compatibili-per-cliente) restano dirette come prima.
+  - Invalidation globale (`queryClient.invalidateQueries()`, non granulare) su tutte e 6 le mutazioni: recalc, deduplica, delete bando, save cliente, delete cliente, upload bando riuscito.
+  - `App.tsx` avvolto in `QueryClientProvider`. `npm run build` pulito, 212 test Python invariati (intervento solo frontend).
 
 - [x] **#15 — Font-size scale (min 0.75rem) + spacing scale + migrazione token colori** `M` `UX/Design`
   Oltre 20 font-size diverse nel CSS, alcune a 9–11px (sotto il minimo leggibile per il target 40–55 anni). Colori hardcoded in `Clienti.tsx`, `Bandi.tsx` e nel `.score-circle` invece dei token `--status-*` già creati.

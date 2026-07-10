@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
+import { useBandi, useApiMutation } from '../lib/queries'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Bando {
@@ -205,9 +206,9 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
 
 // ── Main component ─────────────────────────────────────────
 export default function Bandi() {
-  const [bandi, setBandi] = useState<Bando[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, isLoading: loading, error: queryError } = useBandi<{ bandi: Bando[] }>()
+  const bandi = data?.bandi ?? []
+  const error = queryError ? 'Errore nel caricamento dei bandi.' : null
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('tutti')
@@ -225,13 +226,10 @@ export default function Bandi() {
     return () => clearTimeout(t)
   }, [query])
 
-  useEffect(() => {
-    setLoading(true)
-    fetch('/api/bandi', withApiKey())
-      .then(r => r.json())
-      .then(d => { setBandi(d.bandi ?? []); setLoading(false) })
-      .catch(() => { setError('Errore nel caricamento dei bandi.'); setLoading(false) })
-  }, [])
+  const deleteMutation = useApiMutation((id: number) =>
+    fetch(`/api/bandi/${id}`, withApiKey({ method: 'DELETE' })).then(res => {
+      if (!res.ok) throw new Error()
+    }))
 
   const handleSort = useCallback((key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -311,9 +309,7 @@ export default function Bandi() {
   const handleDeleteConfirm = useCallback(async (id: number) => {
     setDeleting(id)
     try {
-      const res = await fetch(`/api/bandi/${id}`, withApiKey({ method: 'DELETE' }))
-      if (!res.ok) throw new Error()
-      setBandi(prev => prev.filter(b => b.id !== id))
+      await deleteMutation.mutateAsync(id)
       setConfirmDeleteId(null)
       toast.success('Bando eliminato.')
     } catch {
@@ -321,7 +317,7 @@ export default function Bandi() {
     } finally {
       setDeleting(null)
     }
-  }, [])
+  }, [deleteMutation])
 
   const SortIcon = ({ col }: { col: SortKey }) => {
     if (sortKey !== col) return null

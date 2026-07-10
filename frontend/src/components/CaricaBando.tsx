@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
 import { renderMarkdown } from '../lib/renderMarkdown'
+import { useInvalidateAll } from '../lib/queries'
 
 interface ExtractionResult {
   filename: string
@@ -142,6 +143,7 @@ export default function CaricaBando() {
   const [result, setResult] = useState<ExtractionResult | null>(null)
   const [networkError, setNetworkError] = useState<string | null>(null)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const invalidateAll = useInvalidateAll()
 
   useEffect(() => {
     if (!uploading) {
@@ -204,6 +206,7 @@ export default function CaricaBando() {
         toast.info('Bando già presente in archivio.')
       } else if (data.bando_id && !data.errors?.length) {
         toast.success('Bando salvato con successo.')
+        invalidateAll()
       } else if (data.empty_pdf) {
         toast.error('PDF vuoto o non leggibile.')
       } else if (data.errors?.length) {
