@@ -9,6 +9,9 @@ import time
 import uuid
 from collections import defaultdict, deque
 from pathlib import Path
+from urllib.parse import urlparse
+
+import requests
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,6 +64,11 @@ from modules.extractor import (
 )
 from modules.log_utils import log_error, log_prompt_run
 from modules.validator import fields_status, validate_bando
+from modules.url_extractor import (
+    InvalidUrlException,
+    extract_text_from_html,
+    fetch_url_safely,
+)
 
 ROOT = Path(__file__).resolve().parent
 TEMP_DIR = ROOT / "temp"
@@ -518,6 +526,70 @@ def api_download_scheda(bando_id: int):
 PDF_MAGIC = b"%PDF"
 
 
+def _process_and_save_bando(text: str, source_label: str) -> dict:
+    """Pipeline condivisa post-estrazione testo: LLM -> validazione -> dedup
+    -> salvataggio -> matching. Usata sia da /api/estrazione (upload PDF)
+    sia da /api/estrazione-url (#16), per non duplicare questa logica.
+
+    Nota sul caso duplicato: a differenza della versione precedente (che
+    ricostruiva una risposta minimale), qui il risultato include anche i
+    campi già raccolti prima del controllo duplicati (raw_text_preview,
+    data, bando_info, warnings, errors) — dati extra innocui per il
+    frontend, che legge solo i campi che già conosce.
+    """
+    result: dict = {"raw_text_preview": text[:1000]}
+    try:
+        raw_data = extract_bando_data(text)
+        validation = validate_bando(raw_data, raw_text=text)
+        data = validation["data"]
+        bando_info = data.get("bando", {})
+
+        result["data"] = data
+        result["bando_info"] = bando_info
+        result["warnings"] = validation.get("warnings", [])
+        result["errors"] = validation.get("errors", [])
+
+        if bando_info.get("ateco_aperto_a_tutti") is False:
+            escl = bando_info.get("note_esclusioni", {})
+            if isinstance(escl, dict):
+                result["sezioni_escluse"] = escl.get("sezioni_ateco_escluse", [])
+                result["attivita_vietate"] = escl.get("attivita_vietate", [])
+            else:
+                result["note_esclusioni_raw"] = str(escl)
+
+        if not validation["errors"]:
+            try:
+                existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
+                if existing_id:
+                    result["status"] = "duplicato"
+                    result["messaggio"] = "Bando già presente in archivio"
+                    result["bando_id"] = existing_id
+                    result["scheda"] = genera_scheda(data)
+                    return result
+
+                scheda = genera_scheda(data)
+                bando_id = save_bando_from_json(data, scheda=scheda)
+                with get_connection() as conn:
+                    run_matching_for_bando(bando_id, conn)
+
+                result["bando_id"] = bando_id
+                result["scadenza_estratta"] = bando_info.get("data_scadenza")
+                result["null_percentage"] = validation.get("null_percentage", 0)
+
+                ok_fields, null_fields = fields_status(data)
+                log_prompt_run(filename=source_label, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
+
+                result["scheda"] = scheda
+            except Exception as exc:
+                log_error(f"_process_and_save_bando: salvataggio bando '{source_label}' fallito: {exc}")
+                result["save_error"] = "Impossibile salvare il bando estratto. Riprova."
+    except Exception as exc:
+        log_error(f"_process_and_save_bando: estrazione/validazione '{source_label}' fallita: {exc}")
+        result["extraction_error"] = "Errore durante l'estrazione dei dati. Riprova o contatta l'assistenza."
+
+    return result
+
+
 @app.post("/api/estrazione", dependencies=[Depends(verify_api_key), Depends(rate_limit_estrazione)])
 def api_estrazione_submit(file: UploadFile = File(...)):
     safe_name = Path(file.filename).name
@@ -564,65 +636,74 @@ def api_estrazione_submit(file: UploadFile = File(...)):
                 "errors": ["Il PDF risulta corrotto o non leggibile. Verifica il file e riprova."]
             })
 
-        result["raw_text_preview"] = text[:1000]
-
-        try:
-            raw_data = extract_bando_data(text)
-            validation = validate_bando(raw_data, raw_text=text)
-            data = validation["data"]
-            bando_info = data.get("bando", {})
-
-            result["data"] = data
-            result["bando_info"] = bando_info
-            result["warnings"] = validation.get("warnings", [])
-            result["errors"] = validation.get("errors", [])
-
-            if bando_info.get("ateco_aperto_a_tutti") is False:
-                escl = bando_info.get("note_esclusioni", {})
-                if isinstance(escl, dict):
-                    result["sezioni_escluse"] = escl.get("sezioni_ateco_escluse", [])
-                    result["attivita_vietate"] = escl.get("attivita_vietate", [])
-                else:
-                    result["note_esclusioni_raw"] = str(escl)
-
-            if not validation["errors"]:
-                try:
-                    existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
-                    if existing_id:
-                        return JSONResponse(content={
-                            "status": "duplicato",
-                            "messaggio": "Bando già presente in archivio",
-                            "bando_id": existing_id,
-                            "filename": result["filename"],
-                            "size_kb": result["size_kb"],
-                            "scheda": genera_scheda(data),
-                            "warnings": validation.get("warnings", []),
-                        })
-
-                    scheda = genera_scheda(data)
-                    bando_id = save_bando_from_json(data, scheda=scheda)
-                    with get_connection() as conn:
-                        run_matching_for_bando(bando_id, conn)
-
-                    scadenza_estratta = bando_info.get("data_scadenza")
-                    result["bando_id"] = bando_id
-                    result["scadenza_estratta"] = scadenza_estratta
-                    result["null_percentage"] = validation.get("null_percentage", 0)
-
-                    ok_fields, null_fields = fields_status(data)
-                    log_prompt_run(filename=safe_name, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
-
-                    result["scheda"] = scheda
-                except Exception as exc:
-                    log_error(f"api_estrazione_submit: salvataggio bando '{safe_name}' fallito: {exc}")
-                    result["save_error"] = "Impossibile salvare il bando estratto. Riprova."
-        except Exception as exc:
-            log_error(f"api_estrazione_submit: estrazione/validazione '{safe_name}' fallita: {exc}")
-            result["extraction_error"] = "Errore durante l'estrazione dei dati dal PDF. Riprova o contatta l'assistenza."
-
+        result.update(_process_and_save_bando(text, safe_name))
         return result
     finally:
         file_path.unlink(missing_ok=True)
+
+
+class EstrazioneUrlIn(BaseModel):
+    url: str
+
+
+@app.post("/api/estrazione-url", dependencies=[Depends(verify_api_key), Depends(rate_limit_estrazione)])
+def api_estrazione_url_submit(payload: EstrazioneUrlIn):
+    """Estrazione bando da URL (#16): scarica la risorsa (PDF o pagina HTML),
+    ne estrae il testo e riusa la stessa pipeline dell'upload PDF.
+
+    Sicurezza: allow-list schema (solo https), blocco host privati/interni
+    anche sui redirect, timeout e limite dimensione — vedi modules/url_extractor.py.
+    """
+    try:
+        content_bytes, content_type, encoding, final_url = fetch_url_safely(payload.url)
+    except InvalidUrlException as exc:
+        return JSONResponse(status_code=400, content={"errors": [str(exc)]})
+    except requests.RequestException as exc:
+        log_error(f"api_estrazione_url_submit: fetch '{payload.url}' fallito: {exc}")
+        return JSONResponse(status_code=400, content={
+            "errors": ["Impossibile scaricare la pagina. Verifica il link e riprova."]
+        })
+
+    filename = urlparse(final_url).hostname or payload.url
+    result = {"filename": filename, "size_kb": len(content_bytes) / 1024}
+
+    is_pdf = content_bytes.startswith(PDF_MAGIC) or "application/pdf" in content_type
+    file_path: Path | None = None
+    try:
+        if is_pdf:
+            file_path = TEMP_DIR / f"{uuid.uuid4().hex}_estrazione_url.pdf"
+            with open(file_path, "wb") as f:
+                f.write(content_bytes)
+            try:
+                text = extract_text_from_pdf(str(file_path))
+            except EmptyPDFException:
+                result["empty_pdf"] = True
+                return result
+            except PDFTroppoGrandeException as exc:
+                log_error(f"api_estrazione_url_submit: '{final_url}' rifiutato, PDF troppo esteso: {exc}")
+                return JSONResponse(status_code=400, content={
+                    "errors": ["Il PDF ha troppe pagine. Riduci il documento (o dividilo) e riprova."]
+                })
+            except PDFInvalidoException as exc:
+                log_error(f"api_estrazione_url_submit: '{final_url}' PDF corrotto/non leggibile: {exc}")
+                return JSONResponse(status_code=400, content={
+                    "errors": ["Il PDF risulta corrotto o non leggibile. Verifica il link e riprova."]
+                })
+        else:
+            try:
+                html_text = content_bytes.decode(encoding or "utf-8", errors="replace")
+            except (LookupError, UnicodeDecodeError):
+                html_text = content_bytes.decode("utf-8", errors="replace")
+            text = extract_text_from_html(html_text)
+            if not text:
+                result["empty_pdf"] = True
+                return result
+    finally:
+        if file_path is not None:
+            file_path.unlink(missing_ok=True)
+
+    result.update(_process_and_save_bando(text, filename))
+    return result
 
 
 # ---------------------------------------------------------

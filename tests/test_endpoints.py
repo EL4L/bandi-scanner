@@ -432,3 +432,76 @@ def test_estrazione_rate_limit_oltre_soglia_ritorna_429(client):
         assert r1.status_code == 400  # rifiutato per magic bytes, ma conta ai fini del rate limit
         assert r2.status_code == 400
         assert r3.status_code == 429
+
+
+def test_post_estrazione_url_rifiuta_url_non_valido(client):
+    from modules.url_extractor import InvalidUrlException
+
+    with patch("main.fetch_url_safely", side_effect=InvalidUrlException("Sono supportati solo link https://.")):
+        response = client.post("/api/estrazione-url", json={"url": "http://esempio.it/bando"})
+    assert response.status_code == 400
+    assert "https" in response.json()["errors"][0]
+
+
+def test_post_estrazione_url_errore_di_rete(client):
+    import requests
+
+    with patch("main.fetch_url_safely", side_effect=requests.ConnectionError("timeout")):
+        response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando"})
+    assert response.status_code == 400
+    assert "scaricare" in response.json()["errors"][0]
+
+
+def test_post_estrazione_url_pagina_html_vuota(client):
+    html = b"<html><body><p>pagina troppo corta</p></body></html>"
+    with patch("main.fetch_url_safely", return_value=(html, "text/html", "utf-8", "https://esempio.it/bando")), \
+         patch("main.extract_text_from_html", return_value=""):
+        response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando"})
+    assert response.status_code == 200
+    assert response.json()["empty_pdf"] is True
+
+
+def test_post_estrazione_url_successo_html(client, mock_db):
+    html = b"<html><body><article>contenuto bando</article></body></html>"
+    with patch("main.fetch_url_safely", return_value=(html, "text/html", "utf-8", "https://esempio.it/bando")), \
+         patch("main.extract_text_from_html", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=None), \
+         patch("main.save_bando_from_json", return_value=321), \
+         patch("main.run_matching_for_bando"):
+        response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bando_id"] == 321
+    assert data["filename"] == "esempio.it"
+    assert "scheda" in data
+
+
+def test_post_estrazione_url_successo_pdf_diretto(client, mock_db):
+    """L'URL punta direttamente a un PDF (Content-Type application/pdf):
+    deve passare per extract_text_from_pdf, non extract_text_from_html."""
+    with patch("main.fetch_url_safely", return_value=(VALID_PDF_BYTES, "application/pdf", None, "https://esempio.it/bando.pdf")), \
+         patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_text_from_html") as mock_html, \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=None), \
+         patch("main.save_bando_from_json", return_value=99), \
+         patch("main.run_matching_for_bando"):
+        response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando.pdf"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bando_id"] == 99
+    mock_html.assert_not_called()
+
+
+def test_post_estrazione_url_duplicato(client, mock_db):
+    html = b"<html><body><article>contenuto bando</article></body></html>"
+    with patch("main.fetch_url_safely", return_value=(html, "text/html", "utf-8", "https://esempio.it/bando")), \
+         patch("main.extract_text_from_html", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.find_duplicate_bando", return_value=42):
+        response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "duplicato"
+    assert data["bando_id"] == 42

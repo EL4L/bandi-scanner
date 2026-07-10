@@ -1,5 +1,14 @@
 import pytest
 from unittest.mock import MagicMock, patch
+from collections import defaultdict, deque
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limit():
+    import main
+    main._rate_limit_hits.clear()
+    yield
+    main._rate_limit_hits.clear()
 
 
 # ---------------------------------------------------------------------------

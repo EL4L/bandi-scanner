@@ -76,8 +76,13 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
   - Estesa la conversione anche ai ~42 valori numerici di margin/padding/gap hardcoded inline nei componenti TSX (Bandi.tsx, CaricaBando.tsx, ClienteFormModal.tsx, Clienti.tsx, Dashboard.tsx, ModalScheda.tsx).
   - Nessun test Python impattato (212 verdi), `npm run build` pulito.
 
-- [ ] **#16 — Campo URL bando in `CaricaBando` + endpoint `/api/estrazione-url`** `M` `UX/Design`
+- [x] **#16 — Campo URL bando in `CaricaBando` + endpoint `/api/estrazione-url`** `M` `UX/Design`
   Molti bandi regionali esistono solo come pagina web. Aggiungere tab "Da URL" con input, endpoint backend che scarica e converte HTML→testo, poi riusa la pipeline esistente. Richiede allow-list schemi e timeout.
+  - Nuovo `modules/url_extractor.py`: `fetch_url_safely()` scarica seguendo i redirect manualmente (mai `allow_redirects=True`) rivalidando schema e host (protezione SSRF, incluso il metadata endpoint cloud `169.254.169.254`) a ogni hop; `extract_text_from_html()` estrae il testo pulito via `trafilatura`.
+  - Refactoring `main.py`: logica condivisa LLM→validazione→dedup→salvataggio→matching estratta in `_process_and_save_bando()`, riusata sia da `/api/estrazione` (upload PDF) sia dal nuovo `/api/estrazione-url`.
+  - Nuovo endpoint `POST /api/estrazione-url`: accetta un URL, scarica la risorsa (PDF diretto o pagina HTML), applica la stessa pipeline dell'upload.
+  - Frontend: tab switch "Carica PDF" / "Da URL" in `CaricaBando.tsx`, con input URL, validazione client-side (`new URL()`) e stesso flusso di feedback (toast, invalidazione cache React Query) dell'upload PDF.
+  - Nuove dipendenze `requests==2.34.2`, `trafilatura==2.1.0`. +26 test (20 in `tests/test_url_extractor.py`, 6 in `tests/test_endpoints.py`); aggiunta fixture autouse `_reset_rate_limit` in `tests/conftest.py` per isolare il rate limit tra test. 238 test verdi, `npm run build` pulito.
 
 - [ ] **#17 — Nuovi campi estrazione: modalità, tipo agevolazione, % per fascia** `L` `Estrazione`
   Mancano: `modalita_presentazione` (sportello/click day/graduatoria), `tipo_agevolazione` (enum), `percentuale_fondo_perduto` per fascia dimensionale (micro/piccola/media separati), `cumulabilita`. Richiede schema + prompt + scheda + UI.

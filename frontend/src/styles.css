@@ -740,6 +740,37 @@ a { color: var(--color-accent); }
 .upload-zone-title { font-size: var(--text-base); font-weight: 700; color: var(--color-text); margin-bottom: var(--space-1); }
 .upload-zone-sub { font-size: var(--text-sm); color: var(--color-text-muted); }
 
+/* Tab switch "Carica PDF" / "Da URL" (#16) */
+.carica-mode-tabs {
+    display: flex; gap: var(--space-2); margin-bottom: var(--space-4);
+}
+.carica-mode-tab {
+    display: flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-2) var(--space-4); border-radius: 10px;
+    border: 1px solid var(--color-border); background: #fff;
+    color: var(--color-text-muted); font-size: var(--text-sm); font-weight: 600;
+    cursor: pointer; transition: border-color 150ms, background 150ms, color 150ms;
+}
+.carica-mode-tab svg { width: 16px; height: 16px; }
+.carica-mode-tab:hover { border-color: var(--color-accent); color: var(--color-text); }
+.carica-mode-tab.active {
+    border-color: var(--color-accent); background: var(--color-accent-soft); color: var(--color-accent);
+}
+.carica-mode-tab:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+.upload-zone-url {
+    border: 2px solid var(--color-border); border-radius: 16px;
+    padding: var(--space-6); background: #fafbfc;
+}
+.upload-url-input {
+    width: 100%; padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-border-strong); border-radius: 10px;
+    font-size: var(--text-base); color: var(--color-text);
+}
+.upload-url-input:focus-visible {
+    outline: 2px solid var(--color-accent); outline-offset: 1px; border-color: var(--color-accent);
+}
+
 /* ── SPINNER / LOADING ────────────────────────────────────── */
 .spinner {
     width: 22px; height: 22px; border: 3px solid var(--color-border);

@@ -50,6 +50,15 @@ function IconCheck() {
   )
 }
 
+function IconLink() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  )
+}
+
 function IconX() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -137,6 +146,8 @@ function UploadProgress({ statuses }: { statuses: StepStatus[] }) {
 
 export default function CaricaBando() {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [mode, setMode] = useState<'pdf' | 'url'>('pdf')
+  const [bandoUrl, setBandoUrl] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -220,8 +231,55 @@ export default function CaricaBando() {
     }
   }
 
+  const handleUploadUrl = async () => {
+    if (!bandoUrl.trim()) return
+    try {
+      new URL(bandoUrl.trim())
+    } catch {
+      setNetworkError('URL non valido. Deve iniziare con https://')
+      toast.error('URL non valido.')
+      return
+    }
+
+    setUploading(true)
+    setNetworkError(null)
+    setResult(null)
+
+    try {
+      const res = await fetch('/api/estrazione-url', withApiKey({
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: bandoUrl.trim() }),
+      }))
+      const data: ExtractionResult = await res.json()
+      if (!res.ok) {
+        setNetworkError(data.errors?.[0] ?? 'Impossibile elaborare il link.')
+        toast.error(data.errors?.[0] ?? 'Impossibile elaborare il link.')
+        return
+      }
+      setResult(data)
+      if (data.status === 'duplicato') {
+        toast.info('Bando già presente in archivio.')
+      } else if (data.bando_id && !data.errors?.length) {
+        toast.success('Bando salvato con successo.')
+        invalidateAll()
+      } else if (data.empty_pdf) {
+        toast.error('Pagina vuota o non leggibile.')
+      } else if (data.errors?.length) {
+        toast.error('Estrazione completata con errori di validazione.')
+      }
+    } catch {
+      setNetworkError('Errore di rete durante il caricamento. Verifica la connessione.')
+      toast.error('Errore di rete durante il caricamento.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const handleReset = () => {
     setSelectedFile(null)
+    setBandoUrl('')
+    setMode('pdf')
     setResult(null)
     setNetworkError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
@@ -248,45 +306,91 @@ export default function CaricaBando() {
               onChange={handleInputChange}
             />
 
-            <div className="card">
-              <div
-                className={`upload-zone${dragOver ? ' drag-over' : ''}`}
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-                role="button"
-                tabIndex={0}
-                aria-label="Seleziona un file PDF da caricare, o trascinalo qui"
-                onKeyDown={e => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    fileInputRef.current?.click()
-                  }
-                }}
+            <div className="carica-mode-tabs" role="tablist" aria-label="Sorgente del bando">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'pdf'}
+                className={`carica-mode-tab${mode === 'pdf' ? ' active' : ''}`}
+                onClick={() => { setMode('pdf'); setNetworkError(null) }}
               >
-                <div className="upload-zone-icon">
-                  <IconUpload />
+                <IconUpload /> Carica PDF
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'url'}
+                className={`carica-mode-tab${mode === 'url' ? ' active' : ''}`}
+                onClick={() => { setMode('url'); setNetworkError(null) }}
+              >
+                <IconLink /> Da URL
+              </button>
+            </div>
+
+            <div className="card">
+              {mode === 'pdf' ? (
+                <div
+                  className={`upload-zone${dragOver ? ' drag-over' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDrop}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Seleziona un file PDF da caricare, o trascinalo qui"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      fileInputRef.current?.click()
+                    }
+                  }}
+                >
+                  <div className="upload-zone-icon">
+                    <IconUpload />
+                  </div>
+                  {selectedFile ? (
+                    <>
+                      <p className="upload-zone-title">{selectedFile.name}</p>
+                      <p className="upload-zone-sub">
+                        {(selectedFile.size / 1024).toFixed(0)} KB · Clicca per cambiare file
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="upload-zone-title">Trascina il PDF qui, o clicca per selezionare</p>
+                      <p className="upload-zone-sub">Solo file PDF · Max 10 MB</p>
+                    </>
+                  )}
                 </div>
-                {selectedFile ? (
-                  <>
-                    <p className="upload-zone-title">{selectedFile.name}</p>
-                    <p className="upload-zone-sub">
-                      {(selectedFile.size / 1024).toFixed(0)} KB · Clicca per cambiare file
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="upload-zone-title">Trascina il PDF qui, o clicca per selezionare</p>
-                    <p className="upload-zone-sub">Solo file PDF · Max 10 MB</p>
-                  </>
-                )}
-              </div>
+              ) : (
+                <div className="upload-zone-url">
+                  <label htmlFor="bando-url-input" className="upload-zone-title" style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
+                    Incolla il link alla pagina del bando o al PDF online
+                  </label>
+                  <input
+                    id="bando-url-input"
+                    type="url"
+                    inputMode="url"
+                    placeholder="https://www.regione.esempio.it/bando-innovazione"
+                    className="upload-url-input"
+                    value={bandoUrl}
+                    onChange={e => setBandoUrl(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && bandoUrl.trim()) handleUploadUrl() }}
+                  />
+                  <p className="upload-zone-sub" style={{ marginTop: 'var(--space-2)' }}>
+                    Solo link https:// · pagina web o PDF direttamente online
+                  </p>
+                </div>
+              )}
 
               <div className="upload-steps">
                 <div className="upload-step">
                   <span className="upload-step-num">1</span>
-                  <p className="upload-step-text"><strong>Seleziona il PDF</strong> del bando da analizzare</p>
+                  <p className="upload-step-text">
+                    {mode === 'pdf'
+                      ? <><strong>Seleziona il PDF</strong> del bando da analizzare</>
+                      : <><strong>Incolla il link</strong> alla pagina o al PDF del bando</>}
+                  </p>
                 </div>
                 <div className="upload-step">
                   <span className="upload-step-num">2</span>
@@ -302,12 +406,12 @@ export default function CaricaBando() {
                 <div className="alert alert-danger" style={{ marginTop: 'var(--space-4)' }}>{networkError}</div>
               )}
 
-              {selectedFile && (
+              {((mode === 'pdf' && selectedFile) || (mode === 'url' && bandoUrl.trim())) && (
                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)', justifyContent: 'flex-end' }}>
                   <button className="btn" onClick={handleReset}>Annulla</button>
                   <button
                     className="btn btn-primary"
-                    onClick={handleUpload}
+                    onClick={mode === 'pdf' ? handleUpload : handleUploadUrl}
                     disabled={uploading}
                   >
                     {uploading
