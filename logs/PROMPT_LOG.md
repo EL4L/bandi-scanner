@@ -338,3 +338,242 @@ Registro iterazioni del prompt di estrazione (`prompts/system_extraction.md`), t
 - **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
 - **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
 - **Note:** Validazione OK
+
+### bando.pdf — 2026-07-10 17:35:03
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-10 17:35:03
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+---
+
+## Registro interazioni di sviluppo
+
+Questa sezione registra le interazioni tra la persona utente e gli assistenti AI. Gli orari indicano il fuso `Europe/Rome`. Quando l'orario originale del messaggio non è esposto dall'interfaccia, viene riportato l'orario di registrazione e la voce è marcata come retroattiva. Le esecuzioni automatiche del prompt possono essere intercalate perché `log_prompt_run()` appende sempre a fine file; i record conversazionali sono identificati in modo univoco dal prefisso `INT-`.
+
+### INT-20260710-001 — 2026-07-10 18:42:21 +02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Richiesta
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Richiesto audit completo del progetto per knowledge base e validazione, diagnosi del caricamento infinito della dashboard mostrato nello screenshot e verifica delle ultime modifiche attribuite a Claude Code. Richiesto inoltre di registrare metodicamente ogni interazione nel prompt log con data, ora, modello e persona/autore, e di fermarsi per chiedere conferma in caso di dubbi.
+
+### INT-20260710-002 — 2026-07-10 18:42:21 +02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Risposta operativa
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Avviato audit conservativo e read-only: ricostruzione di struttura, cronologia, avvio, prompt log e causa del caricamento infinito; dichiarato che ogni scelta potenzialmente invasiva sarebbe stata sottoposta prima all'utente.
+
+### INT-20260710-003 — 2026-07-10 18:42:21 +02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Richiesta di stato
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** «Stai ancora lavorando in background?»
+
+### INT-20260710-004 — 2026-07-10 18:42:21 +02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento di stato
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Confermata l'attività in corso; segnalati modifiche locali non committate, inclusi Dashboard.tsx e PROMPT_LOG.md, e il commit di migrazione a React Query del 10 luglio come primo candidato da verificare. Confermato che non era ancora stato modificato alcun file.
+
+### INT-20260710-005 — 2026-07-10 18:42:21 +02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento metodologico
+- **Registrazione:** Contestuale
+- **Contenuto:** Verificato che PROMPT_LOG.md era dedicato alle esecuzioni del prompt di estrazione; adottata una sezione separata nello stesso file per registrare le conversazioni senza alterare lo storico.
+
+### esempio.it — 2026-07-10 17:35:03
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### INT-20260710-006 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento diagnostico
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Identificato che lo spinner React Query può restare attivo su una richiesta pending e avviata verifica di processi, porte, backend e database per distinguere frontend da API sospesa.
+- **Azioni/esito:** Nessun listener iniziale sulle porte 5173/5174/8000; fetch senza timeout confermata.
+
+### INT-20260710-007 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzato test read-only `SELECT 1` verso il database Neon, con timeout di 5 secondi.
+- **Azioni/esito:** DB raggiungibile; risposta in circa 1,09 secondi.
+
+### INT-20260710-008 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento diagnostico
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Escluso un guasto attuale di Neon e segnalata la dipendenza `trafilatura` dichiarata ma non installata nel venv locale come causa candidata primaria.
+- **Azioni/esito:** `venv\\Scripts\\python.exe -c "import main"` ha riprodotto `ModuleNotFoundError: trafilatura`.
+
+### INT-20260710-009 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Diagnosi causa radice
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Correlato il crash al commit `1fae20c`, co-firmato Claude Sonnet 5: nuovo import top-level di `url_extractor` e venv non sincronizzato. Richiesta autorizzazione prima di modificare l'ambiente locale.
+
+### INT-20260710-010 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata sincronizzazione del venv tramite `venv\\Scripts\\python.exe -m pip install -r requirements.txt`.
+- **Azioni/esito:** Installata `trafilatura==2.1.0` con dipendenze transitive.
+
+### INT-20260710-011 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento validazione
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Confermata la sincronizzazione e avviati import backend, suite Python, build e lint per distinguere la rottura ambientale da regressioni del codice.
+
+### INT-20260710-012 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Nuovo finding bloccante
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Scoperto che `trafilatura -> jusText -> lxml 6.1.1` richiede anche `lxml_html_clean`, non presente in requirements e non rilevato da `pip check`. Richiesta nuova autorizzazione.
+
+### INT-20260710-013 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata installazione diagnostica di `lxml_html_clean` nel venv.
+- **Azioni/esito:** Installata versione 0.4.5; `import main` successivamente riuscito.
+
+### INT-20260710-014 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento validazione
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Rieseguiti import, pytest, build e lint. La prima esecuzione ha separato errori reali da errori dovuti al sandbox in sola lettura.
+- **Azioni/esito:** Import riuscito; lint 0 errori/5 warning; test/build da ripetere con scrittura temporanea.
+
+### INT-20260710-015 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Spiegazione richiesta permessi
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Spiegato che 7 failure e 4 error pytest dipendevano dai divieti di scrittura su file temporanei, mentre 263 test erano già passati; la build era bloccata solo sui file incrementali TypeScript.
+
+### INT-20260710-016 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata suite pytest con scrittura esclusivamente temporanea.
+- **Azioni/esito:** 274/274 test passati; 2 warning di deprecazione FastAPI.
+
+### INT-20260710-017 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata build frontend con scrittura degli artefatti TypeScript/Vite.
+- **Azioni/esito:** Build di produzione completata senza errori.
+
+### INT-20260710-018 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Proposta smoke test
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Proposto avvio backend temporaneo su porta isolata e lettura dashboard per verificare il flusso HTTP reale senza mutazioni applicative.
+
+### INT-20260710-019 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzato primo smoke test HTTP read-only su porta 8010 con arresto automatico.
+- **Azioni/esito:** Primo tentativo partito prima che l'import lento avesse aperto la porta; nessuna modifica dati.
+
+### INT-20260710-020 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Correzione diagnostica
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Chiarito che il primo smoke test aveva atteso solo 4 secondi; proposta ripetizione con polling della porta fino a 30 secondi.
+
+### INT-20260710-021 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata ripetizione dello smoke test read-only con attesa controllata.
+- **Azioni/esito:** HTTP 200; 11 bandi, 11 card, 55 abbinamenti; server temporaneo arrestato.
+
+### INT-20260710-022 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Esito causa radice
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Dichiarata verificata end-to-end la causa ambientale; segnalato che il repository resta non riproducibile perché `lxml_html_clean` non è ancora in requirements. Avviato consolidamento dei finding senza fix di codice non autorizzati.
+
+### INT-20260710-023 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata raccolta coverage della suite pytest.
+- **Azioni/esito:** 274 test passati; coverage totale 73,22%, `main.py` 65%, `db/init_db.py` 0%.
+
+### INT-20260710-024 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Utente (persona umana; nome non dichiarato)
+- **Modello:** —
+- **Tipo:** Approvazione tramite popup
+- **Registrazione:** Retroattiva; orario di registrazione
+- **Contenuto:** Autorizzata verifica read-only delle vulnerabilità npm di produzione.
+- **Azioni/esito:** `npm audit --omit=dev` ha riportato 0 vulnerabilità note.
+
+### INT-20260711-025 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento audit
+- **Registrazione:** Contestuale
+- **Contenuto:** Consolidati finding frontend: timeout assente, errori HTTP trattati come successi, assenza test UI e regressione informativa nelle modifiche locali della dashboard.
+
+### INT-20260711-026 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Consegna documentale in corso
+- **Registrazione:** Contestuale
+- **Contenuto:** Avviata creazione della knowledge base separata con baseline Git, architettura, causa, validazione, finding, runbook e piano di rimedio, senza applicare fix applicativi non autorizzati.
+- **File correlato:** `AUDIT_KNOWLEDGE_BASE_2026-07-11.md`.
+
+### INT-20260711-027 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Aggiornamento stato scrittura
+- **Registrazione:** Contestuale
+- **Contenuto:** Segnalata latenza OneDrive durante la materializzazione del documento e mantenuta la scrittura in corso per evitare un file parziale.
+- **Azioni/esito:** Documento verificato: 338 righe, 18.664 byte.
+
+### INT-20260711-028 — 2026-07-11T15:59:59+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Igiene audit log
+- **Registrazione:** Contestuale
+- **Contenuto:** Identificati e rimossi esclusivamente i record fittizi generati dalle due suite pytest di questa sessione (timestamp 18:49 e 18:58) e i due incidenti duplicati corrispondenti, preservando lo stato preesistente.
+
+### INT-20260711-029 — 2026-07-11T16:03:14+02:00
+- **Persona/autore:** Codex (assistente AI)
+- **Modello:** GPT-5 / Codex
+- **Tipo:** Consegna finale
+- **Registrazione:** Contestuale
+- **Contenuto:** Concluso audit completo. Comunicata la causa radice (dipendenze installate nel Python globale ma assenti nel venv usato dal backend, introdotte con `1fae20c`) e il ruolo amplificatore delle richieste frontend/DB senza timeout. Confermati riallineamento locale, 274 test verdi, coverage 73,22%, build e lint, npm audit senza vulnerabilità note e smoke dashboard HTTP 200. Consegnata la knowledge base e segnalato che il fix repository resta da autorizzare.
+- **File/test correlati:** `AUDIT_KNOWLEDGE_BASE_2026-07-11.md`, `logs/INCIDENTS.md`, `logs/PROMPT_LOG.md`; pytest, coverage, Vite build, oxlint, npm audit, smoke HTTP.

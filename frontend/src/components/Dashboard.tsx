@@ -53,11 +53,6 @@ interface DashboardData {
   duplicates_count: number
 }
 
-const BLANK_VALUES = new Set(['n/d', 'null', 'none', 'undefined', ''])
-function isBlank(v: string | null | undefined): boolean {
-  if (v == null) return true
-  return BLANK_VALUES.has(v.trim().toLowerCase())
-}
 
 function scoreClass(colorClass: string): string {
   if (colorClass === 'circle-green') return 'score-green'
@@ -121,6 +116,20 @@ function isExpiredCard(card: BandoCard): boolean {
   return card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza < 0
 }
 
+function isAllDaVerificare(card: BandoCard): boolean {
+  const validMatches = card.matches.filter(m => m.breakdown.status !== 'da_verificare')
+  return card.matches.length > 0 && validMatches.length === 0
+}
+
+function sortCardsVerifiedFirst(cards: BandoCard[]): BandoCard[] {
+  return [...cards].sort((a, b) => {
+    const aUnverified = isAllDaVerificare(a)
+    const bUnverified = isAllDaVerificare(b)
+    if (aUnverified === bUnverified) return 0
+    return aUnverified ? 1 : -1
+  })
+}
+
 function stripColorByGiorni(giorni: number | null): string {
   if (giorni === null) return 'var(--color-border-strong, #D1D5DB)'
   if (giorni < 0) return 'var(--color-text-muted, #6b7280)'
@@ -129,15 +138,24 @@ function stripColorByGiorni(giorni: number | null): string {
   return 'var(--color-success, #10b981)'
 }
 
-function scadenzaTextClass(giorni: number | null): string {
-  if (giorni === null) return ''
-  if (giorni < 0) return 'text-muted'
-  if (giorni < 30) return 'scadenza-giorni-red'
-  if (giorni < 90) return 'scadenza-giorni-orange'
-  return 'scadenza-giorni-green'
-}
-
 type SchedaModal = SchedaModalData
+
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`bando-card-chevron${open ? ' bando-card-chevron--open' : ''}`}
+      aria-hidden="true"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
 
 function BandoCardItem({
   card,
@@ -146,122 +164,144 @@ function BandoCardItem({
   card: BandoCard
   onScheda: () => void
 }) {
+  const [expanded, setExpanded] = useState(false)
   const validMatches = card.matches.filter(m => m.breakdown.status !== 'da_verificare')
-  const allDaVerificare = card.matches.length > 0 && validMatches.length === 0
+  const allDaVerificare = isAllDaVerificare(card)
   const effectiveMaxScore = validMatches.length > 0
     ? Math.max(...validMatches.map(m => m.score))
     : card.max_score
+  const hasExpandableContent = card.matches.length > 0
 
   return (
-    <div className="bando-card">
+    <div className={`bando-card${expanded ? ' bando-card--expanded' : ' bando-card--compact'}`}>
       <div
         className="deadline-strip"
         style={{ backgroundColor: stripColorByGiorni(card.giorni_alla_scadenza) }}
       />
       <div className="bando-card-inner">
-      <div className="bando-card-top">
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <button
+          type="button"
+          className="bando-card-header"
+          onClick={() => hasExpandableContent && setExpanded(v => !v)}
+          disabled={!hasExpandableContent}
+          aria-expanded={hasExpandableContent ? expanded : undefined}
+        >
           <p className="bando-card-title">{card.titolo || `Bando #${card.id}`}</p>
-          {card.ente && <p className="bando-card-ente">{card.ente}</p>}
-        </div>
-        {allDaVerificare ? (
-          <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
-            ⚠️ Da verificare
-          </span>
-        ) : (
-          <div
-            className={`score-circle ${scoreClass(circleColorClass(effectiveMaxScore))}`}
-            style={{ '--score': effectiveMaxScore } as React.CSSProperties}
-          >
-            <span>{effectiveMaxScore > 0 ? `${effectiveMaxScore}%` : '—'}</span>
+          <div className="bando-card-header-right">
+            {allDaVerificare ? (
+              <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
+                ⚠️ Da verificare
+              </span>
+            ) : (
+              <div
+                className={`score-circle score-circle--compact ${scoreClass(circleColorClass(effectiveMaxScore))}`}
+                style={{ '--score': effectiveMaxScore } as React.CSSProperties}
+              >
+                <span>{effectiveMaxScore > 0 ? `${effectiveMaxScore}%` : '—'}</span>
+              </div>
+            )}
+            {hasExpandableContent && <IconChevron open={expanded} />}
+          </div>
+        </button>
+
+        {expanded && (
+          <div className="bando-card-details">
+            {card.matches.length > 0 ? (
+              <div className="match-list match-list--static">
+                <p className="match-list-label">
+                  {card.matches.length} {card.matches.length === 1 ? 'cliente compatibile' : 'clienti compatibili'}
+                </p>
+                {card.matches.map((m, i) => {
+                  const escluso = m.ammissibilita?.ammissibile === false
+                  const daVerificare = !escluso && m.breakdown.status === 'da_verificare'
+                  return (
+                    <div key={i} className={`match-row${escluso ? ' match-excluded' : ''}`}>
+                      <span className="match-row-name">{m.nome}</span>
+                      <div className="match-row-right">
+                        {escluso ? (
+                          <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                        ) : daVerificare ? (
+                          <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
+                            ⚠️ Da verificare
+                          </span>
+                        ) : (
+                          <span className={matchBadgeClass(m.score_badge_class)}>
+                            {m.score}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-muted text-sm">Nessun cliente compatibile in anagrafica.</p>
+            )}
+
+            <div className="bando-card-footer">
+              <div className="bando-card-footer-actions">
+                <button className="btn btn-sm btn-primary" onClick={onScheda}>
+                  Scheda
+                </button>
+                <a
+                  href={apiHref(`/api/bandi/${card.id}/scheda.md`)}
+                  download
+                  className="btn btn-sm"
+                  title="Scarica scheda .md"
+                  aria-label={`Scarica scheda di ${card.titolo || `Bando #${card.id}`}`}
+                >
+                  <IconDownload />
+                </a>
+              </div>
+              {card.fonte_url && (
+                <a
+                  href={card.fonte_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-ghost"
+                  title="Apri fonte"
+                  aria-label={`Apri fonte ufficiale di ${card.titolo || `Bando #${card.id}`}`}
+                >
+                  <IconExternal />
+                </a>
+              )}
+            </div>
           </div>
         )}
-      </div>
 
-      {card.scadenza && card.scadenza !== 'N/D' && (
-        <div className="bando-card-scadenza-row">
-          <span className={`scadenza-label ${scadenzaTextClass(card.giorni_alla_scadenza)}`}>
-            Scade {card.scadenza}
-            {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 &&
-              ` · ${card.giorni_alla_scadenza} gg`}
-          </span>
-          {card.urgenza && card.urgenza !== 'scaduto' && (
-            <span className={`badge badge-${card.urgenza}`}>{card.urgenza}</span>
-          )}
-        </div>
-      )}
-
-      {!isBlank(card.contributo_max) && (
-        <div className="bando-card-contributo-row">
-          <span className="bando-card-contributo-label">Contributo max</span>
-          <span className="bando-card-contributo">{card.contributo_max}</span>
-        </div>
-      )}
-
-      {card.matches.length > 0 && (
-        <div className="match-list match-list--static">
-          <p className="match-list-label">
-            {card.matches.length} {card.matches.length === 1 ? 'cliente compatibile' : 'clienti compatibili'}
-          </p>
-          {card.matches.map((m, i) => {
-            const escluso = m.ammissibilita?.ammissibile === false
-            const daVerificare = !escluso && m.breakdown.status === 'da_verificare'
-            return (
-              <div key={i} className={`match-row${escluso ? ' match-excluded' : ''}`}>
-                <span className="match-row-name">{m.nome}</span>
-                <div className="match-row-right">
-                  {escluso ? (
-                    <span className="badge badge-escluso">⛔ Non ammissibile</span>
-                  ) : daVerificare ? (
-                    <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
-                      ⚠️ Da verificare
-                    </span>
-                  ) : (
-                    <span className={matchBadgeClass(m.score_badge_class)}>
-                      {m.score}%
-                    </span>
-                  )}
-                </div>
+        {!hasExpandableContent && (
+          <div className="bando-card-details bando-card-details--always">
+            <p className="text-muted text-sm">Nessun cliente compatibile in anagrafica.</p>
+            <div className="bando-card-footer">
+              <div className="bando-card-footer-actions">
+                <button className="btn btn-sm btn-primary" onClick={onScheda}>
+                  Scheda
+                </button>
+                <a
+                  href={apiHref(`/api/bandi/${card.id}/scheda.md`)}
+                  download
+                  className="btn btn-sm"
+                  title="Scarica scheda .md"
+                  aria-label={`Scarica scheda di ${card.titolo || `Bando #${card.id}`}`}
+                >
+                  <IconDownload />
+                </a>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {card.matches.length === 0 && (
-        <p className="text-muted text-sm" style={{ marginTop: 'var(--space-3)' }}>
-          Nessun cliente compatibile in anagrafica.
-        </p>
-      )}
-
-      <div className="bando-card-footer">
-        <div className="bando-card-footer-actions">
-          <button className="btn btn-sm btn-primary" onClick={onScheda}>
-            Scheda
-          </button>
-          <a
-            href={apiHref(`/api/bandi/${card.id}/scheda.md`)}
-            download
-            className="btn btn-sm"
-            title="Scarica scheda .md"
-            aria-label={`Scarica scheda di ${card.titolo || `Bando #${card.id}`}`}
-          >
-            <IconDownload />
-          </a>
-        </div>
-        {card.fonte_url && (
-          <a
-            href={card.fonte_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-sm btn-ghost"
-            title="Apri fonte"
-            aria-label={`Apri fonte ufficiale di ${card.titolo || `Bando #${card.id}`}`}
-          >
-            <IconExternal />
-          </a>
+              {card.fonte_url && (
+                <a
+                  href={card.fonte_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-ghost"
+                  title="Apri fonte"
+                  aria-label={`Apri fonte ufficiale di ${card.titolo || `Bando #${card.id}`}`}
+                >
+                  <IconExternal />
+                </a>
+              )}
+            </div>
+          </div>
         )}
-      </div>
       </div>
     </div>
   )
@@ -376,19 +416,15 @@ export default function Dashboard() {
         <div className="kpi-card">
           <p className="kpi-label">Bandi in archivio</p>
           <p className="kpi-value">{d.n_bandi}</p>
-        </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Abbinamenti trovati</p>
-          <p className="kpi-value">{d.totale_abbinamenti}</p>
-        </div>
-        <div className="kpi-card">
-          <p className="kpi-label">Bandi con clienti</p>
-          <p className="kpi-value">{uniqueCards.filter(c => c.matches.length > 0).length}</p>
           {duplicatesCount > 0 && (
             <p className="kpi-delta" style={{ color: 'var(--color-warning)' }}>
               {duplicatesCount} duplicat{duplicatesCount === 1 ? 'o' : 'i'} nascost{duplicatesCount === 1 ? 'o' : 'i'}
             </p>
           )}
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">Abbinamenti trovati</p>
+          <p className="kpi-value">{d.totale_abbinamenti}</p>
         </div>
       </div>
 
@@ -404,8 +440,8 @@ export default function Dashboard() {
           <p>Carica un bando PDF dalla sezione "Carica Bando" per iniziare l'analisi.</p>
         </div>
       ) : (() => {
-        const activeCards = uniqueCards.filter(c => !isExpiredCard(c))
-        const expiredCards = uniqueCards.filter(isExpiredCard)
+        const activeCards = sortCardsVerifiedFirst(uniqueCards.filter(c => !isExpiredCard(c)))
+        const expiredCards = sortCardsVerifiedFirst(uniqueCards.filter(isExpiredCard))
         return (
           <>
             {activeCards.length > 0 && (

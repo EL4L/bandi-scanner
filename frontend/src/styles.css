@@ -281,8 +281,8 @@ a { color: var(--color-accent); }
 /* ── BANDO CARDS ──────────────────────────────────────────── */
 .bando-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--space-5);
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-4);
 }
 
 .bando-card {
@@ -298,7 +298,48 @@ a { color: var(--color-accent); }
     gap: 0;
 }
 .bando-card:hover { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); border-color: #D1D5DB; }
-.bando-card-inner { padding: var(--space-5); display: flex; flex-direction: column; gap: 0; flex: 1; }
+.bando-card-inner { padding: var(--space-4); display: flex; flex-direction: column; gap: 0; flex: 1; }
+.bando-card--compact .bando-card-inner { padding: var(--space-3) var(--space-4); }
+
+.bando-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+.bando-card-header:disabled { cursor: default; }
+.bando-card-header:not(:disabled):hover .bando-card-title { color: var(--color-accent); }
+
+.bando-card-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.bando-card-chevron {
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+    transition: transform 200ms ease;
+    flex-shrink: 0;
+}
+.bando-card-chevron--open { transform: rotate(180deg); }
+
+.bando-card-details {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+.bando-card-details--always { border-top: none; padding-top: var(--space-2); margin-top: var(--space-2); }
 
 /* ── DEADLINE STRIP ───────────────────────────────────────── */
 .deadline-strip {
@@ -367,6 +408,12 @@ a { color: var(--color-accent); }
     position: relative;
     background: conic-gradient(var(--ring-color) calc(var(--score, 0) * 1%), var(--ring-track) 0);
 }
+.score-circle--compact {
+    width: 44px;
+    height: 44px;
+}
+.score-circle--compact::before { inset: 4px; }
+.score-circle--compact > span { font-size: var(--text-xs); }
 .score-circle::before {
     content: ''; position: absolute; inset: 5px;
     border-radius: 50%; background: var(--color-surface);
