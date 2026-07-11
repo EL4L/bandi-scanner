@@ -26,6 +26,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 
 - [x] **#6 — Scadenza + badge urgenza + deadline-strip sulla card Dashboard** `S` `UX/Design`
   Scadenza, giorni e urgenza arrivano già dall'API ma non sono renderizzati nella card. Le classi CSS `badge-alta/media/bassa` e `deadline-strip` esistono e non sono usate. Aggiungere la riga JSX con `card.scadenza`, `card.giorni_alla_scadenza` e `card.urgenza`.
+  - **Regressione risolta (2026-07-11):** il redesign card espandibili (commit `eac1aba`, lavoro Codex) aveva rimosso dalla card la riga "Scade DD/MM/YYYY · N gg" con badge urgenza (#6), la riga "Contributo max" e la KPI "Bandi con clienti". Ripristinate in `Dashboard.tsx` via nuova sezione `bando-card-quick-info` sempre visibile (helper `isBlank`/`scadenzaTextClass` re-introdotti) + KPI card; nuova regola CSS `.bando-card-quick-info` in `styles.css`. Comportamento a fisarmonica preservato. Solo frontend: `npm run build` pulito, 274 test Python invariati.
 
 ---
 

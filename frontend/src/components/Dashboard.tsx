@@ -54,6 +54,12 @@ interface DashboardData {
 }
 
 
+const BLANK_VALUES = new Set(['n/d', 'null', 'none', 'undefined', ''])
+function isBlank(v: string | null | undefined): boolean {
+  if (v == null) return true
+  return BLANK_VALUES.has(v.trim().toLowerCase())
+}
+
 function scoreClass(colorClass: string): string {
   if (colorClass === 'circle-green') return 'score-green'
   if (colorClass === 'circle-yellow') return 'score-yellow'
@@ -138,6 +144,14 @@ function stripColorByGiorni(giorni: number | null): string {
   return 'var(--color-success, #10b981)'
 }
 
+function scadenzaTextClass(giorni: number | null): string {
+  if (giorni === null) return ''
+  if (giorni < 0) return 'text-muted'
+  if (giorni < 30) return 'scadenza-giorni-red'
+  if (giorni < 90) return 'scadenza-giorni-orange'
+  return 'scadenza-giorni-green'
+}
+
 type SchedaModal = SchedaModalData
 
 function IconChevron({ open }: { open: boolean }) {
@@ -203,6 +217,29 @@ function BandoCardItem({
             {hasExpandableContent && <IconChevron open={expanded} />}
           </div>
         </button>
+
+        {((card.scadenza && card.scadenza !== 'N/D') || !isBlank(card.contributo_max)) && (
+          <div className="bando-card-quick-info">
+            {card.scadenza && card.scadenza !== 'N/D' && (
+              <div className="bando-card-scadenza-row">
+                <span className={`scadenza-label ${scadenzaTextClass(card.giorni_alla_scadenza)}`}>
+                  Scade {card.scadenza}
+                  {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 &&
+                    ` · ${card.giorni_alla_scadenza} gg`}
+                </span>
+                {card.urgenza && card.urgenza !== 'scaduto' && (
+                  <span className={`badge badge-${card.urgenza}`}>{card.urgenza}</span>
+                )}
+              </div>
+            )}
+            {!isBlank(card.contributo_max) && (
+              <div className="bando-card-contributo-row">
+                <span className="bando-card-contributo-label">Contributo max</span>
+                <span className="bando-card-contributo">{card.contributo_max}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {expanded && (
           <div className="bando-card-details">
@@ -425,6 +462,10 @@ export default function Dashboard() {
         <div className="kpi-card">
           <p className="kpi-label">Abbinamenti trovati</p>
           <p className="kpi-value">{d.totale_abbinamenti}</p>
+        </div>
+        <div className="kpi-card">
+          <p className="kpi-label">Bandi con clienti</p>
+          <p className="kpi-value">{uniqueCards.filter(c => c.matches.length > 0).length}</p>
         </div>
       </div>
 
