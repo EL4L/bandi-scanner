@@ -84,8 +84,14 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
   - Frontend: tab switch "Carica PDF" / "Da URL" in `CaricaBando.tsx`, con input URL, validazione client-side (`new URL()`) e stesso flusso di feedback (toast, invalidazione cache React Query) dell'upload PDF.
   - Nuove dipendenze `requests==2.34.2`, `trafilatura==2.1.0`. +26 test (20 in `tests/test_url_extractor.py`, 6 in `tests/test_endpoints.py`); aggiunta fixture autouse `_reset_rate_limit` in `tests/conftest.py` per isolare il rate limit tra test. 238 test verdi, `npm run build` pulito.
 
-- [ ] **#17 — Nuovi campi estrazione: modalità, tipo agevolazione, % per fascia** `L` `Estrazione`
+- [x] **#17 — Nuovi campi estrazione: modalità, tipo agevolazione, % per fascia** `L` `Estrazione`
   Mancano: `modalita_presentazione` (sportello/click day/graduatoria), `tipo_agevolazione` (enum), `percentuale_fondo_perduto` per fascia dimensionale (micro/piccola/media separati), `cumulabilita`. Richiede schema + prompt + scheda + UI.
+  - `percentuale_fondo_perduto` passa da numero singolo a oggetto per fascia (`micro`/`piccola`/`media`/`default`) con retrocompatibilità: `normalize_percentuale_fondo_perduto()` (condivisa tra `schema.py` e `matcher.py`) gestisce sia il nuovo formato sia i bandi già salvati nel vecchio formato a numero singolo, letto come `"default"`.
+  - `modalita_presentazione` e `tipo_agevolazione` normalizzati a enum tramite le nuove `_to_enum()`/`_to_enum_list()`: valori non riconosciuti (allucinazioni LLM) vengono scartati invece di essere salvati come rumore.
+  - `cumulabilita` estratto come testo letterale (nessuna interpretazione), `null` se assente.
+  - `genera_scheda()` aggiornata per mostrare fondo perduto per fascia o singolo, modalità di presentazione, tipo di agevolazione e cumulabilità tra virgolette.
+  - Prompt di sistema aggiornato con le nuove regole e un nuovo Esempio 3 (percentuale differenziata per fascia).
+  - +36 test (238 preesistenti + 36 nuovi = 274 test verdi). Nessuna modifica frontend necessaria (nessun componente TSX legge questi campi direttamente).
 
 - [x] **#18 — Soglia revisione su campi critici + fix `_is_empty` su dict** `S` `Estrazione`
   La soglia 50% conta tutti i campi con lo stesso peso e sottostima i null perché i dict con valori tutti null passano come "pieni". Usare soglie su campi critici (titolo, scadenza, contributo, ATECO) e correggere `_is_empty`.
@@ -133,7 +139,7 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 | 14 | React Query per fetch e cache | Frontend | M | P2 |
 | 15 | ~~Font-size scale + spacing + token colori~~ | UX/Design | M | P2 |
 | 16 | Campo URL bando + `/api/estrazione-url` | UX/Design | M | P2 |
-| 17 | Nuovi campi estrazione: modalità, tipo, % fascia | Estrazione | L | P2 |
+| 17 | ~~Nuovi campi estrazione: modalità, tipo, % fascia~~ | Estrazione | L | P2 |
 | 18 | ~~Soglia revisione su campi critici + `_is_empty`~~ | Estrazione | S | P2 |
 | 19 | A11y: sort, `aria-expanded`, score circle | Frontend | S | P2 |
 | 20 | Refactoring `lib/icons`, `lib/format`, cartelle | Frontend | M | P3 |

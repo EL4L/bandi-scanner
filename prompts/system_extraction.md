@@ -22,7 +22,15 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
     },
     "fatturato_max": 50000000,
     "contributo_max": 40000,
-    "percentuale_fondo_perduto": 50,
+    "percentuale_fondo_perduto": {
+      "micro": 60,
+      "piccola": 50,
+      "media": 40,
+      "default": null
+    },
+    "modalita_presentazione": "sportello",
+    "tipo_agevolazione": ["fondo_perduto"],
+    "cumulabilita": null,
     "spese_ammissibili": ["Software", "Hardware", "Consulenza ICT"],
     "link_fonte_ufficiale": "https://www.invitalia.it/...",
     "spesa_minima_ammissibile": 25000,
@@ -96,9 +104,27 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
     media <250) vanno in dimensione_impresa, NON qui — questo campo
     è solo per limiti espliciti numerici sul numero di dipendenti.
 
-* "percentuale_fondo_perduto": (numero).
-  - REGOLE MATEMATICHE: Se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), DEVI calcolare la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso scriverai 40). Usa `null` solo se non ci sono dati matematici sufficienti.
-  - Se il bando prevede un'agevolazione mista (parte a fondo perduto + parte come finanziamento agevolato), estrai SOLO la percentuale del contributo a fondo perduto. Aggiungi in `note_esclusioni.lista_testuale` una nota esplicita sulla quota di finanziamento agevolato (es. "Il restante 40% è erogato come finanziamento agevolato a tasso zero").
+* "percentuale_fondo_perduto": (oggetto JSON con chiavi "micro", "piccola", "media", "default" — tutte numero o null).
+  - Molti bandi prevedono percentuali diverse per fascia dimensionale (es. micro 60%, piccola 50%, media 40%): in questo caso valorizza SOLO le chiavi "micro"/"piccola"/"media" corrispondenti, lasciando "default" a `null`.
+  - Se il bando prevede un'unica percentuale valida per tutte le imprese (nessuna differenziazione per fascia), valorizza SOLO la chiave "default" con quel numero, lasciando "micro"/"piccola"/"media" a `null`.
+  - Se non c'è alcuna percentuale indicata né deducibile con certezza, lascia tutte e quattro le chiavi a `null`.
+  - REGOLE MATEMATICHE: se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), calcola la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso 40) e mettila nella chiave pertinente ("default", o nella fascia giusta se differenziata). Aggiungi anche una nota in `note_esclusioni.lista_testuale` sulla quota di finanziamento agevolato (es. "Il restante 40% è erogato come finanziamento agevolato a tasso zero").
+  - Non confondere questo campo con `tipo_agevolazione`: qui va SOLO il numero percentuale, non il tipo di strumento finanziario.
+
+* "modalita_presentazione": (stringa enum o null). Uno tra: "sportello", "click_day", "graduatoria", "mista".
+  - "sportello": il bando usa espressioni come "a sportello", "fino ad esaurimento fondi", "in base all'ordine cronologico di presentazione delle domande".
+  - "click_day": le domande si presentano tutte in una finestra temporale molto breve e ristretta (es. "dalle ore 10:00 del giorno X"), spesso con invio simultaneo.
+  - "graduatoria": le domande vengono valutate e ordinate per punteggio/merito prima dell'assegnazione dei fondi (parole chiave: "graduatoria", "punteggio", "valutazione di merito").
+  - "mista": il bando combina più modalità (es. prima fase a sportello, poi graduatoria per i fondi residui).
+  - Usa `null` se il testo non specifica la modalità di presentazione delle domande.
+
+* "tipo_agevolazione": (lista di stringhe enum). Valori ammessi: "fondo_perduto", "finanziamento_agevolato", "garanzia", "credito_imposta", "voucher".
+  - Un bando può prevedere più tipi contemporaneamente (es. parte a fondo perduto + parte come finanziamento agevolato): includi tutti quelli effettivamente presenti nel testo.
+  - Non inventare un tipo se il testo non lo specifica esplicitamente o implicitamente in modo chiaro. Se il tipo non è determinabile, lascia la lista vuota `[]`.
+
+* "cumulabilita": (stringa o null).
+  - Estrai LETTERALMENTE (senza riassumere o interpretare) la clausola del testo che parla di cumulabilità con altre agevolazioni, regole "de minimis", o divieto di cumulo. Copia la frase così com'è nel testo.
+  - Se il bando non menziona esplicitamente la cumulabilità, usa `null`. Non dedurre né riassumere: questo campo deve riportare solo testo realmente presente nel documento.
 
 * "dimensione_impresa": (oggetto JSON). Deve contenere le chiavi booleane: "micro", "piccola", "media", "grande".
   - REGOLE DI DOMINIO: Le agevolazioni di Stato sono destinate alle PMI. A meno che il testo non autorizzi ESPLICITAMENTE la partecipazione delle "Grandi Imprese", devi SEMPRE impostare `"grande": false`.
@@ -137,7 +163,7 @@ Se il bando descrive i settori tramite esclusioni (es. "possono partecipare tutt
 - NON invertire manualmente l'elenco delle esclusioni per ricavare i codici ammessi.
 
 ### Percentuale fondo perduto implicita
-Se la percentuale di fondo perduto non è espressa come numero ma si ricava dal contesto (es. "il contributo a fondo perduto è pari al 50% delle spese ammissibili", "agevolazione non rimborsabile del 40%"), estraila comunque come numero in `percentuale_fondo_perduto`. Non usare `null` se il dato è deducibile con certezza dal testo.
+Se la percentuale di fondo perduto non è espressa come numero ma si ricava dal contesto (es. "il contributo a fondo perduto è pari al 50% delle spese ammissibili", "agevolazione non rimborsabile del 40%"), estraila comunque come numero nella chiave pertinente di `percentuale_fondo_perduto` (di solito "default", se il bando non differenzia per fascia dimensionale). Non lasciare tutte le chiavi a `null` se il dato è deducibile con certezza dal testo.
 
 ### Più date di scadenza presenti
 Se il bando riporta più date (es. apertura sportello, scadenza intermedia, scadenza finale, chiusura domande):
@@ -178,12 +204,28 @@ Nota: la data è relativa alla pubblicazione e non è calcolabile senza conoscer
 
 ---
 
+### Esempio 3 — Percentuale di fondo perduto differenziata per fascia dimensionale
+Testo: *"Il contributo a fondo perduto è pari al 60% delle spese ammissibili per le micro imprese, al 50% per le piccole imprese e al 40% per le medie imprese."*
+
+Estrazione corretta:
+```json
+{
+  "percentuale_fondo_perduto": {
+    "micro": 60,
+    "piccola": 50,
+    "media": 40,
+    "default": null
+  }
+}
+```
+Nota: quando il bando differenzia esplicitamente la percentuale per fascia dimensionale, valorizza le chiavi corrispondenti e lascia `default` a `null` — non fare una media né sceglierne una sola.
+
 ## Strategia di analisi
 
 1. Cerca prima l'articolo sui "Soggetti beneficiari" per identificare chi può accedere (dimensione impresa, ATECO, regioni)
 2. Poi cerca l'articolo sulle "Spese ammissibili" per il tipo di contributo e le tipologie di intervento finanziabili
 3. Poi cerca le date (pubblicazione, apertura sportello, scadenza finale)
-4. Poi cerca massimali, percentuali di contributo e soglie di investimento minimo
+4. Poi cerca massimali, percentuali di contributo (anche differenziate per fascia dimensionale), tipo di agevolazione (fondo perduto/finanziamento agevolato/garanzia/credito d'imposta/voucher) e soglie di investimento minimo
 5. Cerca eventuali requisiti aggiuntivi: forma giuridica richiesta, anzianità minima/massima dell'impresa, assenza di procedure concorsuali o fallimentari, regolarità contributiva (DURC), altri vincoli di accesso — metti tutto in `note_esclusioni.lista_testuale`
 
 ## Esclusioni

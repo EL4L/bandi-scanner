@@ -5,7 +5,7 @@ import re
 from datetime import datetime
 from typing import Any
 from modules.log_utils import log_error
-from modules.schema import DIMENSIONE_IMPRESA_KEYS
+from modules.schema import DIMENSIONE_IMPRESA_KEYS, normalize_percentuale_fondo_perduto
 
 WEIGHT_REGIONE = 30
 WEIGHT_ATECO = 40
@@ -664,6 +664,28 @@ def _sezione_esclusioni(b: dict[str, Any]) -> str | None:
     if vietate: parts.append("**Attività vietate:** " + ", ".join(vietate))
     return "## Esclusioni\n\n" + "\n\n".join(parts) if parts else None
 
+MODALITA_PRESENTAZIONE_LABELS: dict[str, str] = {
+    "sportello": "Sportello (a esaurimento fondi)",
+    "click_day": "Click day",
+    "graduatoria": "Graduatoria a valutazione",
+    "mista": "Mista (sportello + graduatoria)",
+}
+
+TIPO_AGEVOLAZIONE_LABELS: dict[str, str] = {
+    "fondo_perduto": "Fondo perduto",
+    "finanziamento_agevolato": "Finanziamento agevolato",
+    "garanzia": "Garanzia",
+    "credito_imposta": "Credito d'imposta",
+    "voucher": "Voucher",
+}
+
+def _format_pct(value: Any) -> str | None:
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    return f"{f:.0f}%" if f == int(f) else f"{f}%"
+
 def genera_scheda(bando: dict[str, Any]) -> str:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
     lines = []
@@ -708,14 +730,30 @@ def genera_scheda(bando: dict[str, Any]) -> str:
         requisiti.append(f"**Anzianità massima:** {int(mesi_max)} mesi")
     if forme:
         requisiti.append(f"**Forme giuridiche:** {', '.join(forme)}")
+    modalita = MODALITA_PRESENTAZIONE_LABELS.get(b.get("modalita_presentazione") or "")
+    if modalita:
+        requisiti.append(f"**Modalità di presentazione:** {modalita}")
+    cumulabilita = _norm_str(b.get("cumulabilita"))
+    if cumulabilita:
+        requisiti.append(f"**Cumulabilità:** “{cumulabilita}”")
     if requisiti: lines.append("## Requisiti di accesso\n\n" + "\n\n".join(requisiti))
     contributo = _format_euro(b.get("contributo_max"))
-    pct = b.get("percentuale_fondo_perduto")
+    pct_fasce = normalize_percentuale_fondo_perduto(b.get("percentuale_fondo_perduto"))
     econ_parts = []
     if contributo: econ_parts.append(f"**Contributo massimo:** {contributo}")
-    if pct is not None:
-        try: econ_parts.append(f"**Fondo perduto:** {float(pct):.0f}%" if float(pct) == int(float(pct)) else f"**Fondo perduto:** {float(pct)}%")
-        except (TypeError, ValueError): pass
+    fasce_valorizzate = [
+        (label, pct_fasce.get(chiave)) for chiave, label in (
+            ("micro", "Micro"), ("piccola", "Piccola"), ("media", "Media"),
+        ) if pct_fasce.get(chiave) is not None
+    ]
+    if fasce_valorizzate:
+        dettaglio = "; ".join(f"{label} {_format_pct(val)}" for label, val in fasce_valorizzate)
+        econ_parts.append(f"**Fondo perduto per fascia:** {dettaglio}")
+    elif pct_fasce.get("default") is not None:
+        econ_parts.append(f"**Fondo perduto:** {_format_pct(pct_fasce['default'])}")
+    tipo_ag = [TIPO_AGEVOLAZIONE_LABELS[t] for t in _norm_list(b.get("tipo_agevolazione")) if t in TIPO_AGEVOLAZIONE_LABELS]
+    if tipo_ag:
+        econ_parts.append(f"**Tipo di agevolazione:** {', '.join(tipo_ag)}")
     if econ_parts: lines.append("## Contributi\n\n" + "\n\n".join(econ_parts))
     spese = _norm_list(b.get("spese_ammissibili"))
     if spese: lines.append("## Spese ammissibili\n\n" + "\n".join(f"- {s}" for s in spese))

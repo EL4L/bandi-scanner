@@ -266,3 +266,81 @@ def test_settore_da_verificare_cliente_senza_descrizione():
     }
     cliente = {"codice_ateco": "62.01", "descrizione_attivita": ""}
     assert settore_da_verificare(bando, cliente) is True
+
+
+# ---------------------------------------------------------------------------
+# #17 — nuovi campi in scheda: percentuale per fascia, modalità, tipo
+# agevolazione, cumulabilità
+# ---------------------------------------------------------------------------
+
+def test_genera_scheda_percentuale_per_fascia():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "percentuale_fondo_perduto": {"micro": 60, "piccola": 50, "media": 40, "default": None},
+    }}
+    result = genera_scheda(bando)
+    assert "Fondo perduto per fascia" in result
+    assert "Micro 60%" in result
+    assert "Piccola 50%" in result
+    assert "Media 40%" in result
+
+
+def test_genera_scheda_percentuale_default_singola():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "percentuale_fondo_perduto": {"micro": None, "piccola": None, "media": None, "default": 50},
+    }}
+    result = genera_scheda(bando)
+    assert "**Fondo perduto:** 50%" in result
+    assert "per fascia" not in result
+
+
+def test_genera_scheda_percentuale_formato_legacy_numero():
+    """Bando salvato prima di #17 (percentuale_fondo_perduto come numero
+    semplice, non ancora passato da normalize_response): genera_scheda deve
+    comunque renderizzarlo correttamente, non andare in errore."""
+    bando = {"bando": {"titolo": "Bando Test", "percentuale_fondo_perduto": 35}}
+    result = genera_scheda(bando)
+    assert "**Fondo perduto:** 35%" in result
+
+
+def test_genera_scheda_percentuale_assente_non_mostra_sezione_vuota():
+    bando = {"bando": {"titolo": "Bando Test", "contributo_max": None, "percentuale_fondo_perduto": None}}
+    result = genera_scheda(bando)
+    assert "Contributi" not in result
+
+
+def test_genera_scheda_modalita_presentazione():
+    bando = {"bando": {"titolo": "Bando Test", "modalita_presentazione": "click_day"}}
+    result = genera_scheda(bando)
+    assert "Modalità di presentazione:** Click day" in result
+
+
+def test_genera_scheda_modalita_presentazione_none_non_mostrata():
+    bando = {"bando": {"titolo": "Bando Test", "modalita_presentazione": None}}
+    result = genera_scheda(bando)
+    assert "Modalità di presentazione" not in result
+
+
+def test_genera_scheda_tipo_agevolazione():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "tipo_agevolazione": ["fondo_perduto", "finanziamento_agevolato"],
+    }}
+    result = genera_scheda(bando)
+    assert "Tipo di agevolazione:** Fondo perduto, Finanziamento agevolato" in result
+
+
+def test_genera_scheda_cumulabilita_tra_virgolette():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "cumulabilita": "Non cumulabile con altre misure a valere sullo stesso investimento",
+    }}
+    result = genera_scheda(bando)
+    assert "Cumulabilità:** “Non cumulabile con altre misure a valere sullo stesso investimento”" in result
+
+
+def test_genera_scheda_cumulabilita_assente_non_mostrata():
+    bando = {"bando": {"titolo": "Bando Test", "cumulabilita": None}}
+    result = genera_scheda(bando)
+    assert "Cumulabilità" not in result

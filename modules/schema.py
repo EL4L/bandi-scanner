@@ -9,6 +9,21 @@ DEFAULT_DIMENSIONE_IMPRESA: dict[str, bool] = {
     "grande": False,
 }
 
+# Fasce dimensionali per percentuale_fondo_perduto (#17): non includono "grande"
+# di proposito (le grandi imprese raramente accedono a fondo perduto graduato
+# per fascia) e aggiungono "default" per il caso di percentuale unica non
+# differenziata, o per retrocompatibilità con bandi salvati prima di #17
+# (quando il campo era un numero singolo).
+PERCENTUALE_FASCE_KEYS: tuple[str, ...] = ("micro", "piccola", "media", "default")
+
+MODALITA_PRESENTAZIONE_VALUES: frozenset[str] = frozenset({
+    "sportello", "click_day", "graduatoria", "mista",
+})
+
+TIPO_AGEVOLAZIONE_VALUES: frozenset[str] = frozenset({
+    "fondo_perduto", "finanziamento_agevolato", "garanzia", "credito_imposta", "voucher",
+})
+
 # Campi dentro "bando"
 BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "titolo": (str, type(None)),
@@ -24,7 +39,10 @@ BANDO_SCHEMA: dict[str, type | tuple[type, ...]] = {
     "numero_dipendenti_min": (int, float, type(None)),
     "numero_dipendenti_max": (int, float, type(None)),
     "contributo_max": (int, float, type(None)),
-    "percentuale_fondo_perduto": (int, float, type(None)),
+    "percentuale_fondo_perduto": dict,
+    "modalita_presentazione": (str, type(None)),
+    "tipo_agevolazione": list,
+    "cumulabilita": (str, type(None)),
     "spese_ammissibili": list,
     "link_fonte_ufficiale": (str, type(None)),
     "note_esclusioni": (dict, str, type(None)), 
@@ -57,7 +75,6 @@ def normalize_dimensione_impresa(value: object) -> dict[str, bool]:
 NUMERIC_FIELDS: frozenset[str] = frozenset({
     "contributo_max",
     "fatturato_max",
-    "percentuale_fondo_perduto",
     "spesa_minima_ammissibile",
     "spesa_massima_ammissibile",
     "numero_dipendenti_min",
@@ -98,6 +115,45 @@ def _to_number(val: object) -> float | int | None:
     return None
 
 
+def _to_enum(val: object, allowed: frozenset[str]) -> str | None:
+    """Normalizza a una delle stringhe enum consentite (case-insensitive).
+    Un valore non riconosciuto (allucinazione LLM, refuso) diventa None
+    invece di salvare rumore non filtrabile a valle."""
+    if not isinstance(val, str):
+        return None
+    v = val.strip().lower()
+    return v if v in allowed else None
+
+
+def _to_enum_list(val: object, allowed: frozenset[str]) -> list[str]:
+    """Normalizza a lista di sole stringhe enum consentite (case-insensitive,
+    dedup mantenendo l'ordine di prima occorrenza)."""
+    if not isinstance(val, list):
+        return []
+    seen: list[str] = []
+    for item in val:
+        if not isinstance(item, str):
+            continue
+        v = item.strip().lower()
+        if v in allowed and v not in seen:
+            seen.append(v)
+    return seen
+
+
+def normalize_percentuale_fondo_perduto(value: object) -> dict[str, float | int | None]:
+    """Restituisce sempre {"micro", "piccola", "media", "default"}.
+
+    Gestisce sia il nuovo formato (oggetto per fascia dimensionale, #17)
+    sia il formato legacy (numero singolo, bandi salvati/estratti prima di
+    #17): il numero legacy viene letto come "default", così `genera_scheda`
+    può leggere qualunque bando — vecchio o nuovo — con la stessa funzione.
+    """
+    if isinstance(value, dict):
+        return {key: _to_number(value.get(key)) for key in PERCENTUALE_FASCE_KEYS}
+    numero = _to_number(value)
+    return {"micro": None, "piccola": None, "media": None, "default": numero}
+
+
 def normalize_response(data: dict) -> dict[str, object]:
     """Restituisce sempre {"bando": {...}} con tutte le chiavi schema."""
     if "bando" in data and isinstance(data["bando"], dict):
@@ -121,6 +177,14 @@ def normalize_response(data: dict) -> dict[str, object]:
             bando[key] = val if isinstance(val, list) else []
         elif key == "ateco_aperto_a_tutti":
             bando[key] = _to_bool(val)
+        elif key == "percentuale_fondo_perduto":
+            bando[key] = normalize_percentuale_fondo_perduto(val)
+        elif key == "modalita_presentazione":
+            bando[key] = _to_enum(val, MODALITA_PRESENTAZIONE_VALUES)
+        elif key == "tipo_agevolazione":
+            bando[key] = _to_enum_list(val, TIPO_AGEVOLAZIONE_VALUES)
+        elif key == "cumulabilita":
+            bando[key] = val.strip() if isinstance(val, str) and val.strip() else None
         elif key == "anzianita_impresa":
             if isinstance(val, dict):
                 mesi_min = _to_number(val.get("mesi_minimi_dalla_costituzione"))

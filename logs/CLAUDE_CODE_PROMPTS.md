@@ -483,7 +483,570 @@ Fammi un riepilogo file per file di cosa hai effettivamente cambiato prima
 di fare il commit.
 ```
 
-**Esito**: _in attesa di riscontro._
+**Esito**: applicato esattamente come da specifica (verificato file per
+file). 238 test verdi (212 + 20 + 6), npm run build pulito. Nessuna
+modifica alla logica di sicurezza di fetch_url_safely rispetto alla
+specifica fornita. Committato come 1fae20c, pushato su origin/main.
+
+---
+
+## #17 — Nuovi campi estrazione: modalità, tipo agevolazione, % per fascia, cumulabilità (2026-07-09)
+
+Scope: 4 nuovi campi nello schema di estrazione. Il più delicato è
+`percentuale_fondo_perduto`, che passa da numero singolo a oggetto per
+fascia dimensionale **con retrocompatibilità** per i bandi già salvati
+prima di questo intervento. Nessuna modifica frontend necessaria (verificato
+che nessun componente TSX referenzia questi campi direttamente — solo la
+scheda Markdown pre-generata viene mostrata). Validato in sandbox: 274 test
+verdi (238 + 36 nuovi), nessun impatto sul build frontend.
+
+```
+Sto implementando l'intervento #17 della ROADMAP.md ("Nuovi campi
+estrazione: modalità, tipo agevolazione, % per fascia"). Ho già validato in
+un altro ambiente che questo scope passa 274 test (238 preesistenti + 36
+nuovi). Applica queste modifiche direttamente sui file reali, leggendo
+prima lo stato attuale di ciascuno — non fidarti ciecamente dei numeri di
+riga. Non è previsto nessun cambiamento al frontend (verificato: nessun
+componente TSX legge questi campi direttamente).
+
+## Contesto importante: retrocompatibilità
+
+`percentuale_fondo_perduto` passa da numero singolo a oggetto
+`{"micro", "piccola", "media", "default"}`. I bandi già salvati nel
+database PRIMA di questo intervento hanno ancora il vecchio formato
+(numero semplice) dentro `json_completo`, e l'endpoint
+`POST /api/bandi/{id}/rigenera-scheda` legge quel JSON grezzo chiamando
+`genera_scheda()` DIRETTAMENTE, senza ripassare da `normalize_response`
+(l'ho verificato in main.py). Quindi `genera_scheda` deve gestire
+ENTRAMBI i formati (vecchio numero e nuovo oggetto) — non solo il nuovo.
+La funzione `normalize_percentuale_fondo_perduto()` fa esattamente questo
+ed è condivisa tra estrazione (schema.py) e rendering scheda (matcher.py).
+
+## 1. modules/schema.py
+
+### 1a. Nuove costanti, subito dopo DEFAULT_DIMENSIONE_IMPRESA (prima di
+"# Campi dentro bando" / BANDO_SCHEMA):
+
+# Fasce dimensionali per percentuale_fondo_perduto (#17): non includono "grande"
+# di proposito (le grandi imprese raramente accedono a fondo perduto graduato
+# per fascia) e aggiungono "default" per il caso di percentuale unica non
+# differenziata, o per retrocompatibilità con bandi salvati prima di #17
+# (quando il campo era un numero singolo).
+PERCENTUALE_FASCE_KEYS: tuple[str, ...] = ("micro", "piccola", "media", "default")
+
+MODALITA_PRESENTAZIONE_VALUES: frozenset[str] = frozenset({
+    "sportello", "click_day", "graduatoria", "mista",
+})
+
+TIPO_AGEVOLAZIONE_VALUES: frozenset[str] = frozenset({
+    "fondo_perduto", "finanziamento_agevolato", "garanzia", "credito_imposta", "voucher",
+})
+
+### 1b. In BANDO_SCHEMA, tre modifiche:
+- cambia `"percentuale_fondo_perduto": (int, float, type(None)),` in
+  `"percentuale_fondo_perduto": dict,`
+- aggiungi, subito dopo la riga di percentuale_fondo_perduto, queste tre
+  righe (prima di "spese_ammissibili"):
+  "modalita_presentazione": (str, type(None)),
+  "tipo_agevolazione": list,
+  "cumulabilita": (str, type(None)),
+
+### 1c. In NUMERIC_FIELDS, rimuovi la riga "percentuale_fondo_perduto,"
+(non è più uno scalare a livello di BANDO_SCHEMA — i suoi sotto-valori
+vengono coercizzati separatamente dalla nuova funzione).
+
+### 1d. Subito dopo la funzione _to_number esistente (prima di
+normalize_response), aggiungi queste tre funzioni:
+
+def _to_enum(val: object, allowed: frozenset[str]) -> str | None:
+    """Normalizza a una delle stringhe enum consentite (case-insensitive).
+    Un valore non riconosciuto (allucinazione LLM, refuso) diventa None
+    invece di salvare rumore non filtrabile a valle."""
+    if not isinstance(val, str):
+        return None
+    v = val.strip().lower()
+    return v if v in allowed else None
+
+
+def _to_enum_list(val: object, allowed: frozenset[str]) -> list[str]:
+    """Normalizza a lista di sole stringhe enum consentite (case-insensitive,
+    dedup mantenendo l'ordine di prima occorrenza)."""
+    if not isinstance(val, list):
+        return []
+    seen: list[str] = []
+    for item in val:
+        if not isinstance(item, str):
+            continue
+        v = item.strip().lower()
+        if v in allowed and v not in seen:
+            seen.append(v)
+    return seen
+
+
+def normalize_percentuale_fondo_perduto(value: object) -> dict[str, float | int | None]:
+    """Restituisce sempre {"micro", "piccola", "media", "default"}.
+
+    Gestisce sia il nuovo formato (oggetto per fascia dimensionale, #17)
+    sia il formato legacy (numero singolo, bandi salvati/estratti prima di
+    #17): il numero legacy viene letto come "default", così `genera_scheda`
+    può leggere qualunque bando — vecchio o nuovo — con la stessa funzione.
+    """
+    if isinstance(value, dict):
+        return {key: _to_number(value.get(key)) for key in PERCENTUALE_FASCE_KEYS}
+    numero = _to_number(value)
+    return {"micro": None, "piccola": None, "media": None, "default": numero}
+
+### 1e. In normalize_response, dentro il ciclo "for key in BANDO_SCHEMA",
+subito dopo il branch `elif key == "ateco_aperto_a_tutti": bando[key] = _to_bool(val)`,
+aggiungi questi 4 nuovi branch (prima del branch "anzianita_impresa"):
+
+        elif key == "percentuale_fondo_perduto":
+            bando[key] = normalize_percentuale_fondo_perduto(val)
+        elif key == "modalita_presentazione":
+            bando[key] = _to_enum(val, MODALITA_PRESENTAZIONE_VALUES)
+        elif key == "tipo_agevolazione":
+            bando[key] = _to_enum_list(val, TIPO_AGEVOLAZIONE_VALUES)
+        elif key == "cumulabilita":
+            bando[key] = val.strip() if isinstance(val, str) and val.strip() else None
+
+## 2. modules/matcher.py
+
+### 2a. Import: cambia
+  from modules.schema import DIMENSIONE_IMPRESA_KEYS
+in
+  from modules.schema import DIMENSIONE_IMPRESA_KEYS, normalize_percentuale_fondo_perduto
+
+### 2b. Subito prima di "def genera_scheda(bando: dict[str, Any]) -> str:",
+aggiungi:
+
+MODALITA_PRESENTAZIONE_LABELS: dict[str, str] = {
+    "sportello": "Sportello (a esaurimento fondi)",
+    "click_day": "Click day",
+    "graduatoria": "Graduatoria a valutazione",
+    "mista": "Mista (sportello + graduatoria)",
+}
+
+TIPO_AGEVOLAZIONE_LABELS: dict[str, str] = {
+    "fondo_perduto": "Fondo perduto",
+    "finanziamento_agevolato": "Finanziamento agevolato",
+    "garanzia": "Garanzia",
+    "credito_imposta": "Credito d'imposta",
+    "voucher": "Voucher",
+}
+
+def _format_pct(value: Any) -> str | None:
+    try:
+        f = float(value)
+    except (TypeError, ValueError):
+        return None
+    return f"{f:.0f}%" if f == int(f) else f"{f}%"
+
+### 2c. Dentro genera_scheda, trova questo blocco (dopo "if forme:
+requisiti.append(...)" e prima di "if requisiti: lines.append(...)"):
+aggiungi, subito dopo la riga `if forme: requisiti.append(...)` e PRIMA
+della riga `if requisiti: lines.append("## Requisiti di accesso...`:
+
+    modalita = MODALITA_PRESENTAZIONE_LABELS.get(b.get("modalita_presentazione") or "")
+    if modalita:
+        requisiti.append(f"**Modalità di presentazione:** {modalita}")
+    cumulabilita = _norm_str(b.get("cumulabilita"))
+    if cumulabilita:
+        requisiti.append(f"**Cumulabilità:** \u201c{cumulabilita}\u201d")
+
+### 2d. Subito dopo, trova il blocco che costruisce "contributo" e "pct" e
+la sezione "## Contributi" — sostituiscilo interamente con:
+
+    contributo = _format_euro(b.get("contributo_max"))
+    pct_fasce = normalize_percentuale_fondo_perduto(b.get("percentuale_fondo_perduto"))
+    econ_parts = []
+    if contributo: econ_parts.append(f"**Contributo massimo:** {contributo}")
+    fasce_valorizzate = [
+        (label, pct_fasce.get(chiave)) for chiave, label in (
+            ("micro", "Micro"), ("piccola", "Piccola"), ("media", "Media"),
+        ) if pct_fasce.get(chiave) is not None
+    ]
+    if fasce_valorizzate:
+        dettaglio = "; ".join(f"{label} {_format_pct(val)}" for label, val in fasce_valorizzate)
+        econ_parts.append(f"**Fondo perduto per fascia:** {dettaglio}")
+    elif pct_fasce.get("default") is not None:
+        econ_parts.append(f"**Fondo perduto:** {_format_pct(pct_fasce['default'])}")
+    tipo_ag = [TIPO_AGEVOLAZIONE_LABELS[t] for t in _norm_list(b.get("tipo_agevolazione")) if t in TIPO_AGEVOLAZIONE_LABELS]
+    if tipo_ag:
+        econ_parts.append(f"**Tipo di agevolazione:** {', '.join(tipo_ag)}")
+    if econ_parts: lines.append("## Contributi\n\n" + "\n\n".join(econ_parts))
+
+(il blocco PRECEDENTE che stai sostituendo calcolava `pct = b.get("percentuale_fondo_perduto")`
+e faceva un try/except con float(pct) — quello va rimosso, sostituito
+integralmente da questo nuovo blocco.)
+
+## 3. prompts/system_extraction.md
+
+### 3a. Nell'esempio JSON schema in cima al file, sostituisci la riga
+  "percentuale_fondo_perduto": 50,
+con:
+    "percentuale_fondo_perduto": {
+      "micro": 60,
+      "piccola": 50,
+      "media": 40,
+      "default": null
+    },
+    "modalita_presentazione": "sportello",
+    "tipo_agevolazione": ["fondo_perduto"],
+    "cumulabilita": null,
+
+### 3b. Sostituisci il blocco regola "percentuale_fondo_perduto" esistente
+(quello con "REGOLE MATEMATICHE... agevolazione mista...") con:
+
+* "percentuale_fondo_perduto": (oggetto JSON con chiavi "micro", "piccola", "media", "default" — tutte numero o null).
+  - Molti bandi prevedono percentuali diverse per fascia dimensionale (es. micro 60%, piccola 50%, media 40%): in questo caso valorizza SOLO le chiavi "micro"/"piccola"/"media" corrispondenti, lasciando "default" a `null`.
+  - Se il bando prevede un'unica percentuale valida per tutte le imprese (nessuna differenziazione per fascia), valorizza SOLO la chiave "default" con quel numero, lasciando "micro"/"piccola"/"media" a `null`.
+  - Se non c'è alcuna percentuale indicata né deducibile con certezza, lascia tutte e quattro le chiavi a `null`.
+  - REGOLE MATEMATICHE: se il bando prevede un'agevolazione "mista" (es. 80% diviso a metà tra fondo perduto e tasso zero), calcola la percentuale effettiva del solo fondo perduto rispetto al totale del progetto (es. in questo caso 40) e mettila nella chiave pertinente ("default", o nella fascia giusta se differenziata). Aggiungi anche una nota in `note_esclusioni.lista_testuale` sulla quota di finanziamento agevolato (es. "Il restante 40% è erogato come finanziamento agevolato a tasso zero").
+  - Non confondere questo campo con `tipo_agevolazione`: qui va SOLO il numero percentuale, non il tipo di strumento finanziario.
+
+* "modalita_presentazione": (stringa enum o null). Uno tra: "sportello", "click_day", "graduatoria", "mista".
+  - "sportello": il bando usa espressioni come "a sportello", "fino ad esaurimento fondi", "in base all'ordine cronologico di presentazione delle domande".
+  - "click_day": le domande si presentano tutte in una finestra temporale molto breve e ristretta (es. "dalle ore 10:00 del giorno X"), spesso con invio simultaneo.
+  - "graduatoria": le domande vengono valutate e ordinate per punteggio/merito prima dell'assegnazione dei fondi (parole chiave: "graduatoria", "punteggio", "valutazione di merito").
+  - "mista": il bando combina più modalità (es. prima fase a sportello, poi graduatoria per i fondi residui).
+  - Usa `null` se il testo non specifica la modalità di presentazione delle domande.
+
+* "tipo_agevolazione": (lista di stringhe enum). Valori ammessi: "fondo_perduto", "finanziamento_agevolato", "garanzia", "credito_imposta", "voucher".
+  - Un bando può prevedere più tipi contemporaneamente (es. parte a fondo perduto + parte come finanziamento agevolato): includi tutti quelli effettivamente presenti nel testo.
+  - Non inventare un tipo se il testo non lo specifica esplicitamente o implicitamente in modo chiaro. Se il tipo non è determinabile, lascia la lista vuota `[]`.
+
+* "cumulabilita": (stringa o null).
+  - Estrai LETTERALMENTE (senza riassumere o interpretare) la clausola del testo che parla di cumulabilità con altre agevolazioni, regole "de minimis", o divieto di cumulo. Copia la frase così com'è nel testo.
+  - Se il bando non menziona esplicitamente la cumulabilità, usa `null`. Non dedurre né riassumere: questo campo deve riportare solo testo realmente presente nel documento.
+
+(queste tre nuove regole vanno subito dopo la regola "percentuale_fondo_perduto" riscritta e PRIMA della regola "dimensione_impresa" esistente)
+
+### 3c. Nella sezione "## Gestione Ambiguità", sostituisci il paragrafo
+"### Percentuale fondo perduto implicita" esistente con:
+
+### Percentuale fondo perduto implicita
+Se la percentuale di fondo perduto non è espressa come numero ma si ricava dal contesto (es. "il contributo a fondo perduto è pari al 50% delle spese ammissibili", "agevolazione non rimborsabile del 40%"), estraila comunque come numero nella chiave pertinente di `percentuale_fondo_perduto` (di solito "default", se il bando non differenzia per fascia dimensionale). Non lasciare tutte le chiavi a `null` se il dato è deducibile con certezza dal testo.
+
+### 3d. Nella sezione "## Esempi di casi edge", subito dopo l'Esempio 2
+(quello sulla data di scadenza relativa) e PRIMA di "## Strategia di
+analisi", aggiungi:
+
+---
+
+### Esempio 3 — Percentuale di fondo perduto differenziata per fascia dimensionale
+Testo: *"Il contributo a fondo perduto è pari al 60% delle spese ammissibili per le micro imprese, al 50% per le piccole imprese e al 40% per le medie imprese."*
+
+Estrazione corretta:
+```json
+{
+  "percentuale_fondo_perduto": {
+    "micro": 60,
+    "piccola": 50,
+    "media": 40,
+    "default": null
+  }
+}
+```
+Nota: quando il bando differenzia esplicitamente la percentuale per fascia dimensionale, valorizza le chiavi corrispondenti e lascia `default` a `null` — non fare una media né sceglierne una sola.
+
+### 3e. Nella sezione "## Strategia di analisi", punto 4 (quello che
+inizia con "Poi cerca massimali, percentuali di contributo..."), sostituisci
+con:
+
+4. Poi cerca massimali, percentuali di contributo (anche differenziate per fascia dimensionale), tipo di agevolazione (fondo perduto/finanziamento agevolato/garanzia/credito d'imposta/voucher) e soglie di investimento minimo
+
+## 4. tests/test_schema.py
+
+Cambia l'import in cima al file da:
+  from modules.schema import _to_bool, _to_number, normalize_response
+a:
+  from modules.schema import (
+      _to_bool,
+      _to_enum,
+      _to_enum_list,
+      _to_number,
+      MODALITA_PRESENTAZIONE_VALUES,
+      TIPO_AGEVOLAZIONE_VALUES,
+      normalize_percentuale_fondo_perduto,
+      normalize_response,
+  )
+
+Trova il test esistente "test_percentuale_fondo_perduto_percent_string"
+(dentro la classe che testa normalize_response, verifica "50%" -> 50) e
+sostituiscilo con:
+
+    def test_percentuale_fondo_perduto_percent_string(self):
+        """Formato legacy (numero/stringa singola, come prima di #17): viene
+        letto come chiave "default" del nuovo oggetto per fascia."""
+        data = {"bando": {"percentuale_fondo_perduto": "50%"}}
+        result = normalize_response(data)
+        assert result["bando"]["percentuale_fondo_perduto"] == {
+            "micro": None, "piccola": None, "media": None, "default": 50,
+        }
+
+Poi aggiungi in coda al file (dopo l'ultimo test esistente,
+test_anzianita_mesi_string) tutto questo blocco:
+
+# ---------------------------------------------------------------------------
+# #17 — nuovi campi: percentuale per fascia, modalità, tipo agevolazione, cumulabilità
+# ---------------------------------------------------------------------------
+
+class TestNormalizePercentualeFondoPerduto:
+    def test_formato_oggetto_per_fascia(self):
+        value = {"micro": 60, "piccola": "50%", "media": None, "default": None}
+        result = normalize_percentuale_fondo_perduto(value)
+        assert result == {"micro": 60, "piccola": 50, "media": None, "default": None}
+
+    def test_formato_legacy_numero_singolo(self):
+        """Retrocompatibilità: bandi salvati prima di #17 avevano un numero
+        semplice — deve finire nella chiave "default"."""
+        assert normalize_percentuale_fondo_perduto(50) == {
+            "micro": None, "piccola": None, "media": None, "default": 50,
+        }
+
+    def test_formato_legacy_stringa_percentuale(self):
+        assert normalize_percentuale_fondo_perduto("40%") == {
+            "micro": None, "piccola": None, "media": None, "default": 40,
+        }
+
+    def test_none(self):
+        assert normalize_percentuale_fondo_perduto(None) == {
+            "micro": None, "piccola": None, "media": None, "default": None,
+        }
+
+    def test_oggetto_con_chiavi_mancanti(self):
+        """Un oggetto parziale (solo alcune fasce) non deve sollevare KeyError."""
+        result = normalize_percentuale_fondo_perduto({"micro": 60})
+        assert result == {"micro": 60, "piccola": None, "media": None, "default": None}
+
+    def test_ignora_chiave_grande(self):
+        """La fascia 'grande' non fa parte di questo campo (solo PMI)."""
+        result = normalize_percentuale_fondo_perduto({"micro": 60, "grande": 10})
+        assert "grande" not in result
+
+
+class TestNormalizeResponseNuoviCampi:
+    def test_percentuale_fondo_perduto_per_fascia_via_normalize_response(self):
+        data = {"bando": {"percentuale_fondo_perduto": {"micro": 60, "piccola": 50, "media": 40}}}
+        result = normalize_response(data)
+        assert result["bando"]["percentuale_fondo_perduto"] == {
+            "micro": 60, "piccola": 50, "media": 40, "default": None,
+        }
+
+    def test_modalita_presentazione_valore_valido(self):
+        data = {"bando": {"modalita_presentazione": "sportello"}}
+        result = normalize_response(data)
+        assert result["bando"]["modalita_presentazione"] == "sportello"
+
+    def test_modalita_presentazione_case_insensitive(self):
+        data = {"bando": {"modalita_presentazione": "Click_Day"}}
+        result = normalize_response(data)
+        assert result["bando"]["modalita_presentazione"] == "click_day"
+
+    def test_modalita_presentazione_valore_non_riconosciuto_diventa_none(self):
+        """Un'allucinazione LLM (valore fuori enum) non deve essere salvata
+        come rumore non filtrabile a valle."""
+        data = {"bando": {"modalita_presentazione": "boh"}}
+        result = normalize_response(data)
+        assert result["bando"]["modalita_presentazione"] is None
+
+    def test_modalita_presentazione_none(self):
+        data = {"bando": {"modalita_presentazione": None}}
+        result = normalize_response(data)
+        assert result["bando"]["modalita_presentazione"] is None
+
+    def test_tipo_agevolazione_lista_valida(self):
+        data = {"bando": {"tipo_agevolazione": ["fondo_perduto", "finanziamento_agevolato"]}}
+        result = normalize_response(data)
+        assert result["bando"]["tipo_agevolazione"] == ["fondo_perduto", "finanziamento_agevolato"]
+
+    def test_tipo_agevolazione_scarta_valori_non_enum(self):
+        data = {"bando": {"tipo_agevolazione": ["fondo_perduto", "boh", "voucher"]}}
+        result = normalize_response(data)
+        assert result["bando"]["tipo_agevolazione"] == ["fondo_perduto", "voucher"]
+
+    def test_tipo_agevolazione_dedup(self):
+        data = {"bando": {"tipo_agevolazione": ["voucher", "Voucher", "VOUCHER"]}}
+        result = normalize_response(data)
+        assert result["bando"]["tipo_agevolazione"] == ["voucher"]
+
+    def test_tipo_agevolazione_non_lista_diventa_vuota(self):
+        data = {"bando": {"tipo_agevolazione": "fondo_perduto"}}
+        result = normalize_response(data)
+        assert result["bando"]["tipo_agevolazione"] == []
+
+    def test_cumulabilita_stringa_valida(self):
+        data = {"bando": {"cumulabilita": "Non cumulabile con altre agevolazioni de minimis."}}
+        result = normalize_response(data)
+        assert result["bando"]["cumulabilita"] == "Non cumulabile con altre agevolazioni de minimis."
+
+    def test_cumulabilita_stringa_vuota_diventa_none(self):
+        data = {"bando": {"cumulabilita": "   "}}
+        result = normalize_response(data)
+        assert result["bando"]["cumulabilita"] is None
+
+    def test_cumulabilita_none(self):
+        data = {"bando": {"cumulabilita": None}}
+        result = normalize_response(data)
+        assert result["bando"]["cumulabilita"] is None
+
+
+class TestToEnum:
+    def test_valore_valido(self):
+        assert _to_enum("sportello", MODALITA_PRESENTAZIONE_VALUES) == "sportello"
+
+    def test_case_insensitive_e_spazi(self):
+        assert _to_enum("  Graduatoria  ", MODALITA_PRESENTAZIONE_VALUES) == "graduatoria"
+
+    def test_valore_non_riconosciuto(self):
+        assert _to_enum("qualcosa_altro", MODALITA_PRESENTAZIONE_VALUES) is None
+
+    def test_non_stringa(self):
+        assert _to_enum(123, MODALITA_PRESENTAZIONE_VALUES) is None
+
+    def test_none(self):
+        assert _to_enum(None, MODALITA_PRESENTAZIONE_VALUES) is None
+
+
+class TestToEnumList:
+    def test_lista_mista_filtra_non_validi(self):
+        result = _to_enum_list(["fondo_perduto", "boh", "garanzia"], TIPO_AGEVOLAZIONE_VALUES)
+        assert result == ["fondo_perduto", "garanzia"]
+
+    def test_non_lista(self):
+        assert _to_enum_list("fondo_perduto", TIPO_AGEVOLAZIONE_VALUES) == []
+
+    def test_none(self):
+        assert _to_enum_list(None, TIPO_AGEVOLAZIONE_VALUES) == []
+
+    def test_elementi_non_stringa_ignorati(self):
+        result = _to_enum_list(["fondo_perduto", 123, None, "voucher"], TIPO_AGEVOLAZIONE_VALUES)
+        assert result == ["fondo_perduto", "voucher"]
+
+## 5. tests/test_matcher.py
+
+Aggiungi in coda al file (dopo l'ultimo test esistente,
+test_genera_scheda_scadenza_passata_mostra_scaduto) tutto questo blocco:
+
+# ---------------------------------------------------------------------------
+# #17 — nuovi campi in scheda: percentuale per fascia, modalità, tipo
+# agevolazione, cumulabilità
+# ---------------------------------------------------------------------------
+
+def test_genera_scheda_percentuale_per_fascia():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "percentuale_fondo_perduto": {"micro": 60, "piccola": 50, "media": 40, "default": None},
+    }}
+    result = genera_scheda(bando)
+    assert "Fondo perduto per fascia" in result
+    assert "Micro 60%" in result
+    assert "Piccola 50%" in result
+    assert "Media 40%" in result
+
+
+def test_genera_scheda_percentuale_default_singola():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "percentuale_fondo_perduto": {"micro": None, "piccola": None, "media": None, "default": 50},
+    }}
+    result = genera_scheda(bando)
+    assert "**Fondo perduto:** 50%" in result
+    assert "per fascia" not in result
+
+
+def test_genera_scheda_percentuale_formato_legacy_numero():
+    """Bando salvato prima di #17 (percentuale_fondo_perduto come numero
+    semplice, non ancora passato da normalize_response): genera_scheda deve
+    comunque renderizzarlo correttamente, non andare in errore."""
+    bando = {"bando": {"titolo": "Bando Test", "percentuale_fondo_perduto": 35}}
+    result = genera_scheda(bando)
+    assert "**Fondo perduto:** 35%" in result
+
+
+def test_genera_scheda_percentuale_assente_non_mostra_sezione_vuota():
+    bando = {"bando": {"titolo": "Bando Test", "contributo_max": None, "percentuale_fondo_perduto": None}}
+    result = genera_scheda(bando)
+    assert "Contributi" not in result
+
+
+def test_genera_scheda_modalita_presentazione():
+    bando = {"bando": {"titolo": "Bando Test", "modalita_presentazione": "click_day"}}
+    result = genera_scheda(bando)
+    assert "Modalità di presentazione:** Click day" in result
+
+
+def test_genera_scheda_modalita_presentazione_none_non_mostrata():
+    bando = {"bando": {"titolo": "Bando Test", "modalita_presentazione": None}}
+    result = genera_scheda(bando)
+    assert "Modalità di presentazione" not in result
+
+
+def test_genera_scheda_tipo_agevolazione():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "tipo_agevolazione": ["fondo_perduto", "finanziamento_agevolato"],
+    }}
+    result = genera_scheda(bando)
+    assert "Tipo di agevolazione:** Fondo perduto, Finanziamento agevolato" in result
+
+
+def test_genera_scheda_cumulabilita_tra_virgolette():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "cumulabilita": "Non cumulabile con altre misure a valere sullo stesso investimento",
+    }}
+    result = genera_scheda(bando)
+    assert "Cumulabilità:** \u201cNon cumulabile con altre misure a valere sullo stesso investimento\u201d" in result
+
+
+def test_genera_scheda_cumulabilita_assente_non_mostrata():
+    bando = {"bando": {"titolo": "Bando Test", "cumulabilita": None}}
+    result = genera_scheda(bando)
+    assert "Cumulabilità" not in result
+
+## Verifica finale
+
+pytest -q   # 274 test verdi (238 + 36 nuovi)
+
+Il frontend NON va toccato per questo intervento — verificalo comunque con
+una ricerca di "percentuale_fondo_perduto", "modalita_presentazione",
+"tipo_agevolazione", "cumulabilita" in frontend/src/ prima di concludere:
+non deve trovare nulla (questi campi non sono mai letti/mostrati
+direttamente da nessun componente, solo tramite la scheda Markdown
+pre-generata da genera_scheda).
+
+## Aggiornamento ROADMAP.md
+
+Trova la riga dell'intervento #17 ([ ]), cambia in [x], aggiungi un breve
+changelog: percentuale_fondo_perduto -> oggetto per fascia con
+retrocompatibilità, modalita_presentazione e tipo_agevolazione con
+normalizzazione enum (valori non riconosciuti scartati), cumulabilita come
+estratto testuale letterale, genera_scheda aggiornata, prompt LLM aggiornato
+con nuovo Esempio 3, +36 test, nessuna modifica frontend necessaria. Nella
+tabella riepilogativa in fondo, titolo di #17 in ~~barrato~~.
+
+## Nota per la revisione
+
+Il punto più delicato è la retrocompatibilità di
+normalize_percentuale_fondo_perduto(): deve funzionare identicamente sia
+per il nuovo formato oggetto sia per il vecchio numero singolo, perché
+`genera_scheda` la userà anche su bandi già salvati nel database PRIMA di
+questo intervento (letti via /api/bandi/{id}/rigenera-scheda, che bypassa
+normalize_response). Se tocchi questa funzione, verifica che
+test_genera_scheda_percentuale_formato_legacy_numero continui a passare.
+
+Fammi un riepilogo file per file di cosa hai effettivamente cambiato, con
+il conteggio esatto dei test eseguiti, prima di fare il commit.
+```
+
+**Esito**: applicato come da specifica (schema.py, matcher.py, prompt di
+sistema, test_schema.py, test_matcher.py). `normalize_percentuale_fondo_perduto()`
+gestisce sia il nuovo formato oggetto per fascia sia il vecchio numero
+singolo, condivisa tra schema.py e matcher.py per garantire retrocompatibilità
+anche via `/api/bandi/{id}/rigenera-scheda`. Nessuna modifica al frontend
+necessaria (verificato: nessun campo referenziato in frontend/src/).
+274 test verdi (238 preesistenti + 36 nuovi), ROADMAP.md aggiornata.
 
 #16 — Campo URL bando in CaricaBando + endpoint /api/estrazione-url (2026-07-09)
 
@@ -1332,4 +1895,3 @@ trafilatura==2.1.0` eseguito prima dei test. `pytest -q` → 238 test verdi
 di `fetch_url_safely()` rispetto alla specifica (redirect seguiti
 manualmente, rivalidati a ogni hop). ROADMAP #16 spuntato, changelog
 aggiunto.
-
