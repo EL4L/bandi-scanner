@@ -1895,3 +1895,117 @@ trafilatura==2.1.0` eseguito prima dei test. `pytest -q` → 238 test verdi
 di `fetch_url_safely()` rispetto alla specifica (redirect seguiti
 manualmente, rivalidati a ogni hop). ROADMAP #16 spuntato, changelog
 aggiunto.
+Fix regressione card Dashboard (scadenza/urgenza/contributo max spariti) (2026-07-11)
+
+Contesto: nel commit eac1aba (redesign card espandibili, lavoro fatto con
+Codex) sono spariti dalla card della Dashboard: la riga "Scade DD/MM/YYYY ·
+N gg" con badge urgenza (introdotta in #6, uno dei P0 originari), la riga
+"Contributo max", e la KPI "Bandi con clienti". Validato in sandbox: build
+pulito, 274 test Python invariati (intervento solo frontend).
+
+Nel commit eac1aba (redesign delle card della Dashboard in versione
+espandibile/collassabile) sono sparite tre informazioni che c'erano prima
+e che vanno ripristinate, senza toccare il nuovo comportamento a
+fisarmonica (che va bene tenerlo):
+
+1. La riga "Scade DD/MM/YYYY · N gg" con badge urgenza (introdotta in #6)
+2. La riga "Contributo max"
+3. La KPI card "Bandi con clienti" nella parte alta della Dashboard
+
+Apri frontend/src/components/Dashboard.tsx e applica queste modifiche:
+
+## 1. Ripristina le funzioni isBlank e scadenzaTextClass (rimosse nel
+redesign, servono di nuovo)
+
+Subito prima di "function scoreClass(colorClass: string): string {",
+aggiungi:
+
+const BLANK_VALUES = new Set(['n/d', 'null', 'none', 'undefined', ''])
+function isBlank(v: string | null | undefined): boolean {
+  if (v == null) return true
+  return BLANK_VALUES.has(v.trim().toLowerCase())
+}
+
+Subito prima di "type SchedaModal = SchedaModalData", aggiungi:
+
+function scadenzaTextClass(giorni: number | null): string {
+  if (giorni === null) return ''
+  if (giorni < 0) return 'text-muted'
+  if (giorni < 30) return 'scadenza-giorni-red'
+  if (giorni < 90) return 'scadenza-giorni-orange'
+  return 'scadenza-giorni-green'
+}
+
+## 2. Aggiungi la sezione "quick info" sempre visibile nella card
+
+Dentro BandoCardItem, trova la chiusura del bottone header (il tag
+</button> che chiude il bottone con className="bando-card-header") e
+subito dopo, PRIMA di "{expanded && (", aggiungi:
+
+        {((card.scadenza && card.scadenza !== 'N/D') || !isBlank(card.contributo_max)) && (
+          <div className="bando-card-quick-info">
+            {card.scadenza && card.scadenza !== 'N/D' && (
+              <div className="bando-card-scadenza-row">
+                <span className={`scadenza-label ${scadenzaTextClass(card.giorni_alla_scadenza)}`}>
+                  Scade {card.scadenza}
+                  {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 &&
+                    ` · ${card.giorni_alla_scadenza} gg`}
+                </span>
+                {card.urgenza && card.urgenza !== 'scaduto' && (
+                  <span className={`badge badge-${card.urgenza}`}>{card.urgenza}</span>
+                )}
+              </div>
+            )}
+            {!isBlank(card.contributo_max) && (
+              <div className="bando-card-contributo-row">
+                <span className="bando-card-contributo-label">Contributo max</span>
+                <span className="bando-card-contributo">{card.contributo_max}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+IMPORTANTE: chiama la classe del div "bando-card-quick-info" e NON
+"bando-card-meta" — esiste già una regola CSS .bando-card-meta in
+styles.css (attualmente non usata da nessun componente, quindi CSS morto,
+ma non toccarla/riusarla) con uno stile diverso (border-top, padding), che
+andrebbe in conflitto/collisione di nome con quella nuova.
+
+## 3. Ripristina la KPI "Bandi con clienti"
+
+Trova, dentro il div "kpi-row", la kpi-card "Abbinamenti trovati" (quella
+con {d.totale_abbinamenti}) e aggiungi subito dopo la sua chiusura </div>:
+
+        <div className="kpi-card">
+          <p className="kpi-label">Bandi con clienti</p>
+          <p className="kpi-value">{uniqueCards.filter(c => c.matches.length > 0).length}</p>
+        </div>
+
+(quindi ci saranno di nuovo 3 kpi-card in fila: Bandi in archivio,
+Abbinamenti trovati, Bandi con clienti)
+
+## 4. frontend/src/styles.css — nuova regola CSS
+
+Subito dopo la regola ".bando-card-details--always { ... }" (cercala, è
+vicino alle regole ".bando-card-chevron" e ".bando-card-details"),
+aggiungi:
+
+.bando-card-quick-info {
+    margin-top: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+Le classi CSS che riusi qui (.bando-card-scadenza-row, .scadenza-label,
+.scadenza-giorni-red/orange/green, .bando-card-contributo-row,
+.bando-card-contributo-label, .bando-card-contributo) esistono già nel
+file, non ricrearle.
+
+## Verifica finale
+
+cd frontend && npm run build   # zero errori TypeScript
+cd .. && pytest -q              # 274 test verdi (intervento solo frontend,
+                                 # non deve impattare il backend)
+
+Fammi un riepilogo di cosa hai cambiato prima di fare il commit.
