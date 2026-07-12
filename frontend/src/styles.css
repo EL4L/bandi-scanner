@@ -1,67 +1,76 @@
 :root {
-    --color-bg: #F8F9FB;
+    --color-bg: #EFEDE6;
     --color-surface: #ffffff;
-    --color-border: #E5E7EB;
-    --color-border-strong: #D1D5DB;
+    --color-surface-2: #F7F5EF;
+    --color-border: #E3DFD4;
+    --color-border-strong: #CFC9BB;
 
-    --color-text: #111827;
-    --color-text-muted: #6B7280;
-    --color-text-faint: #9CA3AF;
+    --color-text: #101C1B;
+    --color-text-muted: #515956;
+    --color-text-faint: #8A928D;
 
-    --color-accent: #4F46E5;
-    --color-accent-hover: #4338CA;
-    --color-accent-soft: #EEF2FF;
+    --color-accent: #0A5450;
+    --color-accent-hover: #06403C;
+    --color-accent-bright: #17827A;
+    --color-accent-soft: #D6E9E6;
+    --color-accent-text: #063C39;
+
+    --color-gold: #D9A441;
+    --color-gold-soft: #F5E8CC;
+    --color-gold-text: #7A5713;
 
     --sidebar-bg: #ffffff;
-    --sidebar-text: #374151;
-    --sidebar-text-muted: #6B7280;
-    --sidebar-active-bg: #EEF2FF;
-    --sidebar-active-text: #4F46E5;
-    --sidebar-hover-bg: #F9FAFB;
-    --sidebar-border: #E5E7EB;
+    --sidebar-text: #515956;
+    --sidebar-text-muted: #8A928D;
+    --sidebar-active-bg: #D6E9E6;
+    --sidebar-active-text: #063C39;
+    --sidebar-hover-bg: #F7F5EF;
+    --sidebar-border: #E3DFD4;
     --sidebar-width: 220px;
 
-    --color-success: #059669;
-    --color-success-bg: #ecfdf5;
-    --color-success-border: #a7f3d0;
-    --color-warning: #d97706;
-    --color-warning-bg: #fffbeb;
-    --color-warning-border: #fde68a;
-    --color-danger: #dc2626;
-    --color-danger-bg: #fef2f2;
-    --color-danger-border: #fecaca;
+    --color-success: #2C8B57;
+    --color-success-bg: #E0F0E5;
+    --color-success-border: #B3DCC3;
+    --color-warning: #C08423;
+    --color-warning-bg: #F7EBD3;
+    --color-warning-border: #EAD3A0;
+    --color-danger: #CB5138;
+    --color-danger-bg: #F8E1DA;
+    --color-danger-border: #EBBAAC;
 
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 12px;
     --radius-xl: 20px;
 
-    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: ui-monospace, 'Cascadia Code', monospace;
 
-    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-    --shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.09), 0 2px 4px rgba(15, 23, 42, 0.04);
-    --shadow-lg: 0 12px 36px rgba(15, 23, 42, 0.14), 0 4px 10px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 1px 3px rgba(16, 28, 27, 0.06), 0 1px 2px rgba(16, 28, 27, 0.04);
+    --shadow-hover: 0 2px 8px rgba(16, 28, 27, 0.07);
+    --shadow-md: 0 4px 14px rgba(16, 28, 27, 0.09), 0 2px 4px rgba(16, 28, 27, 0.04);
+    --shadow-lg: 0 12px 36px rgba(16, 28, 27, 0.14), 0 4px 10px rgba(16, 28, 27, 0.06);
+    --shadow-teal: 0 12px 40px -12px rgba(10, 84, 80, 0.45);
 
     /* Stati semantici a 3 livelli (score/match/breakdown alto-medio-basso).
        Centralizzati qui perché la stessa terna verde/giallo/rosso era duplicata
-       in .score-*, .match-badge-*, .breakdown-pill-*, .breakdown-bar-* (audit UI-6). */
-    --status-high: #16a34a;
-    --status-high-text: #166534;
-    --status-high-bg: #dcfce7;
-    --status-high-border: #bbf7d0;
+       in .score-*, .match-badge-*, .breakdown-pill-*, .breakdown-bar-* (audit UI-6).
+       Ritonati sul caldo per il redesign "Radar" (teal+sabbia). */
+    --status-high: #2C8B57;
+    --status-high-text: #1A6238;
+    --status-high-bg: #E0F0E5;
+    --status-high-border: #B3DCC3;
 
-    --status-mid: #f59e0b;
-    --status-mid-text: #854d0e;
-    --status-mid-bg: #fef9c3;
-    --status-mid-border: #fde68a;
+    --status-mid: #C08423;
+    --status-mid-text: #7C550F;
+    --status-mid-bg: #F7EBD3;
+    --status-mid-border: #EAD3A0;
 
-    --status-low: #ef4444;
-    --status-low-text: #991b1b;
-    --status-low-bg: #fee2e2;
-    --status-low-border: #fecaca;
+    --status-low: #CB5138;
+    --status-low-text: #8C3420;
+    --status-low-bg: #F8E1DA;
+    --status-low-border: #EBBAAC;
 
     /* Scala font-size (audit #15): minimo assoluto 0.75rem (12px) per il
        target di lettori 40-55 anni. Ogni valore esistente è stato mappato
@@ -96,9 +105,10 @@ body {
 }
 
 h1, h2, h3, h4, h5 {
+    font-family: var(--font-display);
     font-weight: 600;
     color: var(--color-text);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     line-height: 1.3;
 }
 
@@ -623,7 +633,7 @@ a { color: var(--color-accent); }
 }
 .data-table tbody tr:last-child td { border-bottom: none; }
 .data-table tbody tr:nth-child(odd) td { background: #FAFAFA; }
-.data-table tbody tr:hover td { background: #EEF2FF; }
+.data-table tbody tr:hover td { background: var(--color-surface-2); }
 .td-title { font-weight: 500; }
 .td-muted { color: var(--color-text-muted); font-size: var(--text-sm); }
 
