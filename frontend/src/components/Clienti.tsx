@@ -157,6 +157,20 @@ function IconClose() {
     </svg>
   )
 }
+function IconSearch() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  )
+}
+function IconChevronRight() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  )
+}
 
 export default function Clienti() {
   const { data, isLoading: loading, error: queryError } = useClienti<{
@@ -192,6 +206,8 @@ export default function Clienti() {
   const [detailCliente, setDetailCliente] = useState<Cliente | null>(null)
   const [detailBandi, setDetailBandi] = useState<BandoMatch[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
+
+  const [search, setSearch] = useState('')
 
   const [openScheda, setOpenScheda] = useState<SchedaModalData | null>(null)
   const [schedaLoading, setSchedaLoading] = useState<number | null>(null)
@@ -317,6 +333,13 @@ export default function Clienti() {
   const setField = (key: keyof ClienteForm, val: string) =>
     setForm(prev => ({ ...prev, [key]: val }))
 
+  const q = search.trim().toLowerCase()
+  const clientiFiltrati = q
+    ? clienti.filter(c =>
+        c.ragione_sociale.toLowerCase().includes(q) ||
+        c.p_iva.toLowerCase().includes(q))
+    : clienti
+
   if (loading) {
     return <div className="loading-center"><div className="spinner" /> Caricamento clienti…</div>
   }
@@ -326,7 +349,11 @@ export default function Clienti() {
       <div className="topbar">
         <div>
           <h1 className="page-title">Clienti</h1>
-          <p className="page-subtitle">{clienti.length} {clienti.length === 1 ? 'cliente' : 'clienti'} in anagrafica</p>
+          <p className="page-subtitle">
+            {q
+              ? `${clientiFiltrati.length} di ${clienti.length} clienti`
+              : `${clienti.length} ${clienti.length === 1 ? 'cliente' : 'clienti'} in anagrafica`}
+          </p>
         </div>
         <button className="btn btn-primary" onClick={openAdd}>
           <IconPlus /> Aggiungi cliente
@@ -334,6 +361,24 @@ export default function Clienti() {
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}
+
+      {clienti.length > 0 && (
+        <div className="clienti-search">
+          <span className="clienti-search-icon"><IconSearch /></span>
+          <input
+            type="text"
+            placeholder="Cerca cliente per nome o P.IVA…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            aria-label="Cerca cliente"
+          />
+          {search && (
+            <button className="clienti-search-clear" onClick={() => setSearch('')} aria-label="Cancella ricerca">
+              <IconClose />
+            </button>
+          )}
+        </div>
+      )}
 
       {clienti.length === 0 && !error ? (
         <div className="empty-state">
@@ -349,36 +394,38 @@ export default function Clienti() {
           <p>Aggiungi i profili dei tuoi clienti per calcolare la compatibilità con i bandi.</p>
           <button className="btn btn-primary" onClick={openAdd}><IconPlus /> Aggiungi cliente</button>
         </div>
+      ) : clientiFiltrati.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <h3>Nessun risultato</h3>
+          <p>Nessun cliente corrisponde a "{search}". Prova con un altro nome o P.IVA.</p>
+          <button className="btn btn-ghost" onClick={() => setSearch('')}>Azzera ricerca</button>
+        </div>
       ) : (
         <div className="table-wrapper">
-          <table className="data-table">
+          <table className="data-table clienti-table">
             <thead>
               <tr>
                 <th>Ragione Sociale</th>
-                <th>P.IVA</th>
                 <th>Codice ATECO</th>
                 <th>Regione</th>
                 <th>Fatturato</th>
                 <th>Dimensione</th>
                 <th>Bandi compatibili</th>
                 <th>Azioni</th>
+                <th aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody>
-              {clienti.map(c => (
-                <tr key={c.id}>
+              {clientiFiltrati.map(c => (
+                <tr key={c.id} className="cliente-row" onClick={() => openDetail(c)}>
                   <td>
-                    <button className="cliente-name-btn" onClick={() => openDetail(c)}>
-                      {c.ragione_sociale}
-                    </button>
-                    {c.descrizione_attivita && (
-                      <p className="td-muted" style={{ marginTop: 'var(--space-1)', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {c.descrizione_attivita}
-                      </p>
-                    )}
-                  </td>
-                  <td className="td-muted" style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--text-sm)' }}>
-                    {c.p_iva}
+                    <span className="cliente-name">{c.ragione_sociale}</span>
+                    <p className="cliente-piva">{c.p_iva}</p>
                   </td>
                   <td>
                     <span className="badge badge-blue">{c.codice_ateco}</span>
@@ -393,7 +440,7 @@ export default function Clienti() {
                       {c.match_count}
                     </span>
                   </td>
-                  <td>
+                  <td onClick={e => e.stopPropagation()}>
                     {deleteConfirm === c.id ? (
                       <div className="btn-group">
                         <span className="text-sm text-muted">Confermi?</span>
@@ -419,6 +466,7 @@ export default function Clienti() {
                       </div>
                     )}
                   </td>
+                  <td className="cliente-row-go" aria-hidden="true"><IconChevronRight /></td>
                 </tr>
               ))}
             </tbody>
