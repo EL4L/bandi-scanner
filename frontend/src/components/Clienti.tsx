@@ -1,176 +1,15 @@
 import { useState } from 'react'
 import { toast } from '../toast'
-import { apiHref, withApiKey } from '../apiKey'
+import { withApiKey } from '../apiKey'
 import { useClienti, useApiMutation } from '../lib/queries'
-import { useModalA11y } from '../useModalA11y'
-import { ClienteFormModal, EMPTY_CLIENTE_FORM, type ClienteForm } from './ClienteFormModal'
+import { ClienteFormModal, EMPTY_CLIENTE_FORM, validaDimensione, type ClienteForm } from './ClienteFormModal'
+import { ClienteDetailPage } from './ClienteDetailPage'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
-
-interface Cliente {
-  id: number
-  ragione_sociale: string
-  p_iva: string
-  codice_ateco: string
-  regione: string
-  fatturato: number
-  dimensione_impresa: string
-  descrizione_attivita: string
-  data_costituzione?: string | null
-  numero_dipendenti?: number | null
-  forma_giuridica?: string | null
-  match_count: number
-}
-
-interface Ammissibilita {
-  ammissibile: boolean
-  motivi_esclusione: string[]
-  criteri_verificati: string[]
-}
-
-interface BandoMatch {
-  bando_id: number
-  titolo: string | null
-  ente: string | null
-  score: number
-  breakdown: {
-    regione: number
-    ateco: number
-    dimensione: number
-    fatturato: number
-    total: number
-    status?: 'ok' | 'da_verificare'
-  }
-  scadenza: string | null
-  giorni_alla_scadenza: number | null
-  ammissibilita?: Ammissibilita
-  fonte_url?: string | null
-}
-
-function formatEuro(val: number) {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
-}
-
-const FORMA_GIURIDICA_LABELS: Record<string, string> = {
-  srl: 'S.r.l.',
-  spa: 'S.p.A.',
-  snc: 'S.n.c.',
-  sas: 'S.a.s.',
-  'ditta individuale': 'Ditta individuale',
-  cooperativa: 'Cooperativa',
-  associazione: 'Associazione',
-}
-
-function formatFormaGiuridica(val?: string | null): string | null {
-  if (!val) return null
-  return FORMA_GIURIDICA_LABELS[val] ?? val
-}
-
-function formatDataCostituzione(val?: string | null): string | null {
-  if (!val) return null
-  const parts = val.split('T')[0].split('-')
-  if (parts.length !== 3) return val
-  const [year, month, day] = parts
-  return `${day}/${month}/${year}`
-}
-
-function matchCountBadgeClass(count: number): string {
-  if (count > 5) return 'count-badge-high'
-  if (count > 0) return 'count-badge-mid'
-  return 'count-badge-low'
-}
-
-function stripColorByGiorni(giorni: number | null): string {
-  if (giorni === null || giorni < 0) return 'var(--color-border-strong)'
-  if (giorni < 30) return 'var(--status-low)'
-  if (giorni <= 90) return 'var(--status-mid)'
-  return 'var(--status-high)'
-}
-
-function pillClass(score: number, max: number): string {
-  if (score === max) return 'breakdown-pill-full'
-  if (score >= max / 2) return 'breakdown-pill-partial'
-  return 'breakdown-pill-zero'
-}
-
-function pillIcon(score: number, max: number): string {
-  if (score === max) return '✅'
-  if (score >= max / 2) return '⚠️'
-  return '❌'
-}
-
-function BreakdownBar({ label, score, max }: { label: string; score: number; max: number }) {
-  const pct = max > 0 ? Math.round((score / max) * 100) : 0
-  return (
-    <div className={`breakdown-bar-row ${pillClass(score, max)}`}>
-      <span className="breakdown-bar-label">
-        {pillIcon(score, max)} {label}
-      </span>
-      <div className="breakdown-bar-track" role="img" aria-label={`${label}: ${score} su ${max} punti`}>
-        <div className="breakdown-bar-fill" style={{ width: `${pct}%` }} />
-      </div>
-      <span className="breakdown-bar-value">{score}/{max}</span>
-    </div>
-  )
-}
-
-function scoreCircleClass(score: number): string {
-  if (score > 70) return 'score-green'
-  if (score >= 40) return 'score-yellow'
-  return 'score-red'
-}
-
-function giorniColorClass(giorni: number): string {
-  if (giorni < 30) return 'scadenza-giorni-red'
-  if (giorni <= 90) return 'scadenza-giorni-orange'
-  return 'scadenza-giorni-green'
-}
-
-function IconPlus() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  )
-}
-function IconEdit() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  )
-}
-function IconTrash() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  )
-}
-function IconClose() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  )
-}
-function IconSearch() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  )
-}
-function IconChevronRight() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  )
-}
+import {
+  type Cliente, type BandoMatch,
+  formatEuro, matchCountBadgeClass,
+  IconPlus, IconEdit, IconTrash, IconClose, IconSearch, IconChevronRight,
+} from '../lib/clienti-shared'
 
 export default function Clienti() {
   const { data, isLoading: loading, error: queryError } = useClienti<{
@@ -207,10 +46,27 @@ export default function Clienti() {
   const [detailBandi, setDetailBandi] = useState<BandoMatch[]>([])
   const [detailLoading, setDetailLoading] = useState(false)
 
+  const [anagraficaForm, setAnagraficaForm] = useState<ClienteForm>(EMPTY_CLIENTE_FORM)
+  const [anagraficaErrors, setAnagraficaErrors] = useState<string[]>([])
+  const [anagraficaSaving, setAnagraficaSaving] = useState(false)
+
   const [search, setSearch] = useState('')
 
   const [openScheda, setOpenScheda] = useState<SchedaModalData | null>(null)
   const [schedaLoading, setSchedaLoading] = useState<number | null>(null)
+
+  const formFromCliente = (c: Cliente): ClienteForm => ({
+    ragione_sociale: c.ragione_sociale,
+    p_iva: c.p_iva,
+    codice_ateco: c.codice_ateco,
+    regione: c.regione,
+    fatturato: String(c.fatturato ?? ''),
+    dimensione_impresa: c.dimensione_impresa,
+    descrizione_attivita: c.descrizione_attivita ?? '',
+    data_costituzione: c.data_costituzione ?? '',
+    numero_dipendenti: c.numero_dipendenti ? String(c.numero_dipendenti) : '',
+    forma_giuridica: c.forma_giuridica ?? '',
+  })
 
   const openAdd = () => {
     setEditId(null)
@@ -221,18 +77,7 @@ export default function Clienti() {
 
   const openEdit = (c: Cliente) => {
     setEditId(c.id)
-    setForm({
-      ragione_sociale: c.ragione_sociale,
-      p_iva: c.p_iva,
-      codice_ateco: c.codice_ateco,
-      regione: c.regione,
-      fatturato: String(c.fatturato ?? ''),
-      dimensione_impresa: c.dimensione_impresa,
-      descrizione_attivita: c.descrizione_attivita ?? '',
-      data_costituzione: c.data_costituzione ?? '',
-      numero_dipendenti: c.numero_dipendenti ? String(c.numero_dipendenti) : '',
-      forma_giuridica: c.forma_giuridica ?? '',
-    })
+    setForm(formFromCliente(c))
     setFormErrors([])
     setModalOpen(true)
   }
@@ -243,6 +88,8 @@ export default function Clienti() {
     setDetailCliente(c)
     setDetailBandi([])
     setDetailLoading(true)
+    setAnagraficaForm(formFromCliente(c))
+    setAnagraficaErrors([])
     try {
       const res = await fetch(`/api/clienti/${c.id}/bandi`, withApiKey())
       const d = await res.json()
@@ -256,8 +103,6 @@ export default function Clienti() {
 
   const closeDetail = () => { setDetailCliente(null); setDetailBandi([]) }
 
-  const detailModalRef = useModalA11y(closeDetail, !!detailCliente)
-
   const handleScheda = async (b: BandoMatch) => {
     setSchedaLoading(b.bando_id)
     try {
@@ -268,6 +113,55 @@ export default function Clienti() {
       toast.error('Impossibile caricare la scheda del bando.')
     } finally {
       setSchedaLoading(null)
+    }
+  }
+
+  const setAnagraficaField = (key: keyof ClienteForm, val: string) =>
+    setAnagraficaForm(prev => ({ ...prev, [key]: val }))
+
+  const handleAnagraficaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAnagraficaErrors([])
+    if (!detailCliente) return
+
+    const clientErrors: string[] = []
+    if (!/^\d{11}$/.test(anagraficaForm.p_iva.trim())) {
+      clientErrors.push('Partita IVA non valida: deve contenere esattamente 11 cifre numeriche.')
+    }
+    if (!/^\d{2}\.\d{2}(\.\d{2})?$/.test(anagraficaForm.codice_ateco.trim())) {
+      clientErrors.push('Codice ATECO non valido: usa il formato XX.XX o XX.XX.XX (es. 62.01).')
+    }
+    const dipendenti = anagraficaForm.numero_dipendenti.trim() ? parseInt(anagraficaForm.numero_dipendenti, 10) : null
+    const fatturatoNum = anagraficaForm.fatturato.trim() ? parseFloat(anagraficaForm.fatturato) : null
+    clientErrors.push(...validaDimensione(anagraficaForm.dimensione_impresa, dipendenti, fatturatoNum))
+    if (clientErrors.length > 0) {
+      setAnagraficaErrors(clientErrors)
+      return
+    }
+
+    setAnagraficaSaving(true)
+    const payload = {
+      ragione_sociale: anagraficaForm.ragione_sociale.trim(),
+      p_iva: anagraficaForm.p_iva.trim(),
+      codice_ateco: anagraficaForm.codice_ateco.trim(),
+      regione: anagraficaForm.regione,
+      fatturato: parseFloat(anagraficaForm.fatturato) || 0,
+      dimensione_impresa: anagraficaForm.dimensione_impresa,
+      descrizione_attivita: anagraficaForm.descrizione_attivita.trim(),
+      data_costituzione: anagraficaForm.data_costituzione.trim() || null,
+      numero_dipendenti: anagraficaForm.numero_dipendenti.trim() ? parseInt(anagraficaForm.numero_dipendenti) : null,
+      forma_giuridica: anagraficaForm.forma_giuridica.trim() || null,
+    }
+    try {
+      const updated = await saveMutation.mutateAsync({ url: `/api/clienti/${detailCliente.id}`, method: 'PUT', body: payload })
+      setDetailCliente(prev => prev ? { ...prev, ...payload, id: prev.id, match_count: prev.match_count } : prev)
+      toast.success('Anagrafica aggiornata.')
+      void updated
+    } catch (err) {
+      const errors = (err as { errors?: string[] })?.errors
+      setAnagraficaErrors(errors ?? ['Errore di rete. Riprova.'])
+    } finally {
+      setAnagraficaSaving(false)
     }
   }
 
@@ -342,6 +236,29 @@ export default function Clienti() {
 
   if (loading) {
     return <div className="loading-center"><div className="spinner" /> Caricamento clienti…</div>
+  }
+
+  if (detailCliente) {
+    return (
+      <>
+        <ClienteDetailPage
+          cliente={detailCliente}
+          bandi={detailBandi}
+          loading={detailLoading}
+          onBack={closeDetail}
+          onScheda={handleScheda}
+          schedaLoading={schedaLoading}
+          regioni={regioni}
+          dimensioni={dimensioni}
+          anagraficaForm={anagraficaForm}
+          anagraficaErrors={anagraficaErrors}
+          anagraficaSaving={anagraficaSaving}
+          onAnagraficaFieldChange={setAnagraficaField}
+          onAnagraficaSubmit={handleAnagraficaSubmit}
+        />
+        {openScheda && <ModalScheda data={openScheda} onClose={() => setOpenScheda(null)} />}
+      </>
+    )
   }
 
   return (
@@ -474,160 +391,7 @@ export default function Clienti() {
         </div>
       )}
 
-      {/* ── Detail modal ── */}
-      {detailCliente && (
-        <div className="modal-backdrop" onClick={closeDetail}>
-          <div
-            className="modal modal-xl"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-detail-title"
-            ref={detailModalRef}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <div>
-                <p className="modal-title" id="modal-detail-title">{detailCliente.ragione_sociale}</p>
-                <p className="modal-subtitle">Bandi compatibili</p>
-              </div>
-              <button className="modal-close" onClick={closeDetail} aria-label="Chiudi">
-                <IconClose />
-              </button>
-            </div>
-            <div className="modal-body">
-              <div className="cliente-detail-info">
-                <span className="badge badge-blue">{detailCliente.codice_ateco}</span>
-                <span className="badge badge-neutral">{detailCliente.dimensione_impresa}</span>
-                <span className="td-muted text-sm">{detailCliente.regione}</span>
-                {detailCliente.fatturato ? (
-                  <span className="text-sm">{formatEuro(detailCliente.fatturato)}</span>
-                ) : null}
-                {formatFormaGiuridica(detailCliente.forma_giuridica) && (
-                  <span className="badge badge-neutral">{formatFormaGiuridica(detailCliente.forma_giuridica)}</span>
-                )}
-                {formatDataCostituzione(detailCliente.data_costituzione) && (
-                  <span className="td-muted text-sm">Costituita il {formatDataCostituzione(detailCliente.data_costituzione)}</span>
-                )}
-                {detailCliente.descrizione_attivita && (
-                  <span className="td-muted text-sm" style={{ gridColumn: '1 / -1' }}>
-                    {detailCliente.descrizione_attivita}
-                  </span>
-                )}
-              </div>
-
-              <hr className="divider" />
-
-              <p className="result-section-title" style={{ marginBottom: 'var(--space-3)' }}>
-                {detailLoading ? 'Caricamento…' : `${detailBandi.length} bando${detailBandi.length !== 1 ? 'i' : ''} compatibil${detailBandi.length !== 1 ? 'i' : 'e'}`}
-              </p>
-
-              {detailLoading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
-                  <div className="spinner" />
-                </div>
-              ) : detailBandi.length === 0 ? (
-                <p className="text-muted text-sm">Nessun bando compatibile trovato per questo cliente.</p>
-              ) : (
-                <div className="cliente-bandi-list">
-                  {detailBandi.map(b => {
-                    const escluso = b.ammissibilita?.ammissibile === false
-                    const daVerificare = !escluso && b.breakdown.status === 'da_verificare'
-                    return (
-                      <div key={b.bando_id} className={`cliente-bando-row${escluso ? ' match-excluded' : ''}`}>
-                        <div className="deadline-strip" style={{ '--deadline-color': stripColorByGiorni(b.giorni_alla_scadenza) } as React.CSSProperties} />
-                        <div className="cliente-bando-row-inner">
-                          <div className="cliente-bando-info">
-                            <p className="td-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
-                            {b.ente && <p className="td-muted" style={{ fontSize: 'var(--text-xs)', marginTop: 'var(--space-1)' }}>{b.ente}</p>}
-                            {daVerificare && (
-                              <span
-                                className="badge badge-warning"
-                                style={{ marginTop: 'var(--space-2)' }}
-                                title="Il bando non contiene dati sufficienti per valutare la compatibilità"
-                              >
-                                ⚠️ Da verificare
-                              </span>
-                            )}
-                            {escluso && (
-                              <div style={{ marginTop: 'var(--space-2)' }}>
-                                <span className="badge badge-escluso">⛔ Non ammissibile</span>
-                                {b.ammissibilita!.motivi_esclusione.length > 0 && (
-                                  <ul className="td-muted text-sm" style={{ marginTop: 'var(--space-1)', paddingLeft: 'var(--space-4)' }}>
-                                    {b.ammissibilita!.motivi_esclusione.map((motivo, i) => (
-                                      <li key={i}>{motivo}</li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            )}
-                            <div className="breakdown-bars" style={{ marginTop: 'var(--space-2)' }}>
-                              <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
-                              <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
-                              <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
-                              <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
-                            </div>
-                            <div className="btn-group" style={{ marginTop: 'var(--space-2)' }}>
-                              <button
-                                className="btn btn-sm"
-                                onClick={() => handleScheda(b)}
-                                disabled={schedaLoading === b.bando_id}
-                              >
-                                {schedaLoading === b.bando_id ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} /> : 'Scheda'}
-                              </button>
-                              <a
-                                href={apiHref(`/api/bandi/${b.bando_id}/scheda.md`)}
-                                download
-                                className="btn btn-sm btn-ghost"
-                                aria-label={`Scarica scheda di ${b.titolo ?? `Bando #${b.bando_id}`}`}
-                              >
-                                Scarica
-                              </a>
-                              {b.fonte_url && (
-                                <a
-                                  href={b.fonte_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-sm btn-ghost"
-                                  aria-label={`Apri fonte ufficiale di ${b.titolo ?? `Bando #${b.bando_id}`}`}
-                                >
-                                  Fonte
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                          <div className="cliente-bando-right">
-                            <div
-                              className={`score-circle ${scoreCircleClass(b.score)}`}
-                              style={{ '--score': b.score } as React.CSSProperties}
-                            >
-                              <span>{b.score}%</span>
-                            </div>
-                            {b.scadenza && (
-                              <div style={{ textAlign: 'center', marginTop: 'var(--space-2)' }}>
-                                <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', lineHeight: 1.3 }}>{b.scadenza}</p>
-                                {b.giorni_alla_scadenza !== null && (
-                                  <p className={`scadenza-giorni ${giorniColorClass(b.giorni_alla_scadenza)}`} style={{ marginTop: 'var(--space-1)' }}>
-                                    {b.giorni_alla_scadenza < 0 ? 'scaduto' : `${b.giorni_alla_scadenza} gg`}
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {openScheda && (
-                <ModalScheda data={openScheda} onClose={() => setOpenScheda(null)} />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* ── Add/edit modal ── */}
       {modalOpen && (
         <ClienteFormModal
           isEdit={editId !== null}

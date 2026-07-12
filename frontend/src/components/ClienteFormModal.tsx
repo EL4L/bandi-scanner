@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useModalA11y } from '../useModalA11y'
 
-const SOGLIE_UE: Record<string, {
+export const SOGLIE_UE: Record<string, {
   dipMin?: number; dipMax?: number; fattMax?: number
 }> = {
   micro:   { dipMax: 9,   fattMax: 2_000_000 },
@@ -10,7 +10,7 @@ const SOGLIE_UE: Record<string, {
   grande:  { dipMin: 250 },
 }
 
-function validaDimensione(dimensione: string, dipendenti: number | null, fatturato: number | null): string[] {
+export function validaDimensione(dimensione: string, dipendenti: number | null, fatturato: number | null): string[] {
   const soglie = SOGLIE_UE[dimensione]
   if (!soglie) return []
 
