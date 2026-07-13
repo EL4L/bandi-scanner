@@ -91,6 +91,43 @@ def test_call_llm_api_imposta_max_tokens():
     assert kwargs.get("max_tokens") == LLM_MAX_TOKENS
 
 
+def test_call_llm_api_content_none_solleva_errore_pulito():
+    """Scoperto dal golden set (audit Fable #4, run reale su bando_a_cascata
+    Sapienza): su prompt molto lunghi il provider può restituire un messaggio
+    con content=None (risposta vuota/rifiutata) invece di un errore HTTP.
+    Prima del fix questo si propagava fino a _clean_json_response() e
+    andava in crash con AttributeError ("'NoneType' object has no attribute
+    'strip'"), bypassando anche il fallback al modello di riserva in
+    extract_bando_data (perché _clean_json_response viene chiamato FUORI
+    dal blocco try/except che gestisce il fallback)."""
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content=None))]
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.return_value = mock_response
+
+    with patch("modules.extractor._get_client", return_value=mock_client):
+        with pytest.raises(InvalidJSONResponse):
+            _call_llm_api("prompt di test")
+
+
+def test_extract_bando_data_content_none_attiva_il_fallback():
+    """Stesso caso del test sopra, ma verificato end-to-end su
+    extract_bando_data: un content=None dal modello primario (che ora
+    _call_llm_api trasforma in InvalidJSONResponse) deve attivare il
+    fallback esattamente come un qualunque altro errore, non bypassarlo."""
+    payload_ok = '{"bando": {"titolo": "Da fallback", "ateco_aperto_a_tutti": true}}'
+
+    def side_effect(prompt, model=LLM_MODEL):
+        if model == LLM_MODEL:
+            raise InvalidJSONResponse("content=None dal modello primario")
+        return payload_ok
+
+    with patch("modules.extractor._call_llm_api", side_effect=side_effect) as mock_call:
+        result = extract_bando_data("testo del bando")
+    assert result["bando"]["titolo"] == "Da fallback"
+    assert mock_call.call_count == 2
+
+
 # ---------------------------------------------------------------------------
 # _clean_json_response
 # ---------------------------------------------------------------------------

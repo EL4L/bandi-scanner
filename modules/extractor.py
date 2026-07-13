@@ -224,7 +224,21 @@ def _call_llm_api(prompt: str, model: str = LLM_MODEL) -> str:
     )
     if not response.choices:
         raise InvalidJSONResponse("Risposta API vuota")
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    if not content:
+        # Scoperto dal golden set (audit Fable #4): su prompt molto lunghi
+        # (es. bando Sapienza, testo troncato a MAX_TEXT_CHARS ma comunque
+        # esteso) il provider può restituire un messaggio con content=None
+        # (risposta vuota/rifiutata) invece di sollevare un errore HTTP.
+        # Senza questo controllo, il None si propagava fino a
+        # _clean_json_response() e andava in crash con AttributeError
+        # ("'NoneType' object has no attribute 'strip'") invece di un
+        # errore applicativo comprensibile con retry/fallback già gestiti
+        # a monte da extract_bando_data.
+        raise InvalidJSONResponse(
+            f"Il modello {model} ha restituito una risposta vuota (content=None)"
+        )
+    return content
 
 
 def extract_bando_data(raw_text: str) -> dict:
