@@ -152,22 +152,17 @@ class TestGoldenFondoFemminile:
         valore = pct.get("default") if isinstance(pct, dict) else pct
         assert valore == 40
 
-    @pytest.mark.xfail(
-        reason=(
-            "Audit Fable punto 5 della sintesi (risolto: verificato sull'intero "
-            "testo con grep, zero occorrenze di micro/piccola/media/PMI). "
-            "L'inferenza 'è un bando femminile quindi presumo PMI' non è ancorata "
-            "al testo — è esattamente il caso che la modifica #9 (riformulare la "
-            "REGOLA DI DOMINIO su dimensione_impresa) elimina. Con il fix, questo "
-            "bando dovrebbe risultare con dimensione_impresa tutta false (nessun "
-            "vincolo estratto dal testo) invece di micro/piccola/media inventate."
-        ),
-        strict=False,
-    )
     def test_dimensione_impresa_non_inventata(self, fondo_femminile):
+        """Fix #9 (Fase 3) applicato e confermato: prima del fix questo test
+        era xfail (l'estrazione inventava micro/piccola/media=true senza
+        alcun riscontro testuale, presumendo "PMI" per il solo fatto che
+        fosse un'agevolazione pubblica). Dopo il fix, verificato PASS su
+        chiamata LLM reale il 2026-07-13 — xfail rimosso. Verificata anche
+        l'assenza di regressione su Nuova Sabatini (dove "PMI" è menzionato
+        esplicitamente nel testo e deve restare true)."""
         dim = fondo_femminile.get("dimensione_impresa") or {}
-        # Dopo il fix #9: nessuna fascia dovrebbe risultare True senza un
-        # riscontro testuale esplicito (che qui non esiste).
+        # Nessuna fascia dovrebbe risultare True senza un riscontro testuale
+        # esplicito (che qui non esiste).
         assert not any(dim.get(k) for k in ("micro", "piccola", "media"))
 
     def test_attivita_escluse_agricoltura(self, fondo_femminile):
