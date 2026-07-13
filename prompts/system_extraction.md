@@ -162,7 +162,30 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
   - Se il bando non menziona esplicitamente la cumulabilità, usa `null`. Non dedurre né riassumere: questo campo deve riportare solo testo realmente presente nel documento.
 
 * "dimensione_impresa": (oggetto JSON). Deve contenere le chiavi booleane: "micro", "piccola", "media", "grande".
-  - REGOLE DI DOMINIO: Le agevolazioni di Stato sono destinate alle PMI. A meno che il testo non autorizzi ESPLICITAMENTE la partecipazione delle "Grandi Imprese", devi SEMPRE impostare `"grande": false`.
+  - Imposta a true SOLO le categorie che il testo del bando indica esplicitamente
+    o in modo chiaramente deducibile (es. "PMI", "micro, piccole e medie imprese",
+    "imprese con meno di 250 dipendenti", parametri dimensionali equivalenti).
+  - Se il testo NON menziona alcun vincolo di dimensione — non usa mai parole come
+    "PMI", "micro", "piccola", "media", "grande", "dimensione d'impresa", né soglie
+    equivalenti di dipendenti/fatturato — lascia TUTTE le chiavi a false. NON
+    dedurre "è un'agevolazione pubblica quindi presumo PMI" in assenza di
+    riscontro testuale: l'assenza di indicazione deve restare un bando SENZA
+    vincolo dimensionale rilevato, non un'inferenza silenziosa verso le PMI.
+  - ECCEZIONE — riferimento normativo esplicito alle PMI: se il testo afferma o
+    lascia intendere chiaramente che sono escluse le grandi imprese tramite un
+    riferimento esplicito (es. "riservato alle PMI", "riservato alle PMI ai sensi
+    della raccomandazione 2003/361/CE", "dimensione aziendale entro i parametri
+    PMI"), allora SÌ imposta "grande": false e "micro"/"piccola"/"media": true —
+    in questo caso il riferimento è esplicito, non presunto dal contesto generale.
+  - ESEMPIO NEGATIVO (Fondo impresa femminile): il testo del bando non contiene
+    MAI le parole "micro", "piccola", "media" o "PMI" (verificato: zero
+    occorrenze). Anche trattandosi di un fondo di sostegno alle imprese femminili
+    gestito da un ente pubblico, questo da solo NON autorizza a presumere PMI:
+    dimensione_impresa deve risultare
+    {"micro": false, "piccola": false, "media": false, "grande": false}
+    (nessun vincolo dimensionale rilevato nel testo) — NON
+    {"micro": true, "piccola": true, "media": true, "grande": false} come
+    inventato erroneamente in un'estrazione precedente.
 
 * "spesa_minima_ammissibile": (numero o null).
   - Cerca l'investimento minimo o la spesa minima richiesta per partecipare. Se non c'è, restituisci null.
