@@ -85,7 +85,8 @@ export function ClienteDetailPage({
               </div>
               {bandi.map(b => {
                 const escluso = b.ammissibilita?.ammissibile === false
-                const daVerificare = !escluso && b.breakdown.status === 'da_verificare'
+                const erroreVerifica = b.ammissibilita?.errore === true
+                const daVerificare = !escluso && !erroreVerifica && b.breakdown.status === 'da_verificare'
                 return (
                   <div
                     key={b.bando_id}
@@ -96,13 +97,19 @@ export function ClienteDetailPage({
                       <div>
                         <p className="bcard-title">{b.titolo ?? `Bando #${b.bando_id}`}</p>
                         {b.ente && <p className="bcard-ente">{b.ente}</p>}
-                        {b.scadenza && !escluso && !daVerificare && (
+                        {b.scadenza && !escluso && !daVerificare && !erroreVerifica && (
                           <p className="bcard-scad">
                             Scade <strong>{b.scadenza}</strong>
                             {b.giorni_alla_scadenza !== null && b.giorni_alla_scadenza >= 0 && (
                               <> · <strong>{b.giorni_alla_scadenza} gg</strong></>
                             )}
                           </p>
+                        )}
+                        {erroreVerifica && (
+                          <span className="badge badge-warning" style={{ marginTop: 'var(--space-2)' }}
+                            title="Il controllo di ammissibilità non è riuscito per un errore tecnico: verifica manualmente i requisiti">
+                            <IconAlert /> Verifica non riuscita
+                          </span>
                         )}
                         {daVerificare && (
                           <span className="badge badge-warning" style={{ marginTop: 'var(--space-2)' }}

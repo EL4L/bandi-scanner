@@ -482,25 +482,28 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
             criteri_verificati.append(f"Spesa minima: OK (€ {fat_num:,.0f} >= € {spesa_min:,.0f})")
 
     # Criterio 5: dimensione impresa
-    dim_bando_raw = b.get("dimensione_impresa")
-    if isinstance(dim_bando_raw, dict):
-        ammesse = [k for k, v in dim_bando_raw.items() if v is True]
-        if ammesse:
-            dim_cliente = _norm_str(
-                c.get("dimensione_impresa") or c.get("dimensione")
+    # #11 (audit Fable): usa _dimensioni_ammesse invece di leggere dim_bando_raw
+    # direttamente come dict — quest'ultimo approccio gestiva SOLO il formato dict,
+    # mentre _dimensioni_ammesse (già usata dallo score) gestisce anche stringa/lista,
+    # evitando che l'ammissibilità diverga silenziosamente dallo score su payload
+    # in formato non-dict (es. legacy o non passati da normalize_response).
+    ammesse = _dimensioni_ammesse(b)
+    if ammesse:
+        dim_cliente = _norm_str(
+            c.get("dimensione_impresa") or c.get("dimensione")
+        )
+        if not dim_cliente:
+            criteri_verificati.append(
+                "Dimensione impresa: non verificabile (dato cliente assente)"
             )
-            if not dim_cliente:
-                criteri_verificati.append(
-                    "Dimensione impresa: non verificabile (dato cliente assente)"
-                )
-            elif dim_cliente.lower() not in {d.lower() for d in ammesse}:
-                ammissibile = False
-                motivi_esclusione.append(
-                    f"Dimensione '{dim_cliente}' non ammessa dal bando "
-                    f"(ammesse: {', '.join(ammesse)})"
-                )
-            else:
-                criteri_verificati.append(f"Dimensione impresa: OK ({dim_cliente})")
+        elif dim_cliente.lower() not in {d.lower() for d in ammesse}:
+            ammissibile = False
+            motivi_esclusione.append(
+                f"Dimensione '{dim_cliente}' non ammessa dal bando "
+                f"(ammesse: {', '.join(ammesse)})"
+            )
+        else:
+            criteri_verificati.append(f"Dimensione impresa: OK ({dim_cliente})")
 
     # Criterio 6: fatturato massimo
     fat_max = b.get("fatturato_max")

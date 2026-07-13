@@ -339,7 +339,16 @@ def _dashboard_payload() -> dict:
             try:
                 ammissibilita = check_ammissibilita(payload, cliente_row)
             except Exception:
-                ammissibilita = {"ammissibile": True, "motivi_esclusione": [], "criteri_verificati": []}
+                # #2 (audit Fable): NON fail-open. Un'eccezione nel controllo di
+                # esclusione non deve mai tradursi in "ammissibile" silenzioso —
+                # per uno strumento il cui valore è filtrare i clienti non
+                # eleggibili, un bug qui non può produrre un falso via libera.
+                ammissibilita = {
+                    "ammissibile": None,
+                    "motivi_esclusione": [],
+                    "criteri_verificati": [],
+                    "errore": True,
+                }
 
             matches.append({
                 "nome": m["cliente_nome"],
@@ -767,7 +776,13 @@ def api_cliente_bandi(cliente_id: int):
         try:
             ammissibilita = check_ammissibilita(payload, cliente)
         except Exception:
-            ammissibilita = {"ammissibile": True, "motivi_esclusione": [], "criteri_verificati": []}
+            # #2 (audit Fable): stesso principio della lista match — mai fail-open.
+            ammissibilita = {
+                "ammissibile": None,
+                "motivi_esclusione": [],
+                "criteri_verificati": [],
+                "errore": True,
+            }
         result.append({
             "bando_id": d["bando_id"],
             "titolo": d["titolo"],

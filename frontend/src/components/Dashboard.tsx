@@ -14,9 +14,12 @@ interface Breakdown {
 }
 
 interface Ammissibilita {
-  ammissibile: boolean
+  // #2 (audit Fable): null = verifica non riuscita (errore lato server) — non
+  // trattare come "ammissibile per default", controllare sempre `errore`.
+  ammissibile: boolean | null
   motivi_esclusione: string[]
   criteri_verificati: string[]
+  errore?: boolean
 }
 
 interface Match {
@@ -250,13 +253,18 @@ function BandoCardItem({
                 </p>
                 {card.matches.map((m, i) => {
                   const escluso = m.ammissibilita?.ammissibile === false
-                  const daVerificare = !escluso && m.breakdown.status === 'da_verificare'
+                  const erroreVerifica = m.ammissibilita?.errore === true
+                  const daVerificare = !escluso && !erroreVerifica && m.breakdown.status === 'da_verificare'
                   return (
                     <div key={i} className={`match-row${escluso ? ' match-excluded' : ''}`}>
                       <span className="match-row-name">{m.nome}</span>
                       <div className="match-row-right">
                         {escluso ? (
                           <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                        ) : erroreVerifica ? (
+                          <span className="badge badge-warning" title="Il controllo di ammissibilità non è riuscito per un errore tecnico: verifica manualmente i requisiti">
+                            Verifica non riuscita
+                          </span>
                         ) : daVerificare ? (
                           <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
                             ⚠️ Da verificare

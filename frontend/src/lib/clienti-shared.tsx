@@ -18,9 +18,13 @@ export interface Cliente {
 }
 
 export interface Ammissibilita {
-  ammissibile: boolean
+  // #2 (audit Fable): null = la verifica non è riuscita (errore lato server),
+  // da NON confondere con true/false. Va sempre controllato il flag `errore`
+  // prima di trattare un valore mancante come "ammissibile per default".
+  ammissibile: boolean | null
   motivi_esclusione: string[]
   criteri_verificati: string[]
+  errore?: boolean
 }
 
 export interface BandoMatch {

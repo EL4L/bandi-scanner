@@ -154,6 +154,55 @@ def test_get_dashboard_200(client, mock_db):
     assert "cards" in data
 
 
+def test_get_dashboard_check_ammissibilita_errore_non_fail_open(client):
+    """#2 (audit Fable): se check_ammissibilita solleva un'eccezione, l'esito
+    NON deve mai essere "ammissibile: true" (fail-open) — deve essere
+    ammissibile: null con flag errore, così il commercialista vede un
+    avviso di verifica fallita invece di un falso via libera."""
+    riga = {
+        "bando_id": 1, "bando_titolo": "Bando Test", "bando_ente": "Ente Test",
+        "data_scadenza": None, "json_completo": "{}", "scheda_cached": None,
+        "score": 80, "cliente_id": 1, "cliente_nome": "Cliente Test",
+        "cliente_codice_ateco": "62.01", "cliente_regione": "Lombardia",
+        "cliente_fatturato": 100000, "cliente_dimensione_impresa": "piccola",
+        "cliente_descrizione_attivita": "software", "cliente_data_costituzione": None,
+        "cliente_numero_dipendenti": None, "cliente_forma_giuridica": None,
+    }
+    with patch("main.count_bandi", return_value=1), \
+         patch("main.load_dashboard_rows", return_value=[riga]), \
+         patch("main.check_ammissibilita", side_effect=RuntimeError("errore interno")):
+        response = client.get("/api/dashboard")
+    assert response.status_code == 200
+    match = response.json()["cards"][0]["matches"][0]
+    assert match["ammissibilita"]["ammissibile"] is None
+    assert match["ammissibilita"]["errore"] is True
+
+
+# ---------------------------------------------------------------------------
+# GET /api/clienti/{id}/bandi
+# ---------------------------------------------------------------------------
+
+def test_get_cliente_bandi_check_ammissibilita_errore_non_fail_open(client, mock_db):
+    """#2 (audit Fable): stesso principio sull'endpoint di dettaglio cliente
+    (usato dalla pagina cliente del frontend)."""
+    mock_db.execute.return_value.fetchone.return_value = {
+        "id": 1, "ragione_sociale": "Cliente Test", "p_iva": "12345678901",
+        "codice_ateco": "62.01", "regione": "Lombardia", "fatturato": 100000,
+        "dimensione_impresa": "piccola", "descrizione_attivita": "software",
+        "data_costituzione": None, "numero_dipendenti": None, "forma_giuridica": None,
+    }
+    mock_db.execute.return_value.fetchall.return_value = [{
+        "score": 80, "bando_id": 1, "titolo": "Bando Test", "ente": "Ente Test",
+        "data_scadenza": None, "json_completo": "{}",
+    }]
+    with patch("main.check_ammissibilita", side_effect=RuntimeError("errore interno")):
+        response = client.get("/api/clienti/1/bandi")
+    assert response.status_code == 200
+    bando = response.json()["bandi"][0]
+    assert bando["ammissibilita"]["ammissibile"] is None
+    assert bando["ammissibilita"]["errore"] is True
+
+
 # ---------------------------------------------------------------------------
 # POST /api/bandi/recalc
 # ---------------------------------------------------------------------------
