@@ -296,6 +296,17 @@ export default function CaricaBando() {
       </div>
 
       {!result && (
+        <div className="ai-disclaimer">
+          <IconInfo />
+          <span>
+            Il testo del bando (un documento pubblico) viene inviato a un modello AI esterno per l'estrazione.
+            I dati dei tuoi clienti non vengono mai condivisi con provider esterni: restano nel sistema e il
+            confronto con i bandi è calcolato localmente.
+          </span>
+        </div>
+      )}
+
+      {!result && (
         <div className="carica-layout">
           <div className="carica-main">
             <input
