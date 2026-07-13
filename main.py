@@ -26,12 +26,15 @@ from pydantic import BaseModel
 from modules.database import (
     DIMENSIONI_IMPRESA,
     REGIONI_ITALIANE,
+    attach_pdf_to_bando,
     create_cliente,
     deduplica_bandi,
     delete_bando,
     delete_cliente,
     ensure_database,
+    compute_document_hash,
     find_duplicate_bando,
+    find_duplicate_bando_by_hash,
     get_cliente,
     get_connection,
     list_clienti,
@@ -261,7 +264,16 @@ def _dedupe_cards(cards: list[dict]) -> tuple[list[dict], int]:
             merged_matches = sorted(matches_by_cliente.values(), key=lambda m: m["score"], reverse=True)
             primary = dict(primary)
             primary["matches"] = merged_matches
-            primary["max_score"] = max((m["score"] for m in merged_matches), default=primary["max_score"])
+            eligible_scores = [
+                m["score"] for m in merged_matches
+                if m.get("ammissibilita", {}).get("ammissibile") is True
+                and m.get("breakdown", {}).get("status") != "da_verificare"
+            ]
+            primary["max_score"] = max(eligible_scores, default=0)
+            primary["nessun_cliente_ammissibile"] = bool(merged_matches) and all(
+                m.get("ammissibilita", {}).get("ammissibile") is False
+                for m in merged_matches
+            )
             primary["color_class"] = get_color_class(primary["max_score"])
         merged_cards.append(primary)
 
@@ -287,6 +299,7 @@ def _dashboard_payload() -> dict:
                 "data_scadenza": row["data_scadenza"],
                 "json_completo": row["json_completo"],
                 "scheda_cached": row.get("scheda_cached"),
+                "has_pdf": bool(row.get("has_pdf")),
                 "matches": [],
                 "max_score": row["score"],
             }
@@ -362,6 +375,17 @@ def _dashboard_payload() -> dict:
                 "ammissibilita": ammissibilita,
             })
 
+        eligible_scores = [
+            match["score"] for match in matches
+            if match.get("ammissibilita", {}).get("ammissibile") is True
+            and match.get("breakdown", {}).get("status") != "da_verificare"
+        ]
+        display_max_score = max(eligible_scores, default=0)
+        nessun_cliente_ammissibile = bool(matches) and all(
+            match.get("ammissibilita", {}).get("ammissibile") is False
+            for match in matches
+        )
+
         scadenza_grezza_card = info.get("data_scadenza")
         cards.append({
             "id": bid,
@@ -371,12 +395,15 @@ def _dashboard_payload() -> dict:
             "scadenza": scad_fmt,
             "giorni_alla_scadenza": giorni_alla_scadenza(scadenza_grezza_card),
             "urgenza": calcola_urgenza(scadenza_grezza_card),
-            "max_score": max_sc,
-            "color_class": get_color_class(max_sc),
+            "max_score": display_max_score,
+            "raw_max_score": max_sc,
+            "nessun_cliente_ammissibile": nessun_cliente_ammissibile,
+            "color_class": get_color_class(display_max_score),
             "has_constraints": bando_has_constraints(payload),
             "matches": matches,
             "scheda": _scheda_or_cached(payload, info.get("scheda_cached")),
             "fonte_url": get_fonte_url(payload),
+            "has_pdf": info["has_pdf"],
         })
 
     cards, duplicates_count = _dedupe_cards(cards)
@@ -427,7 +454,12 @@ def api_recalc_matches():
 def api_bandi_list():
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT id, titolo, ente, data_scadenza, contributo_max, regioni FROM bandi ORDER BY id DESC"
+            """
+            SELECT id, titolo, ente, data_scadenza, contributo_max, regioni,
+                   (pdf_original IS NOT NULL) AS has_pdf
+            FROM bandi
+            ORDER BY id DESC
+            """
         ).fetchall()
     result = []
     for row in rows:
@@ -479,6 +511,42 @@ def api_bando_delete(bando_id: int):
     if not deleted:
         return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
     return {"status": "ok"}
+
+
+@app.get("/api/bandi/{bando_id}/pdf", dependencies=[Depends(verify_api_key)])
+def api_download_pdf_originale(bando_id: int):
+    """Scarica il documento originale senza esporre il BYTEA nelle API JSON."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT pdf_original, pdf_filename FROM bandi WHERE id = %s",
+            (bando_id,),
+        ).fetchone()
+    if not row:
+        return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
+    if row["pdf_original"] is None:
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "PDF originale non disponibile: ricarica il documento per associarlo al bando."},
+        )
+
+    pdf_bytes = bytes(row["pdf_original"])
+    if not pdf_bytes.startswith(PDF_MAGIC):
+        return JSONResponse(status_code=500, content={"detail": "PDF originale non valido"})
+
+    original_name = Path(row["pdf_filename"] or f"Bando_{bando_id}.pdf").name
+    safe_name = re.sub(r"[^A-Za-z0-9._-]+", "_", original_name).strip("._")
+    if not safe_name:
+        safe_name = f"Bando_{bando_id}.pdf"
+    if not safe_name.lower().endswith(".pdf"):
+        safe_name += ".pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}"',
+            "Content-Length": str(len(pdf_bytes)),
+        },
+    )
 
 
 @app.get("/api/bandi/{bando_id}/scheda", dependencies=[Depends(verify_api_key)])
@@ -535,7 +603,13 @@ def api_download_scheda(bando_id: int):
 PDF_MAGIC = b"%PDF"
 
 
-def _process_and_save_bando(text: str, source_label: str) -> dict:
+def _process_and_save_bando(
+    text: str,
+    source_label: str,
+    source_url: str | None = None,
+    pdf_bytes: bytes | None = None,
+    pdf_filename: str | None = None,
+) -> dict:
     """Pipeline condivisa post-estrazione testo: LLM -> validazione -> dedup
     -> salvataggio -> matching. Usata sia da /api/estrazione (upload PDF)
     sia da /api/estrazione-url (#16), per non duplicare questa logica.
@@ -547,16 +621,43 @@ def _process_and_save_bando(text: str, source_label: str) -> dict:
     frontend, che legge solo i campi che già conosce.
     """
     result: dict = {"raw_text_preview": text[:1000]}
+    document_hash = compute_document_hash(text)
+    try:
+        existing_hash_id = find_duplicate_bando_by_hash(document_hash)
+    except Exception as exc:
+        log_error(f"_process_and_save_bando: controllo hash '{source_label}' fallito: {exc}")
+        existing_hash_id = None
+    if existing_hash_id:
+        try:
+            attach_pdf_to_bando(existing_hash_id, pdf_bytes, pdf_filename)
+        except Exception as exc:
+            log_error(f"_process_and_save_bando: associazione PDF duplicato #{existing_hash_id} fallita: {exc}")
+        result.update({
+            "status": "duplicato",
+            "messaggio": "Questo documento è già presente in archivio",
+            "bando_id": existing_hash_id,
+        })
+        return result
     try:
         raw_data = extract_bando_data(text)
         validation = validate_bando(raw_data, raw_text=text)
         data = validation["data"]
         bando_info = data.get("bando", {})
 
+        # La provenienza non va inferita dal contenuto del PDF: un URL scritto
+        # nel documento può essere una home page generica o persino inventato.
+        # Conserviamo invece l'indirizzo effettivamente usato dall'utente per
+        # l'estrazione da URL; per un file locale l'origine resta sconosciuta.
+        if isinstance(bando_info, dict):
+            bando_info["link_fonte_ufficiale"] = None
+            bando_info["url_documento_origine"] = source_url
+
         result["data"] = data
         result["bando_info"] = bando_info
         result["warnings"] = validation.get("warnings", [])
         result["errors"] = validation.get("errors", [])
+        result["null_percentage"] = validation.get("null_percentage", 0)
+        result["needs_manual_review"] = validation.get("needs_manual_review", False)
 
         if bando_info.get("ateco_aperto_a_tutti") is False:
             escl = bando_info.get("note_esclusioni", {})
@@ -570,6 +671,7 @@ def _process_and_save_bando(text: str, source_label: str) -> dict:
             try:
                 existing_id = find_duplicate_bando(bando_info.get("titolo"), bando_info.get("ente"))
                 if existing_id:
+                    attach_pdf_to_bando(existing_id, pdf_bytes, pdf_filename)
                     result["status"] = "duplicato"
                     result["messaggio"] = "Bando già presente in archivio"
                     result["bando_id"] = existing_id
@@ -577,14 +679,18 @@ def _process_and_save_bando(text: str, source_label: str) -> dict:
                     return result
 
                 scheda = genera_scheda(data)
-                bando_id = save_bando_from_json(data, scheda=scheda)
+                bando_id = save_bando_from_json(
+                    data,
+                    scheda=scheda,
+                    document_hash=document_hash,
+                    pdf_bytes=pdf_bytes,
+                    pdf_filename=pdf_filename,
+                )
                 with get_connection() as conn:
                     run_matching_for_bando(bando_id, conn)
 
                 result["bando_id"] = bando_id
                 result["scadenza_estratta"] = bando_info.get("data_scadenza")
-                result["null_percentage"] = validation.get("null_percentage", 0)
-
                 ok_fields, null_fields = fields_status(data)
                 log_prompt_run(filename=source_label, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
 
@@ -645,7 +751,12 @@ def api_estrazione_submit(file: UploadFile = File(...)):
                 "errors": ["Il PDF risulta corrotto o non leggibile. Verifica il file e riprova."]
             })
 
-        result.update(_process_and_save_bando(text, safe_name))
+        result.update(_process_and_save_bando(
+            text,
+            safe_name,
+            pdf_bytes=file_bytes,
+            pdf_filename=safe_name,
+        ))
         return result
     finally:
         file_path.unlink(missing_ok=True)
@@ -673,7 +784,9 @@ def api_estrazione_url_submit(payload: EstrazioneUrlIn):
             "errors": ["Impossibile scaricare la pagina. Verifica il link e riprova."]
         })
 
-    filename = urlparse(final_url).hostname or payload.url
+    url_filename = Path(urlparse(final_url).path).name
+    pdf_filename = url_filename if url_filename.lower().endswith(".pdf") else "bando.pdf"
+    filename = pdf_filename if content_bytes.startswith(PDF_MAGIC) or "application/pdf" in content_type else (urlparse(final_url).hostname or payload.url)
     result = {"filename": filename, "size_kb": len(content_bytes) / 1024}
 
     is_pdf = content_bytes.startswith(PDF_MAGIC) or "application/pdf" in content_type
@@ -711,7 +824,13 @@ def api_estrazione_url_submit(payload: EstrazioneUrlIn):
         if file_path is not None:
             file_path.unlink(missing_ok=True)
 
-    result.update(_process_and_save_bando(text, filename))
+    result.update(_process_and_save_bando(
+        text,
+        filename,
+        source_url=final_url,
+        pdf_bytes=content_bytes if is_pdf else None,
+        pdf_filename=pdf_filename if is_pdf else None,
+    ))
     return result
 
 
@@ -734,8 +853,45 @@ class ClienteIn(BaseModel):
 
 @app.get("/api/clienti", dependencies=[Depends(verify_api_key)])
 def api_clienti_list():
+    clienti = list_clienti()
+    if clienti:
+        clienti_by_id = {int(cliente["id"]): cliente for cliente in clienti}
+        with get_connection() as conn:
+            match_rows = conn.execute(
+                """
+                SELECT mr.cliente_id, mr.bando_id, b.json_completo
+                FROM match_results mr
+                JOIN bandi b ON b.id = mr.bando_id
+                WHERE mr.score > 0
+                """
+            ).fetchall()
+
+        bandi_ammissibili: dict[int, set[int]] = defaultdict(set)
+        for row in match_rows:
+            cliente_id = int(row["cliente_id"])
+            cliente = clienti_by_id.get(cliente_id)
+            if cliente is None:
+                continue
+            try:
+                payload = json.loads(row["json_completo"])
+                ammissibilita = check_ammissibilita(payload, cliente)
+                breakdown = get_score_breakdown(payload, cliente)
+            except Exception as exc:
+                # Fail-closed: un controllo non riuscito non può aumentare il
+                # numero di bandi dichiarati realmente compatibili.
+                log_error(f"api_clienti_list: verifica match cliente #{cliente_id} fallita: {exc}")
+                continue
+            if (
+                ammissibilita.get("ammissibile") is True
+                and breakdown.get("status") != "da_verificare"
+            ):
+                bandi_ammissibili[cliente_id].add(int(row["bando_id"]))
+
+        for cliente_id, cliente in clienti_by_id.items():
+            cliente["match_count"] = len(bandi_ammissibili.get(cliente_id, set()))
+
     return {
-        "clienti": list_clienti(),
+        "clienti": clienti,
         "regioni": REGIONI_ITALIANE,
         "dimensioni": DIMENSIONI_IMPRESA,
     }
@@ -757,7 +913,8 @@ def api_cliente_bandi(cliente_id: int):
     with get_connection() as conn:
         rows = conn.execute(
             """
-            SELECT mr.score, b.id AS bando_id, b.titolo, b.ente, b.data_scadenza, b.json_completo
+            SELECT mr.score, b.id AS bando_id, b.titolo, b.ente, b.data_scadenza,
+                   b.json_completo, (b.pdf_original IS NOT NULL) AS has_pdf
             FROM match_results mr
             JOIN bandi b ON b.id = mr.bando_id
             WHERE mr.cliente_id = %s AND mr.score > 0
@@ -793,6 +950,7 @@ def api_cliente_bandi(cliente_id: int):
             "giorni_alla_scadenza": giorni_alla_scadenza(d.get("data_scadenza")),
             "ammissibilita": ammissibilita,
             "fonte_url": get_fonte_url(payload),
+            "has_pdf": bool(d.get("has_pdf")),
         })
     return {"cliente_id": cliente_id, "bandi": result}
 

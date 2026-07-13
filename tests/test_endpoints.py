@@ -37,6 +37,33 @@ def test_get_clienti_lista_vuota(client):
     assert response.json()["clienti"] == []
 
 
+def test_get_clienti_conta_solo_bandi_realmente_ammissibili(client, mock_db, cliente_matching):
+    import json as jsonlib
+
+    cliente = {**cliente_matching, "match_count": 99}
+    dimensioni_base = {"micro": False, "piccola": False, "media": False, "grande": False}
+    ammissibile = {"bando": {
+        "regioni_ammesse": ["Lombardia"],
+        "dimensione_impresa": {**dimensioni_base, "piccola": True},
+    }}
+    non_ammissibile = {"bando": {
+        "regioni_ammesse": ["Lombardia"],
+        "dimensione_impresa": {**dimensioni_base, "grande": True},
+    }}
+    da_verificare = {"bando": {}}
+    mock_db.execute.return_value.fetchall.return_value = [
+        {"cliente_id": cliente["id"], "bando_id": 10, "json_completo": jsonlib.dumps(ammissibile)},
+        {"cliente_id": cliente["id"], "bando_id": 11, "json_completo": jsonlib.dumps(non_ammissibile)},
+        {"cliente_id": cliente["id"], "bando_id": 12, "json_completo": jsonlib.dumps(da_verificare)},
+    ]
+
+    with patch("main.list_clienti", return_value=[cliente]):
+        response = client.get("/api/clienti")
+
+    assert response.status_code == 200
+    assert response.json()["clienti"][0]["match_count"] == 1
+
+
 # ---------------------------------------------------------------------------
 # POST /api/clienti — validazione
 # ---------------------------------------------------------------------------
@@ -103,6 +130,33 @@ def test_get_bandi_200(client):
     assert "bandi" in response.json()
 
 
+def test_download_pdf_originale(client, mock_db):
+    pdf = b"%PDF-1.7\ncontenuto originale"
+    mock_db.execute.return_value.fetchone.return_value = {
+        "pdf_original": pdf,
+        "pdf_filename": "../Bando prova.pdf",
+    }
+
+    response = client.get("/api/bandi/7/pdf")
+
+    assert response.status_code == 200
+    assert response.content == pdf
+    assert response.headers["content-type"] == "application/pdf"
+    assert response.headers["content-disposition"] == 'attachment; filename="Bando_prova.pdf"'
+
+
+def test_download_pdf_originale_non_disponibile(client, mock_db):
+    mock_db.execute.return_value.fetchone.return_value = {
+        "pdf_original": None,
+        "pdf_filename": None,
+    }
+
+    response = client.get("/api/bandi/7/pdf")
+
+    assert response.status_code == 404
+    assert "non disponibile" in response.json()["detail"]
+
+
 # ---------------------------------------------------------------------------
 # GET /api/clienti/{id}/bandi
 # ---------------------------------------------------------------------------
@@ -115,7 +169,7 @@ def test_get_cliente_bandi_include_ammissibilita_e_fonte_url(client, mock_db, cl
             "titolo": "Bando Grandi Imprese",
             "ente": "MIMIT",
             "dimensione_impresa": {"micro": False, "piccola": False, "media": False, "grande": True},
-            "link_fonte_ufficiale": "https://www.mimit.gov.it/bando",
+            "url_documento_origine": "https://www.mimit.gov.it/bando",
         }
     }
     row = {
@@ -137,7 +191,9 @@ def test_get_cliente_bandi_include_ammissibilita_e_fonte_url(client, mock_db, cl
     entry = data["bandi"][0]
     assert "ammissibilita" in entry
     assert entry["ammissibilita"]["ammissibile"] is False
+    assert entry["ammissibilita"]["motivi_esclusione"]
     assert entry["fonte_url"] == "https://www.mimit.gov.it/bando"
+    assert entry["has_pdf"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -176,6 +232,36 @@ def test_get_dashboard_check_ammissibilita_errore_non_fail_open(client):
     match = response.json()["cards"][0]["matches"][0]
     assert match["ammissibilita"]["ammissibile"] is None
     assert match["ammissibilita"]["errore"] is True
+
+
+def test_get_dashboard_non_mostra_score_positivo_se_tutti_sono_esclusi(client):
+    import json as jsonlib
+
+    payload = {"bando": {
+        "titolo": "Bando solo micro",
+        "dimensione_impresa": {
+            "micro": True, "piccola": False, "media": False, "grande": False,
+        },
+    }}
+    riga = {
+        "bando_id": 1, "bando_titolo": "Bando solo micro", "bando_ente": "Ente Test",
+        "data_scadenza": None, "json_completo": jsonlib.dumps(payload), "scheda_cached": None,
+        "score": 55, "cliente_id": 1, "cliente_nome": "Cliente Piccolo",
+        "cliente_codice_ateco": "62.01", "cliente_regione": "Lazio",
+        "cliente_fatturato": 100000, "cliente_dimensione_impresa": "piccola",
+        "cliente_descrizione_attivita": "software", "cliente_data_costituzione": None,
+        "cliente_numero_dipendenti": None, "cliente_forma_giuridica": "srl",
+    }
+    with patch("main.count_bandi", return_value=1), \
+         patch("main.load_dashboard_rows", return_value=[riga]):
+        response = client.get("/api/dashboard")
+
+    assert response.status_code == 200
+    card = response.json()["cards"][0]
+    assert card["raw_max_score"] == 55
+    assert card["max_score"] == 0
+    assert card["nessun_cliente_ammissibile"] is True
+    assert card["matches"][0]["ammissibilita"]["motivi_esclusione"]
 
 
 # ---------------------------------------------------------------------------
@@ -410,7 +496,7 @@ def test_post_estrazione_successo(client, mock_db):
     with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
          patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
          patch("main.find_duplicate_bando", return_value=None), \
-         patch("main.save_bando_from_json", return_value=123), \
+         patch("main.save_bando_from_json", return_value=123) as mock_save, \
          patch("main.run_matching_for_bando"):
         response = client.post(
             "/api/estrazione",
@@ -421,6 +507,11 @@ def test_post_estrazione_successo(client, mock_db):
     assert data["bando_id"] == 123
     assert "scheda" in data
     assert data["errors"] == []
+    saved = mock_save.call_args.args[0]
+    assert saved["bando"]["link_fonte_ufficiale"] is None
+    assert saved["bando"]["url_documento_origine"] is None
+    assert mock_save.call_args.kwargs["pdf_bytes"] == VALID_PDF_BYTES
+    assert mock_save.call_args.kwargs["pdf_filename"] == "bando.pdf"
 
 
 def test_post_estrazione_duplicato(client, mock_db):
@@ -435,6 +526,21 @@ def test_post_estrazione_duplicato(client, mock_db):
     data = response.json()
     assert data["status"] == "duplicato"
     assert data["bando_id"] == 42
+
+
+def test_post_estrazione_stesso_documento_bloccato_prima_del_modello(client, mock_db):
+    with patch("main.extract_text_from_pdf", return_value="testo identico del bando " * 10), \
+         patch("main.find_duplicate_bando_by_hash", return_value=77), \
+         patch("main.extract_bando_data") as mock_extract:
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("stesso-bando.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "duplicato"
+    assert response.json()["bando_id"] == 77
+    mock_extract.assert_not_called()
 
 
 def test_post_estrazione_json_invalido_dal_llm(client):
@@ -516,7 +622,7 @@ def test_post_estrazione_url_successo_html(client, mock_db):
          patch("main.extract_text_from_html", return_value="testo del bando " * 10), \
          patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
          patch("main.find_duplicate_bando", return_value=None), \
-         patch("main.save_bando_from_json", return_value=321), \
+         patch("main.save_bando_from_json", return_value=321) as mock_save, \
          patch("main.run_matching_for_bando"):
         response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando"})
     assert response.status_code == 200
@@ -524,6 +630,8 @@ def test_post_estrazione_url_successo_html(client, mock_db):
     assert data["bando_id"] == 321
     assert data["filename"] == "esempio.it"
     assert "scheda" in data
+    assert mock_save.call_args.kwargs["pdf_bytes"] is None
+    assert mock_save.call_args.kwargs["pdf_filename"] is None
 
 
 def test_post_estrazione_url_successo_pdf_diretto(client, mock_db):
@@ -534,13 +642,18 @@ def test_post_estrazione_url_successo_pdf_diretto(client, mock_db):
          patch("main.extract_text_from_html") as mock_html, \
          patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
          patch("main.find_duplicate_bando", return_value=None), \
-         patch("main.save_bando_from_json", return_value=99), \
+         patch("main.save_bando_from_json", return_value=99) as mock_save, \
          patch("main.run_matching_for_bando"):
         response = client.post("/api/estrazione-url", json={"url": "https://esempio.it/bando.pdf"})
     assert response.status_code == 200
     data = response.json()
     assert data["bando_id"] == 99
     mock_html.assert_not_called()
+    saved = mock_save.call_args.args[0]
+    assert saved["bando"]["link_fonte_ufficiale"] is None
+    assert saved["bando"]["url_documento_origine"] == "https://esempio.it/bando.pdf"
+    assert mock_save.call_args.kwargs["pdf_bytes"] == VALID_PDF_BYTES
+    assert mock_save.call_args.kwargs["pdf_filename"] == "bando.pdf"
 
 
 def test_post_estrazione_url_duplicato(client, mock_db):

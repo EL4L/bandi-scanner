@@ -198,6 +198,22 @@ def test_genera_scheda_contiene_disclaimer():
     assert "fonte ufficiale" in result.lower()
 
 
+def test_genera_scheda_mostra_solo_origine_verificata_dalla_pipeline():
+    legacy = {"bando": {
+        "titolo": "Bando Test",
+        "link_fonte_ufficiale": "https://example.org/home-generica",
+    }}
+    assert "home-generica" not in genera_scheda(legacy)
+
+    da_url = {"bando": {
+        "titolo": "Bando Test",
+        "url_documento_origine": "https://example.org/bando.pdf",
+    }}
+    result = genera_scheda(da_url)
+    assert "## Documento di origine" in result
+    assert "https://example.org/bando.pdf" in result
+
+
 def test_genera_scheda_note_esclusioni_dict():
     bando = {"bando": {
         "titolo": "Bando Test",
@@ -209,9 +225,10 @@ def test_genera_scheda_note_esclusioni_dict():
     }}
     result = genera_scheda(bando)
     assert "## Esclusioni" in result
-    assert "Escluse le imprese agricole" in result
-    assert "Sezioni ATECO escluse:** A, K" in result
-    assert "Attività vietate:** Gioco d'azzardo" in result
+    assert "Escluse le imprese agricole" not in result
+    assert "Sez. A – Agricoltura, silvicoltura e pesca" in result
+    assert "Sez. K – Attività finanziarie e assicurative" in result
+    assert "### Attività vietate\n\n- Gioco d'azzardo" in result
 
 
 def test_genera_scheda_note_esclusioni_stringa():
@@ -313,7 +330,7 @@ def test_genera_scheda_percentuale_assente_non_mostra_sezione_vuota():
 def test_genera_scheda_modalita_presentazione():
     bando = {"bando": {"titolo": "Bando Test", "modalita_presentazione": "click_day"}}
     result = genera_scheda(bando)
-    assert "Modalità di presentazione:** Click day" in result
+    assert "**Presentazione:** Click day" in result
 
 
 def test_genera_scheda_modalita_presentazione_none_non_mostrata():
@@ -337,7 +354,218 @@ def test_genera_scheda_cumulabilita_tra_virgolette():
         "cumulabilita": "Non cumulabile con altre misure a valere sullo stesso investimento",
     }}
     result = genera_scheda(bando)
-    assert "Cumulabilità:** “Non cumulabile con altre misure a valere sullo stesso investimento”" in result
+    assert "Cumulabilità:** Non cumulabile sul medesimo investimento" in result
+
+
+def test_genera_scheda_agevolazione_finanziamento_non_mostra_fonti_interne():
+    bando = {"bando": {
+        "titolo": "Nuovo Fondo Futuro",
+        "agevolazioni": [{
+            "tipo": "finanziamento_agevolato",
+            "importo_min": 5000,
+            "importo_max": 25000,
+            "tasso_interesse_percentuale": 0,
+            "durata_mesi": 72,
+            "rimborso_richiesto": True,
+            "fonti": [{"pagina": 6, "testo": "importo massimo: 25.000 euro"}],
+        }],
+    }}
+    result = genera_scheda(bando)
+    assert "**Finanziamento agevolato**" in result
+    assert "Importo massimo del finanziamento: € 25.000" in result
+    assert "Durata: 72 mesi" in result
+    assert "Rimborso richiesto: sì" in result
+    assert "Fonte:" not in result
+    assert "pag. 6" not in result
+
+
+def test_genera_scheda_mostra_descrizione_sezioni_e_settori_esclusi():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": None,
+            "sezioni_ateco_escluse": ["K"],
+            "attivita_vietate": ["attività immobiliari", "gioco d'azzardo"],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "Sez. K – Attività finanziarie e assicurative" in result
+    assert "### Settori esclusi\n\n- Attività immobiliari" in result
+    assert "### Attività vietate\n\n- Gioco d'azzardo" in result
+
+
+def test_genera_scheda_riassume_settori_senza_inventare_lettere_ateco():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": None,
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": ["attività finanziarie", "attività di sviluppo immobiliare"],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "### Settori esclusi\n\n- Attività finanziarie\n- Attività immobiliari" in result
+    assert "Sez. K" not in result
+    assert "Sez. L" not in result
+
+
+def test_genera_scheda_sintetizza_condizioni_verbose_nelle_esclusioni_di_settore():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": None,
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": [
+                "attività finanziarie quali acquisto o negoziazione di strumenti finanziari",
+                "sviluppo immobiliare con unico scopo di rinnovo, rilocazione o rivendita",
+            ],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "Attività finanziarie" in result
+    assert "acquisto o negoziazione di strumenti finanziari" not in result
+    assert "Attività immobiliari" in result
+    assert "Sviluppo immobiliare speculativo" in result
+    assert "unico scopo di rinnovo" not in result
+
+
+def test_genera_scheda_sintetizza_spese_ammissibili_in_categorie_atomiche():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "spese_ammissibili": [
+            "Acquisto di arredi, impianti, macchinari e attrezzature",
+            "Acquisto di mezzi targati solo se beni strumentali",
+            "Acquisto di software",
+            "Acquisto brevetti, realizzazione sistema di qualità, certificazione e realizzazione sito web",
+            "Opere per adeguamento funzionale e ristrutturazione della sede operativa",
+            "IVA e imposta di bollo",
+            "Servizi di accompagnamento alla realizzazione",
+        ],
+    }}
+    result = genera_scheda(bando)
+    for label in (
+        "Arredi", "Impianti", "Macchinari", "Attrezzature", "Mezzi targati",
+        "Software", "Brevetti", "Certificazioni di qualità", "Realizzazione sito web",
+        "Adeguamento funzionale sede operativa", "Ristrutturazione sede operativa",
+        "IVA", "Imposta di bollo", "Servizi di accompagnamento alla realizzazione",
+    ):
+        assert f"- {label}" in result
+    assert "Acquisto di arredi, impianti" not in result
+
+
+def test_genera_scheda_sintetizza_attivita_vietate_in_categorie():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": None,
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": [
+                "attività finanziarie",
+                "attività immobiliari",
+                "produzione e commercio di tabacco, salvo i bar tabacchi",
+                "case da gioco e gioco d'azzardo su Internet",
+                "pornografia e commercio sessuale e relative infrastrutture",
+                "produzione e commercio di armi e munizioni",
+                "energia nucleare",
+                "produzione primaria di prodotti agricoli, pesca e acquacoltura",
+                "sviluppo immobiliare con unico scopo di rinnovo o rivendita",
+            ],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "### Settori esclusi\n\n- Attività finanziarie\n- Attività immobiliari" in result
+    for label in (
+        "Tabacco (salvo bar tabacchi)", "Gioco d'azzardo",
+        "Pornografia e commercio sessuale", "Armi e munizioni", "Energia nucleare",
+        "Pesca e acquacoltura", "Attività agricole primarie",
+        "Sviluppo immobiliare speculativo",
+    ):
+        assert f"- {label}" in result
+    assert "relative infrastrutture" not in result
+
+
+def test_genera_scheda_esclusioni_in_blocchi_schematici_senza_paragrafo_duplicato():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "note_esclusioni": {
+            "lista_testuale": "Lungo riepilogo duplicato delle esclusioni",
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": ["tabacco"],
+            "soggetti_esclusi": ["imprese in liquidazione"],
+            "spese_non_ammissibili": ["beni usati"],
+            "altre_esclusioni": ["progetti già conclusi"],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "Lungo riepilogo duplicato" not in result
+    assert "### Attività vietate\n\n- Tabacco" in result
+    assert "### Soggetti esclusi\n\n- imprese in liquidazione" in result
+    assert "### Spese non ammissibili\n\n- beni usati" in result
+    assert "### Altre esclusioni\n\n- progetti già conclusi" in result
+
+
+def test_genera_scheda_mostra_tutte_le_spese_e_le_esclusioni_deduplicate():
+    bando = {"bando": {
+        "titolo": "Bando sintetico",
+        "spese_ammissibili": [f"Categoria di spesa {index}" for index in range(10)],
+        "note_esclusioni": {
+            "lista_testuale": None,
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": [],
+            "soggetti_esclusi": [f"Condizione soggettiva {index}" for index in range(9)],
+            "spese_non_ammissibili": [],
+            "altre_esclusioni": [],
+        },
+    }}
+    result = genera_scheda(bando)
+    assert "Categoria di spesa 9" in result
+    assert "Condizione soggettiva 8" in result
+    assert "ulteriori voci" not in result
+
+
+def test_genera_scheda_compatta_forme_giuridiche_equivalenti():
+    bando = {"bando": {
+        "titolo": "Bando sintetico",
+        "forme_giuridiche_ammesse": [
+            "Liberi Professionisti", "Libero professionista",
+            "Ditte individuali", "Ditta individuale",
+            "Società a responsabilità limitata (S.r.l)",
+            "Società a responsabilità limitata",
+            "Società a responsabilità limitata semplificata (S.r.l.s.)",
+        ],
+    }}
+    result = genera_scheda(bando)
+    assert (
+        "**Forme giuridiche:** Liberi professionisti, Ditte individuali, S.r.l., S.r.l.s."
+        in result
+    )
+
+
+def test_genera_scheda_se_ha_spese_non_ripete_attivita_ammesse():
+    bando = {"bando": {
+        "titolo": "Bando sintetico",
+        "attivita_ammesse": ["Acquisto macchinari", "Digitalizzazione"],
+        "spese_ammissibili": ["Macchinari", "Software"],
+    }}
+    result = genera_scheda(bando)
+    assert "## Spese ammissibili" in result
+    assert "### Interventi ammessi" not in result
+    assert "Digitalizzazione" not in result
+
+
+def test_genera_scheda_distingue_promotore_e_gestore():
+    bando = {"bando": {
+        "titolo": "Bando Test",
+        "ente": "Regione Lazio",
+        "enti_coinvolti": [
+            {"nome": "Banca Nazionale del Lavoro", "ruolo": "gestore"},
+            {"nome": "Mediocredito Centrale", "ruolo": "gestore"},
+        ],
+    }}
+    result = genera_scheda(bando)
+    assert "**Ente promotore:** Regione Lazio" in result
+    assert "**Gestore:** Banca Nazionale del Lavoro" in result
+    assert "**Gestore:** Mediocredito Centrale" in result
 
 
 def test_genera_scheda_cumulabilita_assente_non_mostrata():

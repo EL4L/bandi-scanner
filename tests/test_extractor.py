@@ -23,16 +23,22 @@ from modules.extractor import (
     _call_llm_api,
     _clean_json_response,
     _is_retryable_api_error,
+    _merge_partial_results,
+    _split_text_chunks,
     _tronca_testo,
     extract_bando_data,
     extract_text_from_pdf,
 )
-from modules.schema import MAX_TEXT_CHARS
+from modules.schema import MAX_TEXT_CHARS, normalize_response
 
 
 # ---------------------------------------------------------------------------
-# D-1: troncamento testo
+# D-1: limite testo (250.000 caratteri)
 # ---------------------------------------------------------------------------
+
+def test_limite_testo_impostato_a_250000_caratteri():
+    assert MAX_TEXT_CHARS == 250_000
+
 
 def test_tronca_testo_sotto_soglia_non_modifica():
     testo = "x" * 100
@@ -226,6 +232,7 @@ def test_extract_text_from_pdf_estrae_testo(tmp_path):
     doc.close()
     testo = extract_text_from_pdf(str(path))
     assert "Testo di prova" in testo
+    assert "--- PAGINA 1 ---" in testo
 
 
 def test_extract_text_from_pdf_troppe_pagine(tmp_path):
@@ -282,3 +289,107 @@ def test_extract_bando_data_json_non_valido():
     with patch("modules.extractor._call_llm_api", return_value="questo non e' json"):
         with pytest.raises(InvalidJSONResponse):
             extract_bando_data("testo del bando")
+
+
+def test_extract_bando_data_json_primario_non_valido_attiva_fallback():
+    payload_ok = '{"bando": {"titolo": "JSON valido dal fallback"}}'
+
+    def side_effect(prompt, model=LLM_MODEL):
+        if model == LLM_MODEL:
+            return '{"bando": {"titolo": "JSON troncato",}'
+        return payload_ok
+
+    with patch("modules.extractor._call_llm_api", side_effect=side_effect) as mock_call:
+        result = extract_bando_data("testo del bando")
+    assert result["bando"]["titolo"] == "JSON valido dal fallback"
+    assert mock_call.call_count == 2
+    assert mock_call.call_args_list[1].kwargs["model"] == LLM_FALLBACK_MODEL
+
+
+# ---------------------------------------------------------------------------
+# Documenti lunghi: chunking e consolidamento senza perdita
+# ---------------------------------------------------------------------------
+
+def test_split_text_chunks_copre_tutto_il_testo_senza_troncamento():
+    from modules import extractor
+
+    tokens = [f"RIGA-{index:04d}" for index in range(120)]
+    testo = "\n".join(tokens)
+    with patch.object(extractor, "MAX_TEXT_CHARS", 250):
+        with patch.object(extractor, "EXTRACTION_CHUNK_CHARS", 180):
+            with patch.object(extractor, "EXTRACTION_CHUNK_OVERLAP", 20):
+                chunks = _split_text_chunks(testo)
+    assert len(chunks) > 1
+    assert all(len(chunk) <= 180 for chunk in chunks)
+    assert all(any(token in chunk for chunk in chunks) for token in tokens)
+    assert chunks[0].startswith(tokens[0])
+    assert chunks[-1].endswith(tokens[-1])
+
+
+def test_extract_bando_data_lungo_usa_blocchi_e_registra_copertura_completa():
+    from modules import extractor
+
+    testo = "\n".join(f"RIGA-{index:04d}" for index in range(80))
+    partial = normalize_response({"bando": {"titolo": "Parziale"}})
+    consolidated = normalize_response({"bando": {"titolo": "Consolidato"}})
+    with patch.object(extractor, "MAX_TEXT_CHARS", 200):
+        with patch.object(extractor, "EXTRACTION_CHUNK_CHARS", 150):
+            with patch.object(extractor, "EXTRACTION_CHUNK_OVERLAP", 15):
+                with patch("modules.extractor._extract_single_chunk", return_value=partial) as extract_mock:
+                    with patch("modules.extractor._consolidate_partial_results", return_value=consolidated):
+                        result = extract_bando_data(testo)
+    assert extract_mock.call_count > 1
+    coverage = result["bando"]["copertura_estrazione"]
+    assert coverage == {
+        "caratteri_totali": len(testo),
+        "caratteri_analizzati": len(testo),
+        "numero_blocchi": extract_mock.call_count,
+        "completa": True,
+    }
+
+
+def test_chunking_scattata_prima_del_limite_documento_250mila():
+    from modules import extractor
+
+    testo = "X" * 500
+    partial = normalize_response({"bando": {"titolo": "Parziale"}})
+    consolidated = normalize_response({"bando": {"titolo": "Consolidato"}})
+    with patch.object(extractor, "MAX_TEXT_CHARS", 250_000), \
+         patch.object(extractor, "EXTRACTION_CHUNK_CHARS", 180), \
+         patch.object(extractor, "EXTRACTION_CHUNK_OVERLAP", 10), \
+         patch("modules.extractor._extract_single_chunk", return_value=partial) as extract_mock, \
+         patch("modules.extractor._consolidate_partial_results", return_value=consolidated):
+        result = extract_bando_data(testo)
+    assert extract_mock.call_count > 1
+    assert result["bando"]["copertura_estrazione"]["caratteri_analizzati"] == 500
+
+
+def test_merge_deterministico_unisce_agevolazioni_ed_esclusioni():
+    first = normalize_response({"bando": {
+        "titolo": "Bando Test",
+        "agevolazioni": [{"tipo": "finanziamento_agevolato", "importo_max": 25000}],
+        "note_esclusioni": {"sezioni_ateco_escluse": ["K"]},
+    }})
+    second = normalize_response({"bando": {
+        "agevolazioni": [{"tipo": "fondo_perduto", "importo_max": 10000}],
+        "note_esclusioni": {"sezioni_ateco_escluse": ["L"]},
+    }})
+    merged = _merge_partial_results([first, second])["bando"]
+    assert {item["tipo"] for item in merged["agevolazioni"]} == {
+        "finanziamento_agevolato", "fondo_perduto",
+    }
+    assert merged["note_esclusioni"]["sezioni_ateco_escluse"] == ["K", "L"]
+
+
+def test_merge_deterministico_completa_lo_stesso_finanziamento_senza_duplicarlo():
+    first = normalize_response({"bando": {"agevolazioni": [{
+        "tipo": "finanziamento_agevolato", "importo_max": 25000,
+    }]}})
+    second = normalize_response({"bando": {"agevolazioni": [{
+        "tipo": "finanziamento_agevolato", "abbuono_rate": 12,
+        "condizioni": ["assenza di garanzie"],
+    }]}})
+    agevolazioni = _merge_partial_results([first, second])["bando"]["agevolazioni"]
+    assert len(agevolazioni) == 1
+    assert agevolazioni[0]["importo_max"] == 25000
+    assert agevolazioni[0]["abbuono_rate"] == 12

@@ -296,17 +296,6 @@ export default function CaricaBando() {
       </div>
 
       {!result && (
-        <div className="ai-disclaimer">
-          <IconInfo />
-          <span>
-            Il testo del bando (un documento pubblico) viene inviato a un modello AI esterno per l'estrazione.
-            I dati dei tuoi clienti non vengono mai condivisi con provider esterni: restano nel sistema e il
-            confronto con i bandi è calcolato localmente.
-          </span>
-        </div>
-      )}
-
-      {!result && (
         <div className="carica-layout">
           <div className="carica-main">
             <input
@@ -445,6 +434,16 @@ export default function CaricaBando() {
             <div className="ai-disclaimer">
               <IconInfo />
               <span>
+                I PDF vengono elaborati e inviati a un modello AI esterno per l'estrazione dei dati.
+                Il documento originale viene salvato nel sistema per consentirne il download. I dati dei
+                clienti non vengono inviati al modello AI: restano nel sistema e il confronto con i bandi
+                viene calcolato localmente.
+              </span>
+            </div>
+
+            <div className="ai-disclaimer">
+              <IconInfo />
+              <span>
                 I dati vengono estratti automaticamente tramite intelligenza artificiale e possono contenere imprecisioni.
                 Verifica sempre scadenze, importi e requisiti sulla fonte ufficiale prima di utilizzarli con i clienti.
               </span>
@@ -495,7 +494,7 @@ export default function CaricaBando() {
               <div style={{ flex: 1 }}>
                 <strong>Bando già presente in archivio</strong>
                 <p style={{ margin: '4px 0 10px', fontSize: 'var(--text-sm)' }}>
-                  Un bando con lo stesso titolo ed ente è già stato salvato (ID #{result.bando_id}).
+                  Lo stesso documento è già stato salvato (ID #{result.bando_id}).
                   Non è stato creato un duplicato.
                 </p>
                 <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
@@ -558,14 +557,6 @@ export default function CaricaBando() {
                 <p className="font-bold" style={{ fontSize: 'var(--text-base)' }}>{result.filename}</p>
                 <p className="text-muted text-sm">{result.size_kb.toFixed(0)} KB</p>
               </div>
-              {result.null_percentage !== undefined && (
-                <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                  <p className="text-xs text-muted">Campi compilati</p>
-                  <p className="font-bold" style={{ fontSize: 'var(--text-lg)', color: result.null_percentage > 40 ? 'var(--color-warning)' : 'var(--color-success)' }}>
-                    {100 - Math.round(result.null_percentage)}%
-                  </p>
-                </div>
-              )}
             </div>
           </div>
 

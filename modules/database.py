@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
+import re
 from typing import Any
 
 import psycopg2
@@ -222,6 +224,51 @@ def delete_bando(bando_id: int) -> bool:
         return deleted
 
 
+def compute_document_hash(text: str | None) -> str | None:
+    """Hash stabile del testo estratto, indipendente da spazi e maiuscole."""
+    if not isinstance(text, str):
+        return None
+    normalized = re.sub(r"\s+", " ", text).strip().casefold()
+    if not normalized:
+        return None
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def find_duplicate_bando_by_hash(document_hash: str | None) -> int | None:
+    """Trova lo stesso documento prima di invocare il modello AI."""
+    if not (document_hash or "").strip():
+        return None
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id FROM bandi WHERE document_hash = %s ORDER BY id DESC LIMIT 1",
+            (document_hash,),
+        ).fetchone()
+    return int(row["id"]) if row else None
+
+
+def attach_pdf_to_bando(
+    bando_id: int,
+    pdf_bytes: bytes | None,
+    pdf_filename: str | None,
+) -> bool:
+    """Associa il PDF originale a un bando che non lo possiede ancora."""
+    if not pdf_bytes or not pdf_bytes.startswith(b"%PDF"):
+        return False
+    filename = (pdf_filename or f"Bando_{bando_id}.pdf").strip()
+    with get_connection() as conn:
+        cur = conn.execute(
+            """
+            UPDATE bandi
+            SET pdf_original = %s, pdf_filename = %s
+            WHERE id = %s AND pdf_original IS NULL
+            """,
+            (pdf_bytes, filename, bando_id),
+        )
+        updated = cur.rowcount > 0
+        conn.commit()
+        return updated
+
+
 def deduplica_bandi(strict: bool = True) -> int:
     """
     Rimuove duplicati mantenendo il bando con id più alto.
@@ -308,7 +355,13 @@ def find_duplicate_bando(
     return int(row["id"]) if row else None
 
 
-def save_bando_from_json(data: dict[str, Any], scheda: str | None = None) -> int:
+def save_bando_from_json(
+    data: dict[str, Any],
+    scheda: str | None = None,
+    document_hash: str | None = None,
+    pdf_bytes: bytes | None = None,
+    pdf_filename: str | None = None,
+) -> int:
     """Salva estrazione bando. data = {"bando": {...}}. scheda = markdown pre-calcolato."""
     bando = data.get("bando") if isinstance(data.get("bando"), dict) else {}
     dim = bando.get("dimensione_impresa")
@@ -323,8 +376,9 @@ def save_bando_from_json(data: dict[str, Any], scheda: str | None = None) -> int
             """
             INSERT INTO bandi (
                 titolo, ente, data_scadenza, codici_ateco, regioni,
-                dimensione, contributo_max, json_completo, scheda_cached
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                dimensione, contributo_max, json_completo, scheda_cached,
+                document_hash, pdf_original, pdf_filename
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -337,6 +391,9 @@ def save_bando_from_json(data: dict[str, Any], scheda: str | None = None) -> int
                 bando.get("contributo_max"),
                 json.dumps(data, ensure_ascii=False),
                 scheda,
+                document_hash,
+                pdf_bytes,
+                pdf_filename,
             ),
         )
         new_id = int(cur.fetchone()["id"])

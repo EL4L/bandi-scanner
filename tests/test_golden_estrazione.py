@@ -220,23 +220,26 @@ class TestGoldenSapienzaPNRR:
 
 
 # ---------------------------------------------------------------------------
-# Verifica troncamento (Sapienza, 52 pagine — audit #3 della sintesi)
+# Verifica copertura integrale PDF lunghi
 # ---------------------------------------------------------------------------
 
-def test_sapienza_testo_troncato_silenziosamente():
-    """Documenta il troncamento silenzioso trovato dall'audit: il testo del
-    bando Sapienza supera MAX_TEXT_CHARS e viene tagliato prima di arrivare
-    all'LLM, senza che il JSON salvato ne porti traccia. Questo test verifica
-    solo la lunghezza del testo estratto (nessuna chiamata LLM, gira sempre)."""
+@pytest.mark.parametrize(
+    "pdf_name",
+    [
+        "bando_a_cascata_pe1_spoke_5_beneficiari_imprese.pdf",
+        "Complesso.pdf",
+        "esclusioni.pdf",
+    ],
+)
+def test_pdf_lunghi_entro_limite_sono_analizzati_integralmente(pdf_name):
+    """I PDF lunghi usati nei golden test e nella demo devono arrivare
+    integralmente all'LLM, senza perdere le sezioni finali."""
+    from modules.extractor import _tronca_testo
     from modules.schema import MAX_TEXT_CHARS
 
-    testo = extract_text_from_pdf(str(PDF_DIR / "bando_a_cascata_pe1_spoke_5_beneficiari_imprese.pdf"))
-    # L'audit ha misurato 134.106 caratteri con PyMuPDF; se questo numero
-    # scende sotto MAX_TEXT_CHARS in futuro (es. libreria PDF cambiata),
-    # il troncamento non si verifica più e la modifica #5 perde di urgenza
-    # per QUESTO documento specifico (ma resta valida in generale).
-    assert len(testo) > MAX_TEXT_CHARS, (
+    testo = extract_text_from_pdf(str(PDF_DIR / pdf_name))
+    assert len(testo) <= MAX_TEXT_CHARS, (
         f"Testo di {len(testo)} caratteri, MAX_TEXT_CHARS={MAX_TEXT_CHARS}: "
-        "se questo assert fallisce, il documento non viene più troncato "
-        "(verificare comunque con documenti più lunghi)"
+        f"{pdf_name} verrebbe troncato prima della chiamata LLM"
     )
+    assert _tronca_testo(testo) == testo

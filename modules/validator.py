@@ -7,11 +7,20 @@ from datetime import date, datetime
 from typing import Any
 
 from modules.date_infer import _sembra_sportello_continuo, infer_data_scadenza_from_text
+from modules.evidence import (
+    economic_detail_warnings,
+    entity_source_warnings,
+    reconcile_economic_details,
+    reconcile_entity_source,
+    reconcile_explicit_ateco_exclusions,
+)
 from modules.schema import (
     BANDO_SCHEMA,
     DATE_FIELDS,
     DIMENSIONE_IMPRESA_KEYS,
     LIST_STRING_FIELDS,
+    RUOLO_ENTE_VALUES,
+    TIPO_AGEVOLAZIONE_VALUES,
     normalize_response,
 )
 
@@ -26,6 +35,35 @@ def _get_bando(data: dict[str, Any]) -> dict[str, Any] | None:
     if isinstance(bando, dict):
         return bando
     return None
+
+
+def _raw_agevolazioni_warnings(data: dict[str, Any]) -> list[str]:
+    """Rileva conflitti prima che la normalizzazione li corregga."""
+    bando = _get_bando(data)
+    if not isinstance(bando, dict):
+        return []
+    agevolazioni = bando.get("agevolazioni")
+    if not isinstance(agevolazioni, list) or not agevolazioni:
+        return []
+    structured_types = {
+        item.get("tipo") for item in agevolazioni
+        if isinstance(item, dict) and item.get("tipo") in TIPO_AGEVOLAZIONE_VALUES
+    }
+    legacy_types = set(bando.get("tipo_agevolazione") or [])
+    warnings: list[str] = []
+    if structured_types and structured_types != legacy_types:
+        warnings.append(
+            "Coerenza agevolazioni: tipo_agevolazione è stato riallineato "
+            "automaticamente ad agevolazioni[].tipo"
+        )
+    non_rimborsabili = {"fondo_perduto", "voucher", "credito_imposta"}
+    if structured_types and not (structured_types & non_rimborsabili):
+        if bando.get("contributo_max") is not None:
+            warnings.append(
+                "Coerenza agevolazioni: contributo_max conteneva il massimale "
+                "del prestito ed è stato azzerato automaticamente"
+            )
+    return warnings
 
 
 def _is_empty(value: Any) -> bool:
@@ -135,6 +173,56 @@ def validate_format_fields(bando: dict[str, Any]) -> list[str]:
                 "Se ateco_aperto_a_tutti è true, codici_ateco_ammessi deve essere []"
             )
 
+    agevolazioni = bando.get("agevolazioni")
+    if isinstance(agevolazioni, list):
+        for index, agevolazione in enumerate(agevolazioni):
+            prefix = f"bando.agevolazioni[{index}]"
+            if not isinstance(agevolazione, dict):
+                errors.append(f"{prefix} deve essere un oggetto")
+                continue
+            if agevolazione.get("tipo") not in TIPO_AGEVOLAZIONE_VALUES:
+                errors.append(f"{prefix}.tipo non valido")
+            for field in (
+                "importo_min", "importo_max", "percentuale",
+                "tasso_interesse_percentuale", "durata_mesi",
+                "preammortamento_mesi", "abbuono_rate",
+            ):
+                value = agevolazione.get(field)
+                if value is not None and not isinstance(value, (int, float)):
+                    errors.append(f"{prefix}.{field} deve essere numerico o null")
+                elif isinstance(value, (int, float)) and value < 0:
+                    errors.append(f"{prefix}.{field} non può essere negativo")
+            percentage = agevolazione.get("percentuale")
+            if isinstance(percentage, (int, float)) and percentage > 100:
+                errors.append(f"{prefix}.percentuale non può superare 100")
+            repayment = agevolazione.get("rimborso_richiesto")
+            if repayment is not None and not isinstance(repayment, bool):
+                errors.append(f"{prefix}.rimborso_richiesto deve essere booleano o null")
+
+    fonti = bando.get("fonti")
+    if isinstance(fonti, list):
+        for index, fonte in enumerate(fonti):
+            prefix = f"bando.fonti[{index}]"
+            if not isinstance(fonte, dict):
+                errors.append(f"{prefix} deve essere un oggetto")
+                continue
+            pagina = fonte.get("pagina")
+            if pagina is not None and (not isinstance(pagina, int) or pagina < 1):
+                errors.append(f"{prefix}.pagina deve essere un intero positivo o null")
+
+    entities = bando.get("enti_coinvolti")
+    if isinstance(entities, list):
+        for index, entity in enumerate(entities):
+            prefix = f"bando.enti_coinvolti[{index}]"
+            if not isinstance(entity, dict):
+                errors.append(f"{prefix} deve essere un oggetto")
+                continue
+            if not isinstance(entity.get("nome"), str) or not entity["nome"].strip():
+                errors.append(f"{prefix}.nome deve essere una stringa non vuota")
+            role = entity.get("ruolo")
+            if role is not None and role not in RUOLO_ENTE_VALUES:
+                errors.append(f"{prefix}.ruolo non valido")
+
     return errors
 
 
@@ -142,24 +230,75 @@ def validate_logical_fields(bando: dict[str, Any]) -> tuple[list[str], list[str]
     errors: list[str] = []
     warnings: list[str] = []
     raw = bando.get("data_scadenza")
-    if raw is None or (isinstance(raw, str) and not raw.strip()):
-        return errors, warnings
-    if not isinstance(raw, str) or not ISO_DATE_RE.match(raw.strip()):
-        return errors, warnings
-    parsed = _parse_date(raw)
-    if parsed is None:
-        errors.append("bando.data_scadenza non è una data valida")
-        return errors, warnings
-    if parsed.date() <= date.today():
-        warnings.append("data_scadenza nel passato — verificare se il bando è ancora attivo")
+    if isinstance(raw, str) and ISO_DATE_RE.match(raw.strip()):
+        parsed = _parse_date(raw)
+        if parsed is None:
+            errors.append("bando.data_scadenza non è una data valida")
+        elif parsed.date() <= date.today():
+            warnings.append("data_scadenza nel passato — verificare se il bando è ancora attivo")
+
+    agevolazioni = bando.get("agevolazioni")
+    agevolazioni = agevolazioni if isinstance(agevolazioni, list) else []
+    tipi_strutturati = {
+        item.get("tipo") for item in agevolazioni
+        if isinstance(item, dict) and item.get("tipo") in TIPO_AGEVOLAZIONE_VALUES
+    }
+    tipi_legacy = set(bando.get("tipo_agevolazione") or [])
+    if tipi_strutturati and tipi_legacy != tipi_strutturati:
+        warnings.append(
+            "Coerenza agevolazioni: tipo_agevolazione non coincide con agevolazioni[].tipo"
+        )
+
+    solo_finanziamento = bool(tipi_strutturati or tipi_legacy) and not (
+        {"fondo_perduto", "voucher", "credito_imposta"} & (tipi_strutturati or tipi_legacy)
+    )
+    if solo_finanziamento and bando.get("contributo_max") is not None:
+        warnings.append(
+            "Coerenza agevolazioni: contributo_max è valorizzato per uno strumento "
+            "solo rimborsabile; verificare che non sia il massimale del prestito"
+        )
+
+    for index, item in enumerate(agevolazioni):
+        if not isinstance(item, dict):
+            continue
+        tipo = item.get("tipo")
+        if tipo == "finanziamento_agevolato" and item.get("rimborso_richiesto") is False:
+            warnings.append(
+                f"Coerenza agevolazioni: agevolazioni[{index}] è un finanziamento "
+                "ma rimborso_richiesto è false"
+            )
+        if tipo == "fondo_perduto":
+            percentages = item.get("percentuali_per_dimensione")
+            has_percentage = item.get("percentuale") is not None or (
+                isinstance(percentages, dict) and any(v is not None for v in percentages.values())
+            )
+            if item.get("importo_max") is None and not has_percentage:
+                warnings.append(
+                    f"Coerenza agevolazioni: agevolazioni[{index}] è a fondo perduto "
+                    "ma non contiene né importo massimo né percentuale"
+                )
+
+    coverage = bando.get("copertura_estrazione")
+    if isinstance(coverage, dict) and coverage.get("completa") is False:
+        warnings.append("Copertura estrazione incompleta — revisione manuale obbligatoria")
     return errors, warnings
 
 
 def calculate_null_percentage(bando: dict[str, Any]) -> float:
     if not isinstance(bando, dict) or not bando:
         return 100.0
-    total = len(BANDO_SCHEMA)
-    empty = sum(1 for key in BANDO_SCHEMA if _is_empty(bando.get(key)))
+    # I nuovi campi strutturati sono additivi e i metadati non rappresentano
+    # informazioni mancanti del bando. Escluderli mantiene confrontabile la
+    # percentuale con le estrazioni legacy già salvate.
+    completeness_fields = tuple(
+        key for key in BANDO_SCHEMA
+        if key not in {
+            "agevolazioni", "fonti", "enti_coinvolti", "copertura_estrazione",
+            "url_documento_origine",
+        }
+    )
+    total = len(completeness_fields)
+    empty = sum(1 for key in completeness_fields if _is_empty(bando.get(key)))
     return (empty / total) * 100.0
 
 
@@ -184,7 +323,13 @@ def critical_gaps(bando: dict[str, Any], raw_text: str | None = None) -> list[st
         if not sportello:
             gaps.append("data_scadenza")
 
-    if _is_empty(bando.get("contributo_max")) and _is_empty(bando.get("percentuale_fondo_perduto")):
+    economic_info = (
+        not _is_empty(bando.get("contributo_max"))
+        or not _is_empty(bando.get("percentuale_fondo_perduto"))
+        or not _is_empty(bando.get("agevolazioni"))
+        or not _is_empty(bando.get("tipo_agevolazione"))
+    )
+    if not economic_info:
         gaps.append("contributo_max/percentuale_fondo_perduto")
 
     ateco_presente = (
@@ -212,9 +357,12 @@ def validate_bando(
     Valida {"bando": {...}}.
     Ritorna: data, errors, warnings, null_percentage, needs_manual_review.
     """
+    raw_input = data if isinstance(data, dict) else {}
+    raw_bando = _get_bando(raw_input)
+    raw_warnings = _raw_agevolazioni_warnings(raw_input)
     wrapped = normalize_response(data if isinstance(data, dict) else {})
     errors = validate_structure(wrapped)
-    warnings: list[str] = []
+    warnings: list[str] = list(raw_warnings)
 
     bando = wrapped.get("bando")
     if not isinstance(bando, dict):
@@ -237,6 +385,13 @@ def validate_bando(
             )
 
     wrapped["bando"] = bando
+    if raw_text:
+        warnings.extend(reconcile_explicit_ateco_exclusions(wrapped, raw_text))
+        warnings.extend(reconcile_entity_source(wrapped, raw_text))
+        reconcile_economic_details(wrapped, raw_text)
+        warnings.extend(economic_detail_warnings(wrapped, raw_text))
+    if isinstance(raw_bando, dict) and "fonti" in raw_bando:
+        warnings.extend(entity_source_warnings(wrapped))
     errors.extend(validate_format_fields(bando))
     logical_errors, logical_warnings = validate_logical_fields(bando)
     errors.extend(logical_errors)
@@ -244,14 +399,29 @@ def validate_bando(
 
     null_pct = calculate_null_percentage(bando)
     gaps = critical_gaps(bando, raw_text)
-    needs_review = should_review_manually(bando, raw_text)
+    coherence_warnings = [
+        warning for warning in warnings
+        if warning.startswith("Coerenza agevolazioni")
+        or warning.startswith("Coerenza fonti")
+        or warning.startswith("Coerenza ATECO")
+        or warning.startswith("Copertura estrazione incompleta")
+        or warning.startswith("Completezza economica")
+    ]
+    needs_review = should_review_manually(bando, raw_text) or bool(coherence_warnings)
     if needs_review:
         if gaps:
             warnings.append(
                 "Da revisionare manualmente — campi critici mancanti: " + ", ".join(gaps)
             )
-        else:
-            warnings.append("Da revisionare manualmente — troppi campi non estratti")
+        if null_pct > MANUAL_REVIEW_THRESHOLD:
+            warnings.append(
+                "RF-007: Da revisionare manualmente — più del 50% dei campi è nullo "
+                f"({null_pct:.0f}%)"
+            )
+        if coherence_warnings and not gaps and null_pct <= MANUAL_REVIEW_THRESHOLD:
+            warnings.append(
+                "Da revisionare manualmente — verificare le avvertenze di coerenza"
+            )
 
     return {
         "data": wrapped,

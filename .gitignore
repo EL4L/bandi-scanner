@@ -11,3 +11,10 @@ error_log.txt
 *.log
 .coverage
 struttura_progetto.txt
+
+# Configurazioni locali degli assistenti e artefatti diagnostici temporanei
+.claude/settings.local.json
+diff_codex.txt
+
+# Export locale del DB: può contenere dati anagrafici dei clienti
+audit_export_bandi.md

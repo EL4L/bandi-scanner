@@ -124,6 +124,7 @@ def test_validate_bando_needs_manual_review_true(bando_minimo):
     data = {"bando": bando_minimo()}
     result = validate_bando(data)
     assert result["needs_manual_review"] is True
+    assert any(warning.startswith("RF-007:") for warning in result["warnings"])
 
 
 # ---------------------------------------------------------------------------
@@ -252,3 +253,90 @@ def test_should_review_manually_campo_critico_mancante_anche_con_pochi_null(band
     )
     assert should_review_manually(bando) is True
     assert "titolo" in critical_gaps(bando)
+
+
+def test_finanziamento_strutturato_non_richiede_contributo_max(bando_minimo):
+    bando = bando_minimo(
+        titolo="Nuovo Fondo Futuro",
+        data_scadenza=None,
+        tipo_agevolazione=["finanziamento_agevolato"],
+        agevolazioni=[{
+            "tipo": "finanziamento_agevolato",
+            "importo_max": 25000,
+            "rimborso_richiesto": True,
+        }],
+        attivita_ammesse=["Investimenti produttivi"],
+    )
+    gaps = critical_gaps(bando, "Misura a sportello continuo")
+    assert "contributo_max/percentuale_fondo_perduto" not in gaps
+
+
+def test_massimale_prestito_in_contributo_max_genera_warning_e_revisione(bando_minimo):
+    data = {"bando": bando_minimo(
+        titolo="Nuovo Fondo Futuro",
+        data_scadenza="2099-12-31",
+        contributo_max=25000,
+        tipo_agevolazione=["finanziamento_agevolato"],
+        agevolazioni=[{
+            "tipo": "finanziamento_agevolato",
+            "importo_max": 25000,
+            "rimborso_richiesto": True,
+        }],
+        codici_ateco_ammessi=["62.01"],
+    )}
+    result = validate_bando(data)
+    assert any("massimale del prestito" in warning for warning in result["warnings"])
+    assert result["data"]["bando"]["contributo_max"] is None
+    assert result["needs_manual_review"] is True
+
+
+def test_finanziamento_con_rimborso_false_genera_warning(bando_minimo):
+    data = {"bando": bando_minimo(
+        titolo="Prestito Test",
+        data_scadenza="2099-12-31",
+        tipo_agevolazione=["finanziamento_agevolato"],
+        agevolazioni=[{
+            "tipo": "finanziamento_agevolato",
+            "importo_max": 25000,
+            "rimborso_richiesto": False,
+        }],
+        codici_ateco_ammessi=["62.01"],
+    )}
+    result = validate_bando(data)
+    assert any("rimborso_richiesto è false" in warning for warning in result["warnings"])
+
+
+def test_abbuono_citato_ma_non_collocabile_richiede_revisione(bando_minimo):
+    data = {"bando": bando_minimo(
+        titolo="Bando con abbuono",
+        data_scadenza="2099-12-31",
+        contributo_max=10000,
+        codici_ateco_ammessi=["62.01"],
+        agevolazioni=[],
+    )}
+    result = validate_bando(data, raw_text="È previsto un Abbuono delle ultime 6 rate mensili.")
+    assert any("Completezza economica" in warning for warning in result["warnings"])
+    assert result["needs_manual_review"] is True
+
+
+def test_fonte_ente_incoerente_richiede_revisione(bando_minimo):
+    data = {"bando": bando_minimo(
+        titolo="Nuovo Fondo Futuro",
+        ente="Regione Lazio",
+        data_scadenza="2099-12-31",
+        tipo_agevolazione=["finanziamento_agevolato"],
+        agevolazioni=[{
+            "tipo": "finanziamento_agevolato",
+            "importo_max": 25000,
+            "rimborso_richiesto": True,
+        }],
+        codici_ateco_ammessi=["62.01"],
+        fonti=[{
+            "campo": "ente",
+            "pagina": 4,
+            "testo": "La gestione è affidata a Banca Nazionale del Lavoro",
+        }],
+    )}
+    result = validate_bando(data)
+    assert any("fonte associata a ente" in warning for warning in result["warnings"])
+    assert result["needs_manual_review"] is True

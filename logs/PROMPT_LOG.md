@@ -597,3 +597,578 @@ Questa sezione registra le interazioni tra la persona utente e gli assistenti AI
 - **Campi estratti correttamente:** —
 - **Campi null/vuoti:** —
 - **Note:** Intervento solo frontend, nessun impatto sul prompt/estrazione LLM. Fix della regressione introdotta dal redesign card espandibili (commit `eac1aba`, Codex): ripristinate nella card della Dashboard la riga scadenza/giorni con badge urgenza (#6), la riga "Contributo max" e la KPI "Bandi con clienti". Reintrodotte le helper `isBlank`/`scadenzaTextClass`, aggiunta la sezione `bando-card-quick-info` sempre visibile e la relativa regola CSS; comportamento a fisarmonica preservato. `npm run build` pulito, 274 test Python invariati.
+
+### bando.pdf — 2026-07-13 11:29:32
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:29:32
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:29:32
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 11:30:07
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:30:07
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:30:07
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 11:31:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:31:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:31:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 11:32:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:32:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 11:32:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 15:41:27
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 15:41:27
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 15:41:27
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 16:00:09
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:00:09
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:00:09
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 16:19:01
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:19:01
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:19:01
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 16:52:32
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:52:33
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:52:33
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 16:59:35
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:59:35
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 16:59:35
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 17:01:19
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:01:19
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:01:19
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 17:22:15
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:22:16
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:22:16
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 17:44:39
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:44:39
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:44:39
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 17:54:11
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:54:12
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 17:54:12
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:09:28
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:09:28
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:09:28
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:14:52
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:14:53
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:14:53
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:22:01
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:22:02
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:22:02
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### Complesso.pdf — 2026-07-13 18:27:25
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.spesa_massima_ammissibile
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:46:21
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:46:21
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:46:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:47:18
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:47:18
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:47:18
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:47:57
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:47:57
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:47:57
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.link_fonte_ufficiale
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 18:50:14
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:50:15
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 18:50:15
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### Complesso.pdf — 2026-07-13 18:56:59
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.modalita_presentazione, bando.tipo_agevolazione, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.cumulabilita, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.spesa_massima_ammissibile
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 19:19:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:19:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:19:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 19:41:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:41:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:41:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 19:58:34
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:58:34
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 19:58:34
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 20:44:00
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:44:00
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:44:00
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 20:45:19
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:45:20
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:45:20
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 20:56:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:56:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 20:56:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:05:26
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:05:27
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:05:27
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:07:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:07:23
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:07:23
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:09:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:09:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:09:08
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:09:22
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:09:23
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:09:23
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:38:09
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:38:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:38:10
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:39:32
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:39:33
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:39:33
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:42:17
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 21:42:17
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 21:42:17
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 22:17:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 22:17:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 22:17:40
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 22:18:02
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 22:18:02
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 22:18:02
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando_Acilia.pdf — 2026-07-13 22:45:58
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.modalita_presentazione, bando.note_esclusioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.dimensione_impresa, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni
+- **Note:** Validazione OK
+
+### bando_liguria.pdf — 2026-07-13 23:10:12
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_pubblicazione, bando.attivita_ammesse, bando.ateco_aperto_a_tutti, bando.regioni_ammesse, bando.dimensione_impresa, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Campi null/vuoti:** bando.data_scadenza, bando.codici_ateco_ammessi, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.contributo_max, bando.percentuale_fondo_perduto, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.anzianita_impresa
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 23:23:30
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 23:23:30
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 23:23:31
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 23:24:38
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.url_documento_origine, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### esempio.it — 2026-07-13 23:24:39
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK
+
+### bando.pdf — 2026-07-13 23:24:39
+- **Campi estratti correttamente:** bando.titolo, bando.ente, bando.data_scadenza, bando.ateco_aperto_a_tutti, bando.dimensione_impresa, bando.contributo_max, bando.url_documento_origine
+- **Campi null/vuoti:** bando.data_pubblicazione, bando.codici_ateco_ammessi, bando.attivita_ammesse, bando.regioni_ammesse, bando.fatturato_max, bando.numero_dipendenti_min, bando.numero_dipendenti_max, bando.percentuale_fondo_perduto, bando.modalita_presentazione, bando.tipo_agevolazione, bando.cumulabilita, bando.spese_ammissibili, bando.link_fonte_ufficiale, bando.note_esclusioni, bando.spesa_minima_ammissibile, bando.spesa_massima_ammissibile, bando.anzianita_impresa, bando.forme_giuridiche_ammesse, bando.agevolazioni, bando.fonti, bando.enti_coinvolti, bando.copertura_estrazione
+- **Note:** Validazione OK

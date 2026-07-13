@@ -34,6 +34,9 @@ CREATE TABLE IF NOT EXISTS bandi (
     contributo_max REAL,
     json_completo TEXT NOT NULL,
     scheda_cached TEXT,
+    document_hash TEXT,
+    pdf_original BYTEA,
+    pdf_filename TEXT,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -74,6 +77,18 @@ def _migrate_schema(conn) -> None:
     bandi_cols = {row[0] for row in cur.fetchall()}
     if "scheda_cached" not in bandi_cols:
         cur.execute("ALTER TABLE bandi ADD COLUMN scheda_cached TEXT")
+    if "document_hash" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN document_hash TEXT")
+    if "pdf_original" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN pdf_original BYTEA")
+    if "pdf_filename" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN pdf_filename TEXT")
+    # PostgreSQL consente più valori NULL in un indice UNIQUE: i vecchi bandi
+    # possono quindi restare senza hash, mentre ogni nuovo documento è unico.
+    cur.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_bandi_document_hash_unique "
+        "ON bandi(document_hash)"
+    )
 
 
 def init_database(database_url: str | None = None) -> None:

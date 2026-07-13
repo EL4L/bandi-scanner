@@ -91,6 +91,19 @@ def test_bando_senza_vincoli_dimensione():
     assert result["ammissibile"] is True
 
 
+def test_snc_corrisponde_a_societa_in_nome_collettivo():
+    bando = {
+        "bando": {
+            **BANDO_PMI["bando"],
+            "forme_giuridiche_ammesse": ["Società in nome collettivo"],
+        }
+    }
+    cliente = {**CLIENTE_MICRO, "forma_giuridica": "snc"}
+    result = check_ammissibilita(bando, cliente)
+    assert result["ammissibile"] is True
+    assert not result["motivi_esclusione"]
+
+
 def test_sezione_ateco_esclusa_disammette():
     # Sezione K (attività finanziarie e assicurative) = divisioni 64-66
     bando = {

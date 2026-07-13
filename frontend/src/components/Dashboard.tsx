@@ -41,11 +41,14 @@ interface BandoCard {
   giorni_alla_scadenza: number | null
   urgenza: string | null
   max_score: number
+  raw_max_score?: number
+  nessun_cliente_ammissibile?: boolean
   color_class: string
   has_constraints: boolean
   matches: Match[]
   scheda: string
   fonte_url: string | null
+  has_pdf: boolean
 }
 
 interface DashboardData {
@@ -125,9 +128,19 @@ function isExpiredCard(card: BandoCard): boolean {
   return card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza < 0
 }
 
+function hasOnlyIneligibleClients(card: BandoCard): boolean {
+  return card.nessun_cliente_ammissibile === true || (
+    card.matches.length > 0
+    && card.matches.every(m => m.ammissibilita?.ammissibile === false)
+  )
+}
+
 function isAllDaVerificare(card: BandoCard): boolean {
-  const validMatches = card.matches.filter(m => m.breakdown.status !== 'da_verificare')
-  return card.matches.length > 0 && validMatches.length === 0
+  return card.matches.length > 0 && card.matches.every(m =>
+    m.ammissibilita?.ammissibile !== false
+    && m.ammissibilita?.errore !== true
+    && m.breakdown.status === 'da_verificare'
+  )
 }
 
 function sortCardsVerifiedFirst(cards: BandoCard[]): BandoCard[] {
@@ -182,11 +195,13 @@ function BandoCardItem({
   onScheda: () => void
 }) {
   const [expanded, setExpanded] = useState(false)
-  const validMatches = card.matches.filter(m => m.breakdown.status !== 'da_verificare')
+  const validMatches = card.matches.filter(m =>
+    m.ammissibilita?.ammissibile === true && m.breakdown.status !== 'da_verificare')
   const allDaVerificare = isAllDaVerificare(card)
   const effectiveMaxScore = validMatches.length > 0
     ? Math.max(...validMatches.map(m => m.score))
-    : card.max_score
+    : 0
+  const nessunClienteAmmissibile = hasOnlyIneligibleClients(card)
   const hasExpandableContent = card.matches.length > 0
 
   return (
@@ -205,11 +220,7 @@ function BandoCardItem({
         >
           <p className="bando-card-title">{card.titolo || `Bando #${card.id}`}</p>
           <div className="bando-card-header-right">
-            {allDaVerificare ? (
-              <span className="badge badge-warning" title="Il bando non contiene dati sufficienti per valutare la compatibilità">
-                ⚠️ Da verificare
-              </span>
-            ) : (
+            {nessunClienteAmmissibile || allDaVerificare ? null : (
               <div
                 className={`score-circle score-circle--compact ${scoreClass(circleColorClass(effectiveMaxScore))}`}
                 style={{ '--score': effectiveMaxScore } as React.CSSProperties}
@@ -249,7 +260,7 @@ function BandoCardItem({
             {card.matches.length > 0 ? (
               <div className="match-list match-list--static">
                 <p className="match-list-label">
-                  {card.matches.length} {card.matches.length === 1 ? 'cliente compatibile' : 'clienti compatibili'}
+                  {card.matches.length} {card.matches.length === 1 ? 'cliente analizzato' : 'clienti analizzati'}
                 </p>
                 {card.matches.map((m, i) => {
                   const escluso = m.ammissibilita?.ammissibile === false
@@ -260,7 +271,10 @@ function BandoCardItem({
                       <span className="match-row-name">{m.nome}</span>
                       <div className="match-row-right">
                         {escluso ? (
-                          <span className="badge badge-escluso">⛔ Non ammissibile</span>
+                          <span
+                            className="badge badge-escluso"
+                            title={m.ammissibilita?.motivi_esclusione?.join(' · ') || 'Requisito vincolante non rispettato'}
+                          >⛔ Non ammissibile</span>
                         ) : erroreVerifica ? (
                           <span className="badge badge-warning" title="Il controllo di ammissibilità non è riuscito per un errore tecnico: verifica manualmente i requisiti">
                             Verifica non riuscita
@@ -297,6 +311,13 @@ function BandoCardItem({
                 >
                   <IconDownload />
                 </a>
+                {card.has_pdf ? (
+                  <a href={apiHref(`/api/bandi/${card.id}/pdf`)} download className="btn btn-sm">
+                    <IconDownload /> PDF
+                  </a>
+                ) : (
+                  <button className="btn btn-sm" disabled title="PDF originale non disponibile: ricarica il documento">PDF</button>
+                )}
               </div>
               {card.fonte_url && (
                 <a
@@ -331,6 +352,13 @@ function BandoCardItem({
                 >
                   <IconDownload />
                 </a>
+                {card.has_pdf ? (
+                  <a href={apiHref(`/api/bandi/${card.id}/pdf`)} download className="btn btn-sm">
+                    <IconDownload /> PDF
+                  </a>
+                ) : (
+                  <button className="btn btn-sm" disabled title="PDF originale non disponibile: ricarica il documento">PDF</button>
+                )}
               </div>
               {card.fonte_url && (
                 <a
@@ -357,6 +385,8 @@ export default function Dashboard() {
   const error = queryError ? 'Impossibile caricare la dashboard. Verifica che il server sia in esecuzione.' : null
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
   const [showExpiredSection, setShowExpiredSection] = useState(false)
+  const [showIneligibleSection, setShowIneligibleSection] = useState(false)
+  const [showReviewSection, setShowReviewSection] = useState(false)
 
   const recalcMutation = useApiMutation(() => fetch('/api/bandi/recalc', withApiKey({ method: 'POST' })))
   const deduplicaMutation = useApiMutation(async () => {
@@ -472,8 +502,9 @@ export default function Dashboard() {
           <p className="kpi-value">{d.totale_abbinamenti}</p>
         </div>
         <div className="kpi-card">
-          <p className="kpi-label">Bandi con clienti</p>
-          <p className="kpi-value">{uniqueCards.filter(c => c.matches.length > 0).length}</p>
+          <p className="kpi-label">Bandi con clienti ammissibili</p>
+          <p className="kpi-value">{uniqueCards.filter(c =>
+            c.matches.some(m => m.ammissibilita?.ammissibile === true)).length}</p>
         </div>
       </div>
 
@@ -489,8 +520,13 @@ export default function Dashboard() {
           <p>Carica un bando PDF dalla sezione "Carica Bando" per iniziare l'analisi.</p>
         </div>
       ) : (() => {
-        const activeCards = sortCardsVerifiedFirst(uniqueCards.filter(c => !isExpiredCard(c)))
-        const expiredCards = sortCardsVerifiedFirst(uniqueCards.filter(isExpiredCard))
+        const activeCards = sortCardsVerifiedFirst(uniqueCards.filter(c =>
+          !isExpiredCard(c) && !hasOnlyIneligibleClients(c) && !isAllDaVerificare(c)))
+        const ineligibleCards = sortCardsVerifiedFirst(uniqueCards.filter(hasOnlyIneligibleClients))
+        const reviewCards = sortCardsVerifiedFirst(uniqueCards.filter(c =>
+          !hasOnlyIneligibleClients(c) && isAllDaVerificare(c)))
+        const expiredCards = sortCardsVerifiedFirst(uniqueCards.filter(c =>
+          isExpiredCard(c) && !hasOnlyIneligibleClients(c) && !isAllDaVerificare(c)))
         return (
           <>
             {activeCards.length > 0 && (
@@ -499,9 +535,73 @@ export default function Dashboard() {
                   <BandoCardItem
                     key={card.id}
                     card={card}
-                    onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url })}
+                    onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url, has_pdf: card.has_pdf })}
                   />
                 ))}
+              </div>
+            )}
+
+            {ineligibleCards.length > 0 && (
+              <div className="section-scaduti section-non-ammissibili">
+                <button
+                  className={`section-scaduti-header${showIneligibleSection ? ' open' : ''}`}
+                  onClick={() => setShowIneligibleSection(v => !v)}
+                >
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                    Bandi senza clienti ammissibili
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <span className="scaduti-count">{ineligibleCards.length}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14, transition: 'transform 200ms' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </button>
+                {showIneligibleSection && (
+                  <div className="section-scaduti-body">
+                    <div className="bando-grid">
+                      {ineligibleCards.map(card => (
+                        <BandoCardItem
+                          key={card.id}
+                          card={card}
+                          onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url, has_pdf: card.has_pdf })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {reviewCards.length > 0 && (
+              <div className="section-scaduti section-da-verificare">
+                <button
+                  className={`section-scaduti-header${showReviewSection ? ' open' : ''}`}
+                  onClick={() => setShowReviewSection(v => !v)}
+                >
+                  <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>
+                    Bandi da verificare
+                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                    <span className="scaduti-count">{reviewCards.length}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: 14, height: 14, transition: 'transform 200ms' }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </button>
+                {showReviewSection && (
+                  <div className="section-scaduti-body">
+                    <div className="bando-grid">
+                      {reviewCards.map(card => (
+                        <BandoCardItem
+                          key={card.id}
+                          card={card}
+                          onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url, has_pdf: card.has_pdf })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -528,7 +628,7 @@ export default function Dashboard() {
                         <div key={card.id} className="bando-card-expired">
                           <BandoCardItem
                             card={card}
-                            onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url })}
+                            onScheda={() => setOpenScheda({ id: card.id, titolo: card.titolo, scheda: card.scheda, fonte_url: card.fonte_url, has_pdf: card.has_pdf })}
                           />
                         </div>
                       ))}

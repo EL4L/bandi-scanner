@@ -5,9 +5,48 @@ from modules.schema import (
     _to_number,
     MODALITA_PRESENTAZIONE_VALUES,
     TIPO_AGEVOLAZIONE_VALUES,
+    deduplicate_semantic_phrases,
+    normalize_agevolazioni,
+    normalize_duration_months,
+    normalize_enti_coinvolti,
+    normalize_fonti,
     normalize_percentuale_fondo_perduto,
     normalize_response,
 )
+
+
+def test_deduplica_semantica_esclusioni_mantiene_la_voce_piu_completa():
+    result = deduplicate_semantic_phrases([
+        "smantellamento o costruzione di centrali nucleari",
+        "smantellamento, gestione, adeguamento o costruzione di centrali nucleari",
+        "gioco d'azzardo",
+    ])
+    assert result == [
+        "smantellamento, gestione, adeguamento o costruzione di centrali nucleari",
+        "gioco d'azzardo",
+    ]
+
+
+def test_deduplica_semantica_non_unisce_condizioni_diverse_sui_combustibili():
+    result = deduplicate_semantic_phrases([
+        "estrazione, trasformazione e stoccaggio di combustibili fossili",
+        "trasporto, distribuzione e combustione di combustibili fossili",
+    ])
+    assert len(result) == 2
+
+
+def test_normalizza_categorie_esclusione_separate():
+    result = normalize_response({"bando": {"note_esclusioni": {
+        "lista_testuale": None,
+        "sezioni_ateco_escluse": [],
+        "attivita_vietate": ["tabacco"],
+        "soggetti_esclusi": ["imprese in liquidazione"],
+        "spese_non_ammissibili": ["beni usati", "beni usati"],
+        "altre_esclusioni": ["progetti già conclusi"],
+    }}})["bando"]["note_esclusioni"]
+    assert result["soggetti_esclusi"] == ["imprese in liquidazione"]
+    assert result["spese_non_ammissibili"] == ["beni usati"]
+    assert result["altre_esclusioni"] == ["progetti già conclusi"]
 
 
 class TestToBool:
@@ -219,3 +258,112 @@ class TestToEnumList:
     def test_elementi_non_stringa_ignorati(self):
         result = _to_enum_list(["fondo_perduto", 123, None, "voucher"], TIPO_AGEVOLAZIONE_VALUES)
         assert result == ["fondo_perduto", "voucher"]
+
+
+class TestAgevolazioniStrutturate:
+    def test_finanziamento_non_diventa_contributo(self):
+        result = normalize_response({"bando": {
+            "contributo_max": None,
+            "tipo_agevolazione": ["finanziamento_agevolato"],
+            "agevolazioni": [{
+                "tipo": "finanziamento_agevolato",
+                "importo_min": "€ 5.000",
+                "importo_max": "€ 25.000",
+                "tasso_interesse_percentuale": "0%",
+                "durata_mesi": "72",
+                "rimborso_richiesto": True,
+                "fonti": [{"pagina": 6, "testo": "importo massimo: 25.000 euro"}],
+            }],
+        }})
+        bando = result["bando"]
+        assert bando["contributo_max"] is None
+        assert bando["agevolazioni"][0]["importo_max"] == 25000
+        assert bando["agevolazioni"][0]["durata_mesi"] == 72
+        assert bando["agevolazioni"][0]["rimborso_richiesto"] is True
+
+    def test_durate_con_unita_vengono_convertite_in_mesi(self):
+        assert normalize_duration_months("16 semestri") == 96
+        assert normalize_duration_months("2 trimestri") == 6
+        assert normalize_duration_months("1 anno") == 12
+        assert normalize_duration_months("18 mesi") == 18
+        assert normalize_duration_months("72") == 72
+
+        result = normalize_agevolazioni([{
+            "tipo": "finanziamento_agevolato",
+            "durata_mesi": "fino a 16 semestri",
+            "preammortamento_mesi": "2 semestri",
+        }])[0]
+        assert result["durata_mesi"] == 96
+        assert result["preammortamento_mesi"] == 12
+
+    def test_tipo_agevolazione_non_valido_viene_scartato(self):
+        assert normalize_agevolazioni([{"tipo": "premio_magico"}]) == []
+
+    def test_massimale_prestito_rimosso_da_contributo_max(self):
+        result = normalize_response({"bando": {
+            "contributo_max": 25000,
+            "tipo_agevolazione": ["finanziamento_agevolato"],
+            "agevolazioni": [{
+                "tipo": "finanziamento_agevolato",
+                "importo_max": 25000,
+                "rimborso_richiesto": True,
+            }],
+        }})["bando"]
+        assert result["contributo_max"] is None
+        assert result["agevolazioni"][0]["importo_max"] == 25000
+
+    def test_fonti_deduplicate_e_pagina_normalizzata(self):
+        source = {"campo": "contributo_max", "pagina": "8", "testo": "massimo 40.000 euro"}
+        result = normalize_fonti([source, source])
+        assert result == [{
+            "campo": "contributo_max",
+            "pagina": 8,
+            "testo": "massimo 40.000 euro",
+            "certezza": None,
+        }]
+
+
+def test_normalizza_enti_coinvolti_con_ruoli_distinti():
+    result = normalize_enti_coinvolti([
+        {"nome": "BNL S.p.A.", "ruolo": "gestore", "fonti": []},
+        {"nome": "Mediocredito Centrale", "ruolo": "gestore", "fonti": []},
+    ])
+    assert [(item["nome"], item["ruolo"]) for item in result] == [
+        ("BNL S.p.A.", "gestore"),
+        ("Mediocredito Centrale", "gestore"),
+    ]
+
+
+def test_normalizza_enti_unifica_stesso_nome_e_sceglie_ruolo_piu_specifico():
+    result = normalize_enti_coinvolti([
+        {"nome": "Lazio Innova SpA", "ruolo": "gestore", "fonti": []},
+        {"nome": "Lazio Innova S.p.A.", "ruolo": "ente_attuatore", "fonti": []},
+        {"nome": "Banca Nazionale del Lavoro S.p.A.", "ruolo": "intermediario_finanziario", "fonti": []},
+        {"nome": "Banca Nazionale del Lavoro S.p.A.", "ruolo": "gestore", "fonti": []},
+    ])
+    assert [(item["nome"], item["ruolo"]) for item in result] == [
+        ("Lazio Innova S.p.A.", "ente_attuatore"),
+        ("Banca Nazionale del Lavoro S.p.A.", "gestore"),
+    ]
+
+
+def test_spese_ammissibili_elimina_voci_brevi_gia_comprese_in_una_voce_completa():
+    result = normalize_response({"bando": {"spese_ammissibili": [
+        "Acquisto di arredi, impianti, macchinari e attrezzature",
+        "Arredi",
+        "Impianti",
+        "Macchinari",
+        "Attrezzature",
+    ]}})["bando"]["spese_ammissibili"]
+    assert result == ["Acquisto di arredi, impianti, macchinari e attrezzature"]
+
+
+def test_esclusioni_settoriali_forzano_ateco_non_aperto_a_tutti():
+    result = normalize_response({"bando": {
+        "ateco_aperto_a_tutti": True,
+        "note_esclusioni": {
+            "sezioni_ateco_escluse": [],
+            "attivita_vietate": ["attività finanziarie"],
+        },
+    }})["bando"]
+    assert result["ateco_aperto_a_tutti"] is False

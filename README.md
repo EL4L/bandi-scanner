@@ -52,4 +52,4 @@ Tutte le rotte `/api/*` (tranne `/api/health`) richiedono l'header `X-API-Key` c
 
 - PDF scansionati (immagini senza testo selezionabile) non supportati: nessun OCR.
 - Scadenze relative ("entro 60 giorni") non convertite in date: richiedono verifica manuale.
-- PDF oltre 120.000 caratteri vengono troncati prima dell'invio al LLM: per documenti estremamente lunghi l'estrazione potrebbe essere incompleta, in particolare per informazioni presenti solo nelle sezioni finali.
+- Il limite di sicurezza resta 250.000 caratteri per singolo input al modello, ma i documenti oltre 60.000 caratteri vengono analizzati in blocchi sovrapposti più piccoli e poi consolidati. L'intero testo del PDF viene coperto senza scartare le sezioni finali.

@@ -12,10 +12,11 @@ interface Bando {
   contributo_max: number | null
   giorni_alla_scadenza: number | null
   regioni: string | null
+  has_pdf: boolean
 }
 
 type QuickFilter = 'tutti' | 'attivi' | 'scaduti'
-type SortKey = 'scadenza' | 'titolo' | 'contributo'
+type SortKey = 'scadenza' | 'contributo'
 type SortDir = 'asc' | 'desc'
 
 type SchedaModal = SchedaModalData
@@ -86,19 +87,19 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
   const scadenzaStr = formatDateIT(b.data_scadenza)
   return (
     <tr style={dimmed ? { opacity: 0.52, color: 'var(--color-text-muted)' } : undefined}>
-      <td className="td-muted" style={{ fontSize: 'var(--text-xs)' }}>{b.id}</td>
-      <td>
+      <td className="bandi-title-cell">
         <button
           className="td-title-link"
           style={dimmed ? { color: 'var(--color-text-muted)' } : undefined}
           onClick={() => onScheda(b)}
           disabled={schedaLoading === b.id}
+          title={b.titolo ?? `Bando #${b.id}`}
         >
           {b.titolo ?? `Bando #${b.id}`}
         </button>
       </td>
-      <td className="td-muted">{b.ente ?? '—'}</td>
-      <td>
+      <td className="td-muted bandi-ente-cell">{b.ente ?? '—'}</td>
+      <td className="bandi-scadenza-cell">
         {scadenzaStr && (
           <div>
             <span style={{ fontWeight: 600, fontSize: 'var(--text-sm)' }}>{scadenzaStr}</span>
@@ -110,8 +111,8 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
           </div>
         )}
       </td>
-      <td>{b.contributo_max !== null ? <span className="font-medium">{formatEuro(b.contributo_max)}</span> : <span className="td-muted">—</span>}</td>
-      <td>
+      <td className="bandi-contributo-cell">{b.contributo_max !== null ? <span className="font-medium">{formatEuro(b.contributo_max)}</span> : <span className="td-muted">—</span>}</td>
+      <td className="bandi-actions-cell">
         {isConfirming ? (
           <div className="btn-group" style={{ alignItems: 'center', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap' }}>Sei sicuro?</span>
@@ -125,7 +126,7 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
             <button className="btn btn-sm" onClick={onDeleteCancel}>Annulla</button>
           </div>
         ) : (
-          <div className="btn-group">
+          <div className="btn-group bandi-actions-default">
             <button
               className="btn btn-sm btn-primary"
               onClick={() => onScheda(b)}
@@ -144,6 +145,21 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
             >
               <IconDownload />
             </a>
+            {b.has_pdf ? (
+              <a
+                href={apiHref(`/api/bandi/${b.id}/pdf`)}
+                download
+                className="btn btn-sm"
+                title="Scarica PDF originale"
+                aria-label={`Scarica PDF originale di ${b.titolo ?? `Bando #${b.id}`}`}
+              >
+                <IconDownload /> PDF
+              </a>
+            ) : (
+              <button className="btn btn-sm" disabled title="PDF originale non disponibile: ricarica il documento">
+                PDF
+              </button>
+            )}
             <button
               className="btn btn-sm"
               style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
@@ -176,21 +192,27 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
   deleting: number | null
 }) {
   return (
-    <div className="table-wrapper">
-      <table className="data-table">
+    <div className="table-wrapper bandi-table-wrapper">
+      <table className="data-table bandi-table">
+        <colgroup>
+          <col className="bandi-col-title" />
+          <col className="bandi-col-ente" />
+          <col className="bandi-col-scadenza" />
+          <col className="bandi-col-contributo" />
+          <col className="bandi-col-actions" />
+        </colgroup>
         <thead>
           <tr>
-            <th style={{ width: 40 }}>#</th>
-            <th className="sortable" onClick={() => handleSort('titolo')}>Titolo <SortIcon col="titolo" /></th>
+            <th>Titolo</th>
             <th>Ente</th>
             <th className="sortable" onClick={() => handleSort('scadenza')}>Scadenza <SortIcon col="scadenza" /></th>
             <th className="sortable" onClick={() => handleSort('contributo')}>Contributo max <SortIcon col="contributo" /></th>
-            <th>Azioni</th>
+            <th className="bandi-actions-heading">Azioni</th>
           </tr>
         </thead>
         <tbody>
           {rows.length === 0
-            ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>{emptyMsg}</td></tr>
+            ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>{emptyMsg}</td></tr>
             : rows.map(b => (
               <BandoRow
                 key={b.id} b={b} dimmed={dimmed} schedaLoading={schedaLoading} onScheda={onScheda}
@@ -241,7 +263,12 @@ export default function Bandi() {
     try {
       const res = await fetch(`/api/bandi/${bando.id}/scheda`, withApiKey())
       const d = await res.json()
-      setOpenScheda({ id: bando.id, titolo: bando.titolo ?? `Bando #${bando.id}`, scheda: d.scheda ?? '' })
+      setOpenScheda({
+        id: bando.id,
+        titolo: bando.titolo ?? `Bando #${bando.id}`,
+        scheda: d.scheda ?? '',
+        has_pdf: bando.has_pdf,
+      })
     } catch {
       toast.error('Impossibile caricare la scheda del bando.')
     } finally {
@@ -290,8 +317,6 @@ export default function Bandi() {
         else if (aVal === null) cmp = 1
         else if (bVal === null) cmp = -1
         else cmp = aVal - bVal
-      } else if (sortKey === 'titolo') {
-        cmp = (a.titolo ?? '').localeCompare(b.titolo ?? '')
       } else if (sortKey === 'contributo') {
         cmp = (b.contributo_max ?? 0) - (a.contributo_max ?? 0)
       }

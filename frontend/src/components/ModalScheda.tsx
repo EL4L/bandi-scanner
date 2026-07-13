@@ -7,6 +7,7 @@ export interface SchedaModalData {
   titolo: string | null
   scheda: string
   fonte_url?: string | null
+  has_pdf?: boolean
 }
 
 function IconDownload() {
@@ -44,8 +45,17 @@ export function ModalScheda({ data, onClose }: Props) {
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexShrink: 0 }}>
             <a href={apiHref(`/api/bandi/${data.id}/scheda.md`)} download className="btn btn-sm">
-              <IconDownload /> Scarica
+              <IconDownload /> Scheda .md
             </a>
+            {data.has_pdf ? (
+              <a href={apiHref(`/api/bandi/${data.id}/pdf`)} download className="btn btn-sm">
+                <IconDownload /> PDF
+              </a>
+            ) : (
+              <button className="btn btn-sm" disabled title="PDF originale non disponibile: ricarica il documento">
+                PDF non disponibile
+              </button>
+            )}
             {data.fonte_url && (
               <a href={data.fonte_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm">
                 <IconExternal /> Fonte

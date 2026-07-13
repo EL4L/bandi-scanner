@@ -8,7 +8,7 @@ import { ModalScheda, type SchedaModalData } from './ModalScheda'
 import {
   type Cliente, type BandoMatch,
   formatEuro, matchCountBadgeClass,
-  IconPlus, IconEdit, IconTrash, IconClose, IconSearch, IconChevronRight,
+  IconPlus, IconEdit, IconTrash, IconClose, IconSearch, IconChevronRight, IconInfo,
 } from '../lib/clienti-shared'
 
 export default function Clienti() {
@@ -108,7 +108,13 @@ export default function Clienti() {
     try {
       const res = await fetch(`/api/bandi/${b.bando_id}/scheda`, withApiKey())
       const d = await res.json()
-      setOpenScheda({ id: b.bando_id, titolo: b.titolo ?? `Bando #${b.bando_id}`, scheda: d.scheda ?? '', fonte_url: b.fonte_url })
+      setOpenScheda({
+        id: b.bando_id,
+        titolo: b.titolo ?? `Bando #${b.bando_id}`,
+        scheda: d.scheda ?? '',
+        fonte_url: b.fonte_url,
+        has_pdf: b.has_pdf,
+      })
     } catch {
       toast.error('Impossibile caricare la scheda del bando.')
     } finally {
@@ -275,6 +281,14 @@ export default function Clienti() {
         <button className="btn btn-primary" onClick={openAdd}>
           <IconPlus /> Aggiungi cliente
         </button>
+      </div>
+
+      <div className="ai-disclaimer clienti-privacy-disclaimer">
+        <IconInfo />
+        <span>
+          I dati dei clienti vengono salvati nel sistema per gestire l'anagrafica e calcolare il matching
+          localmente. Non vengono inviati al modello AI esterno né condivisi con provider AI.
+        </span>
       </div>
 
       {error && <div className="alert alert-danger">{error}</div>}

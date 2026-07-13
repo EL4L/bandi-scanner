@@ -63,7 +63,7 @@ export function ClienteDetailPage({
 
       <div className="cliente-tabs">
         <button className={`cliente-tab${tab === 'bandi' ? ' active' : ''}`} onClick={() => setTab('bandi')}>
-          Bandi compatibili<span className="cliente-tab-count">{bandi.length}</span>
+          Bandi analizzati<span className="cliente-tab-count">{bandi.length}</span>
         </button>
         <button className={`cliente-tab${tab === 'anagrafica' ? ' active' : ''}`} onClick={() => setTab('anagrafica')}>
           Anagrafica
@@ -81,7 +81,7 @@ export function ClienteDetailPage({
           ) : (
             <>
               <div className="cliente-scan-line">
-                <span className="pulse-dot" /> Il radar ha agganciato <strong>{bandi.length}</strong> {bandi.length === 1 ? 'bando' : 'bandi'} per questa azienda
+                <span className="pulse-dot" /> Il radar ha analizzato <strong>{bandi.length}</strong> {bandi.length === 1 ? 'bando' : 'bandi'} per questa azienda
               </div>
               {bandi.map(b => {
                 const escluso = b.ammissibilita?.ammissibile === false
@@ -118,32 +118,34 @@ export function ClienteDetailPage({
                           </span>
                         )}
                         {escluso && (
-                          <div style={{ marginTop: 'var(--space-2)' }}>
+                          <div className="eligibility-excluded" style={{ marginTop: 'var(--space-2)' }}>
                             <span className="badge badge-escluso"><IconBan /> Non ammissibile</span>
-                            {b.ammissibilita!.motivi_esclusione.length > 0 && (
-                              <ul className="td-muted text-sm" style={{ marginTop: 'var(--space-1)', paddingLeft: 'var(--space-4)' }}>
-                                {b.ammissibilita!.motivi_esclusione.map((motivo, i) => <li key={i}>{motivo}</li>)}
-                              </ul>
-                            )}
+                            <ul className="eligibility-reasons">
+                              {(b.ammissibilita?.motivi_esclusione?.length
+                                ? b.ammissibilita.motivi_esclusione
+                                : ['Non è stato possibile determinare il requisito non rispettato: verifica manualmente.']
+                              ).map((motivo, i) => <li key={i}>{motivo}</li>)}
+                            </ul>
                           </div>
                         )}
                       </div>
-                      {!escluso && (
-                        <div
-                          className={`score-circle score-circle--radar ${scoreCircleClass(b.score)}`}
-                          style={{ '--score': b.score } as React.CSSProperties}
-                        >
-                          <span>{b.score}%</span>
-                        </div>
-                      )}
                     </div>
 
                     {!escluso && (
-                      <div className="breakdown-bars" style={{ marginTop: 'var(--space-3)', maxWidth: 'none' }}>
-                        <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
-                        <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
-                        <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
-                        <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
+                      <div className="cliente-score-summary">
+                        <div
+                          className={`score-circle score-circle--radar ${scoreCircleClass(b.score)}`}
+                          style={{ '--score': b.score } as React.CSSProperties}
+                          aria-label={`Score totale ${b.score}%`}
+                        >
+                          <span>{b.score}%</span>
+                        </div>
+                        <div className="breakdown-bars cliente-score-breakdown">
+                          <BreakdownBar label="Regione" score={b.breakdown.regione} max={30} />
+                          <BreakdownBar label="ATECO" score={b.breakdown.ateco} max={40} />
+                          <BreakdownBar label="Dimensione" score={b.breakdown.dimensione} max={20} />
+                          <BreakdownBar label="Fatturato" score={b.breakdown.fatturato} max={10} />
+                        </div>
                       </div>
                     )}
 
@@ -153,8 +155,18 @@ export function ClienteDetailPage({
                       </button>
                       <a href={apiHref(`/api/bandi/${b.bando_id}/scheda.md`)} download className="btn btn-sm"
                         aria-label={`Scarica scheda di ${b.titolo ?? `Bando #${b.bando_id}`}`}>
-                        <IconDownload /> Scarica
+                        <IconDownload /> Scheda .md
                       </a>
+                      {b.has_pdf ? (
+                        <a href={apiHref(`/api/bandi/${b.bando_id}/pdf`)} download className="btn btn-sm"
+                          aria-label={`Scarica PDF originale di ${b.titolo ?? `Bando #${b.bando_id}`}`}>
+                          <IconDownload /> PDF
+                        </a>
+                      ) : (
+                        <button className="btn btn-sm" disabled title="PDF originale non disponibile: ricarica il documento">
+                          PDF non disponibile
+                        </button>
+                      )}
                       {b.fonte_url && (
                         <a href={b.fonte_url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-ghost"
                           aria-label={`Apri fonte ufficiale di ${b.titolo ?? `Bando #${b.bando_id}`}`}>

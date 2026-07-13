@@ -5,7 +5,11 @@ import re
 from datetime import datetime
 from typing import Any
 from modules.log_utils import log_error
-from modules.schema import DIMENSIONE_IMPRESA_KEYS, normalize_percentuale_fondo_perduto
+from modules.schema import (
+    DIMENSIONE_IMPRESA_KEYS,
+    normalize_percentuale_fondo_perduto,
+    normalize_response,
+)
 
 WEIGHT_REGIONE = 30
 WEIGHT_ATECO = 40
@@ -95,6 +99,8 @@ FORMA_GIURIDICA_CATEGORIE: dict[str, str] = {
     "snc": CAT_SOCIETA_PERSONE,
     "sas": CAT_SOCIETA_PERSONE,
     "ss": CAT_SOCIETA_PERSONE,
+    "nomecollettivo": CAT_SOCIETA_PERSONE,
+    "accomanditasemplice": CAT_SOCIETA_PERSONE,
     "societasemplice": CAT_SOCIETA_PERSONE,
     "societadipersone": CAT_SOCIETA_PERSONE,
     # Ditte individuali / imprenditori individuali
@@ -142,6 +148,29 @@ ATECO_SEZIONI_DIVISIONI: dict[str, tuple[int, int]] = {
     "K": (64, 66), "L": (68, 68), "M": (69, 75), "N": (77, 82), "O": (84, 84),
     "P": (85, 85), "Q": (86, 88), "R": (90, 93), "S": (94, 96), "T": (97, 98),
     "U": (99, 99),
+}
+ATECO_SEZIONI_LABELS: dict[str, str] = {
+    "A": "Agricoltura, silvicoltura e pesca",
+    "B": "Estrazione di minerali",
+    "C": "Attività manifatturiere",
+    "D": "Energia elettrica e gas",
+    "E": "Acqua, reti fognarie e rifiuti",
+    "F": "Costruzioni",
+    "G": "Commercio",
+    "H": "Trasporto e magazzinaggio",
+    "I": "Alloggio e ristorazione",
+    "J": "Servizi di informazione e comunicazione",
+    "K": "Attività finanziarie e assicurative",
+    "L": "Attività immobiliari",
+    "M": "Attività professionali, scientifiche e tecniche",
+    "N": "Servizi di supporto alle imprese",
+    "O": "Amministrazione pubblica",
+    "P": "Istruzione",
+    "Q": "Sanità e assistenza sociale",
+    "R": "Attività artistiche, sportive e di intrattenimento",
+    "S": "Altre attività di servizi",
+    "T": "Attività di famiglie e convivenze",
+    "U": "Organizzazioni extraterritoriali",
 }
 _SEZIONE_LETTERA_RE = re.compile(r"\b([A-U])\b")
 
@@ -638,19 +667,164 @@ def _format_euro(value: Any) -> str | None:
     try: return f"€ {float(value):,.0f}".replace(",", ".")
     except (TypeError, ValueError): return None
 
+
 def _chi_puo_accedere(bando: dict[str, Any]) -> str | None:
     parts = []
     regioni = _regioni_bando(bando)
-    if regioni: parts.append("**Regioni:** " + ", ".join(regioni))
-    if bando.get("ateco_aperto_a_tutti") is True: parts.append("**ATECO:** aperto a tutti i settori")
+    if regioni: parts.append("- **Territorio:** " + ", ".join(regioni))
+    if bando.get("ateco_aperto_a_tutti") is True: parts.append("- **ATECO:** aperto a tutti i settori")
     else:
         codici = _codici_ateco_bando(bando)
-        if codici: parts.append("**ATECO ammessi:** " + ", ".join(codici))
+        if codici: parts.append("- **ATECO ammessi:** " + ", ".join(codici))
         attivita = _norm_list(bando.get("attivita_ammesse"))
-        if attivita: parts.append("**Attività:** " + ", ".join(attivita))
+        spese = _norm_list(bando.get("spese_ammissibili"))
+        # Se le spese sono disponibili sono la rappresentazione più schematica
+        # degli interventi: non mostrare entrambe le liste nella stessa scheda.
+        if attivita and not spese:
+            parts.append("### Interventi ammessi\n\n" + _all_bullets(attivita))
     dim = _dimensioni_ammesse(bando)
-    if dim: parts.append("**Dimensioni impresa:** " + ", ".join(dim))
-    return "\n\n".join(parts) if parts else None
+    if dim: parts.append("- **Dimensioni impresa:** " + ", ".join(dim))
+    return "\n".join(parts) if parts else None
+
+
+def _append_unique(values: list[str], value: str) -> None:
+    if value and value not in values:
+        values.append(value)
+
+
+def _display_fallback(value: str, limit: int = 90) -> str:
+    """Rende leggibile una voce non coperta dal catalogo senza toccare il dato."""
+    compact = re.sub(r"\s+", " ", value).strip(" -–—,;.")
+    compact = re.sub(
+        r"^(?:spese?|costi?|investimenti?)\s+(?:ammissibili\s+)?(?:per|di|in)\s+",
+        "",
+        compact,
+        flags=re.IGNORECASE,
+    )
+    if compact:
+        compact = compact[0].upper() + compact[1:]
+    return compact if len(compact) <= limit else compact[:limit - 1].rstrip() + "…"
+
+
+def _compact_expense_labels(values: list[str]) -> list[str]:
+    """Trasforma descrizioni verbose in categorie di spesa brevi per la scheda.
+
+    La normalizzazione è solo di presentazione: il JSON originale conserva le
+    formulazioni estratte, utili per audit e matching.
+    """
+    result: list[str] = []
+    generic: list[str] = []
+    for value in values:
+        key = _norm_fg(value)
+        matched = False
+
+        rules: tuple[tuple[str, tuple[str, ...]], ...] = (
+            ("Arredi", ("arred",)),
+            ("Impianti", ("impiant",)),
+            ("Macchinari", ("macchinar",)),
+            ("Attrezzature", ("attrezzatur",)),
+            ("Mezzi targati", ("mezzitargat", "veicol", "automezz")),
+            ("Hardware", ("hardware",)),
+            ("Software", ("software", "licenzeinformatic")),
+            ("Brevetti", ("brevett",)),
+            ("Certificazioni di qualità", ("certificaz", "sistemadiqualita")),
+            ("Realizzazione sito web", ("sitoweb", "sitointernet", "portaleweb")),
+            ("Adeguamento funzionale sede operativa", ("adeguamentofunzional",)),
+            ("Ristrutturazione sede operativa", ("ristrutturazion",)),
+            ("Ricerca e sviluppo", ("ricercaesviluppo",)),
+            ("Consulenze specialistiche", ("consulenz",)),
+            ("Formazione", ("formazion",)),
+            ("Personale", ("costidelpersonale", "spesedipersonale")),
+            ("Imposta di bollo", ("impostadibollo", "bollodovut")),
+            ("Servizi di accompagnamento alla realizzazione", ("servizidiaccompagnamento",)),
+        )
+        for label, needles in rules:
+            if any(needle in key for needle in needles):
+                _append_unique(result, label)
+                matched = True
+        if re.search(r"\biva\b", value, re.IGNORECASE):
+            _append_unique(result, "IVA")
+            matched = True
+
+        if matched:
+            continue
+        if key in {
+            "investimentimaterialieimmateriali",
+            "altrespeseconnesse",
+            "altrespeseconnesseallarealizzazionedelprogetto",
+        }:
+            generic.append(_display_fallback(value))
+        else:
+            _append_unique(result, _display_fallback(value))
+
+    # Le categorie ombrello aggiungono rumore quando sono già disponibili le
+    # singole spese; restano visibili soltanto se il bando non offre dettaglio.
+    if not result:
+        for value in generic:
+            _append_unique(result, value)
+    return result
+
+
+def _compact_forbidden_labels(values: list[str]) -> list[str]:
+    """Riduce formulazioni normative a categorie autonome e deduplicate."""
+    result: list[str] = []
+    for value in values:
+        key = _norm_fg(value)
+        matched = False
+
+        def add(label: str) -> None:
+            nonlocal matched
+            _append_unique(result, label)
+            matched = True
+
+        if "tabacc" in key:
+            add("Tabacco (salvo bar tabacchi)" if "bartabacc" in key else "Tabacco")
+        if any(token in key for token in ("giocodazzardo", "casedagioco", "casadagioco")):
+            add("Gioco d'azzardo")
+        if "pornograf" in key or "commerciosessual" in key:
+            add("Pornografia e commercio sessuale")
+        if "armi" in key or "munizion" in key:
+            add("Armi e munizioni")
+        if "nuclear" in key:
+            add("Energia nucleare")
+        if "pesc" in key or "acquacoltur" in key:
+            add("Pesca e acquacoltura")
+        if "produzioneprimaria" in key and ("agricol" in key or "prodottiagricoli" in key):
+            add("Attività agricole primarie")
+        if "sviluppoimmobiliar" in key and any(
+            token in key for token in ("speculat", "unicoscopo", "rivendit", "rilocazion")
+        ):
+            add("Sviluppo immobiliare speculativo")
+        if "esportazion" in key or "retedidistribuzion" in key:
+            add("Attività di esportazione e reti di distribuzione")
+        if "dirittiuman" in key or "dirittiindividual" in key:
+            add("Violazioni dei diritti umani")
+        if "clonazion" in key or "patrimoniogenetico" in key or "embrion" in key:
+            add("Clonazione e modificazione genetica umana")
+        if "animalivivi" in key and ("sperimental" in key or "scientific" in key):
+            add("Sperimentazione animale")
+        if "combustibilifossil" in key or "estrazionemineraria" in key:
+            add("Combustibili fossili ed estrazione mineraria")
+        if "discaric" in key:
+            add("Smaltimento dei rifiuti in discarica")
+        if "trattamentomeccanicobiologico" in key or "tmb" in key:
+            add("Trattamento meccanico-biologico dei rifiuti")
+        if "inceneritor" in key:
+            add("Incenerimento dei rifiuti")
+        if "infrastruttureaeroportual" in key:
+            add("Infrastrutture aeroportuali")
+
+        # Le attività finanziarie/assicurative e immobiliari generiche sono
+        # rappresentate in "Settori esclusi", quindi non vanno ripetute qui.
+        sector_only = (
+            "finanziar" in key
+            or "assicurativ" in key
+            or ("immobiliar" in key and "sviluppoimmobiliar" not in key)
+        )
+        if not matched and not sector_only:
+            add(_display_fallback(value))
+    return result
+
 
 def _sezione_esclusioni(b: dict[str, Any]) -> str | None:
     note = b.get("note_esclusioni")
@@ -658,14 +832,52 @@ def _sezione_esclusioni(b: dict[str, Any]) -> str | None:
         return f"## Esclusioni\n\n{note.strip()}"
     if not isinstance(note, dict):
         return None
-    parts: list[str] = []
-    testo = _norm_str(note.get("lista_testuale"))
-    if testo: parts.append(testo)
+    sections: list[str] = []
     sezioni = _norm_list(note.get("sezioni_ateco_escluse"))
-    if sezioni: parts.append("**Sezioni ATECO escluse:** " + ", ".join(sezioni))
+    sezioni_leggibili: list[str] = []
+    for voce in sezioni:
+        lettera = _estrai_lettera_sezione(voce)
+        label = ATECO_SEZIONI_LABELS.get(lettera or "")
+        sezioni_leggibili.append(f"Sez. {lettera} – {label}" if lettera and label else voce)
+    if sezioni_leggibili:
+        sections.append("### Sezioni ATECO\n\n" + "\n".join(f"- {item}" for item in sezioni_leggibili))
     vietate = _norm_list(note.get("attivita_vietate"))
-    if vietate: parts.append("**Attività vietate:** " + ", ".join(vietate))
-    return "## Esclusioni\n\n" + "\n\n".join(parts) if parts else None
+    settori: list[str] = []
+    for voce in vietate:
+        lowered = voce.casefold()
+        settore = None
+        if "finanziar" in lowered and "assicurativ" in lowered:
+            settore = ATECO_SEZIONI_LABELS["K"]
+        elif "finanziar" in lowered:
+            settore = "Attività finanziarie"
+        elif "assicurativ" in lowered:
+            settore = "Attività assicurative"
+        elif "immobiliar" in lowered:
+            settore = ATECO_SEZIONI_LABELS["L"]
+        if settore and settore not in settori:
+            settori.append(settore)
+    altre_vietate = _compact_forbidden_labels(vietate)
+    if settori:
+        sections.append("### Settori esclusi\n\n" + _all_bullets(settori))
+    if altre_vietate:
+        sections.append("### Attività vietate\n\n" + _all_bullets(altre_vietate))
+
+    structured_groups = (
+        ("Soggetti esclusi", "soggetti_esclusi"),
+        ("Spese non ammissibili", "spese_non_ammissibili"),
+        ("Altre esclusioni", "altre_esclusioni"),
+    )
+    for title, key in structured_groups:
+        values = _norm_list(note.get(key))
+        if values:
+            sections.append(f"### {title}\n\n" + _all_bullets(values))
+
+    # Compatibilità con estrazioni precedenti: il vecchio paragrafo libero è
+    # mostrato solo quando non esiste alcuna informazione strutturata.
+    testo = _norm_str(note.get("lista_testuale"))
+    if testo and not sections:
+        sections.append("### Nota\n\n" + testo)
+    return "## Esclusioni\n\n" + "\n\n".join(sections) if sections else None
 
 MODALITA_PRESENTAZIONE_LABELS: dict[str, str] = {
     "sportello": "Sportello (a esaurimento fondi)",
@@ -682,6 +894,15 @@ TIPO_AGEVOLAZIONE_LABELS: dict[str, str] = {
     "voucher": "Voucher",
 }
 
+RUOLO_ENTE_LABELS: dict[str, str] = {
+    "promotore": "Promotore",
+    "gestore": "Gestore",
+    "ente_attuatore": "Ente attuatore",
+    "intermediario_finanziario": "Intermediario finanziario",
+    "piattaforma": "Piattaforma",
+    "altro": "Altro soggetto",
+}
+
 def _format_pct(value: Any) -> str | None:
     try:
         f = float(value)
@@ -689,38 +910,168 @@ def _format_pct(value: Any) -> str | None:
         return None
     return f"{f:.0f}%" if f == int(f) else f"{f}%"
 
+
+def _shorten(value: str, limit: int = 180) -> str:
+    compact = re.sub(r"\s+", " ", value).strip()
+    return compact if len(compact) <= limit else compact[:limit - 1].rstrip() + "…"
+
+
+def _all_bullets(values: list[str]) -> str:
+    return "\n".join(f"- {value}" for value in values)
+
+
+def _compact_legal_forms(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        key = _norm_fg(value)
+        if "responsabilitalimitatasemplificata" in key or key.startswith("srls"):
+            canonical = "S.r.l.s."
+        elif "responsabilitalimitata" in key or key.startswith("srl"):
+            canonical = "S.r.l."
+        elif "nomecollettivo" in key or key == "snc":
+            canonical = "S.n.c."
+        elif "accomanditasemplice" in key or key == "sas":
+            canonical = "S.a.s."
+        elif "cooperativ" in key:
+            canonical = "Cooperative"
+        elif "individual" in key:
+            canonical = "Ditte individuali"
+        elif "profession" in key:
+            canonical = "Liberi professionisti"
+        else:
+            canonical = value
+        signature = _norm_fg(canonical)
+        if signature not in seen:
+            seen.add(signature)
+            result.append(canonical)
+    return result
+
+
+def _format_cumulabilita(value: Any) -> str | None:
+    text = _norm_str(value)
+    if not text:
+        return None
+    lowered = text.casefold()
+    if "limiti di cumulo" in lowered and ("salvo" in lowered or "rispett" in lowered):
+        return "Ammessa nel rispetto dei limiti di cumulo applicabili"
+    if "non cumulabil" in lowered or "non è compatibil" in lowered or "non e compatibil" in lowered:
+        return "Non cumulabile sul medesimo investimento"
+    if "non aver beneficiato" in lowered and "medesimo investimento" in lowered:
+        return "Non cumulabile sul medesimo investimento, salvo i limiti applicabili"
+    if "de minimis" in lowered:
+        return "Soggetta alle regole de minimis"
+    return _shorten(text)
+
+
+def _format_agevolazioni(agevolazioni: Any) -> list[str]:
+    if not isinstance(agevolazioni, list):
+        return []
+    sections: list[str] = []
+    for item in agevolazioni:
+        if not isinstance(item, dict):
+            continue
+        tipo = item.get("tipo")
+        label = TIPO_AGEVOLAZIONE_LABELS.get(tipo)
+        if not label:
+            continue
+        details: list[str] = []
+        importo_min = _format_euro(item.get("importo_min"))
+        importo_max = _format_euro(item.get("importo_max"))
+        if importo_min:
+            label_min = "Importo minimo del finanziamento" if tipo == "finanziamento_agevolato" else "Importo minimo"
+            details.append(f"{label_min}: {importo_min}")
+        if importo_max:
+            label_max = "Importo massimo del finanziamento" if tipo == "finanziamento_agevolato" else "Importo massimo"
+            details.append(f"{label_max}: {importo_max}")
+        percentage = _format_pct(item.get("percentuale"))
+        if percentage:
+            details.append(f"Copertura: {percentage}")
+        percentages = normalize_percentuale_fondo_perduto(item.get("percentuali_per_dimensione"))
+        by_size = [
+            f"{size} {_format_pct(percentages[key])}"
+            for key, size in (("micro", "Micro"), ("piccola", "Piccola"), ("media", "Media"))
+            if percentages.get(key) is not None
+        ]
+        if by_size:
+            details.append("Copertura per fascia: " + "; ".join(by_size))
+        rate = _format_pct(item.get("tasso_interesse_percentuale"))
+        rate_description = _norm_str(item.get("tasso_descrizione"))
+        if rate:
+            details.append(f"Tasso: {rate}")
+        elif rate_description:
+            details.append(f"Tasso: {rate_description}")
+        if item.get("durata_mesi") is not None:
+            details.append(f"Durata: {item['durata_mesi']} mesi")
+        if item.get("preammortamento_mesi") is not None:
+            details.append(f"Preammortamento: {item['preammortamento_mesi']} mesi")
+        if item.get("abbuono_rate") is not None:
+            details.append(f"Abbuono: {item['abbuono_rate']} rate")
+        repayment = item.get("rimborso_richiesto")
+        if repayment is not None:
+            details.append("Rimborso richiesto: sì" if repayment else "Rimborso richiesto: no")
+        conditions = _norm_list(item.get("condizioni"))
+        if conditions:
+            details.extend(f"Condizione: {_shorten(value, 120)}" for value in conditions[:2])
+        body = "\n".join(f"- {detail}" for detail in details)
+        sections.append(f"**{label}**" + (f"\n{body}" if body else ""))
+    return sections
+
 def genera_scheda(bando: dict[str, Any]) -> str:
-    b = _unwrap_bando(bando if isinstance(bando, dict) else {})
+    raw = _unwrap_bando(bando if isinstance(bando, dict) else {})
+    b = normalize_response({"bando": raw})["bando"]
     lines = []
     titolo = _norm_str(b.get("titolo"))
     ente = _norm_str(b.get("ente"))
     if titolo: lines.append(f"# {titolo}")
-    if ente: lines.append(f"**Ente:** {ente}")
+    overview: list[str] = []
+    if ente:
+        overview.append(f"- **Ente promotore:** {ente}")
+    modalita = MODALITA_PRESENTAZIONE_LABELS.get(b.get("modalita_presentazione") or "")
+    involved = b.get("enti_coinvolti")
+    involved_lines: list[str] = []
+    if isinstance(involved, list):
+        for item in involved:
+            if not isinstance(item, dict):
+                continue
+            name = _norm_str(item.get("nome"))
+            if not name:
+                continue
+            role = RUOLO_ENTE_LABELS.get(item.get("ruolo") or "", "Soggetto coinvolto")
+            if item.get("ruolo") == "piattaforma":
+                continue
+            involved_lines.append(f"- **{role}:** {name}")
     scadenza = format_scadenza_italiana(b.get("data_scadenza"))
     if scadenza:
         gg = giorni_alla_scadenza(b.get("data_scadenza"))
         if gg is not None:
             if gg < 0:
-                lines.append(f"**Scadenza:** {scadenza} — ⛔ **SCADUTO**")
+                overview.append(f"- **Scadenza:** {scadenza} — SCADUTO")
             elif gg < 30:
-                lines.append(f"**Scadenza:** {scadenza} — 🔴 **{gg} giorni** (urgenza alta)")
+                overview.append(f"- **Scadenza:** {scadenza} — {gg} giorni (urgenza alta)")
             elif gg < 90:
-                lines.append(f"**Scadenza:** {scadenza} — 🟡 {gg} giorni")
+                overview.append(f"- **Scadenza:** {scadenza} — {gg} giorni")
             else:
-                lines.append(f"**Scadenza:** {scadenza} — 🟢 {gg} giorni")
+                overview.append(f"- **Scadenza:** {scadenza} — {gg} giorni")
         else:
-            lines.append(f"**Scadenza:** {scadenza}")
+            overview.append(f"- **Scadenza:** {scadenza}")
+    elif modalita == MODALITA_PRESENTAZIONE_LABELS["sportello"]:
+        overview.append("- **Scadenza:** fino a esaurimento fondi")
+    if modalita:
+        overview.append(f"- **Presentazione:** {modalita}")
+    if overview:
+        lines.append("## Panoramica\n\n" + "\n".join(overview))
+    if involved_lines:
+        lines.append("## Soggetti coinvolti\n\n" + "\n".join(involved_lines))
     accesso = _chi_puo_accedere(b)
-    if accesso: lines.append("## Chi può accedere\n\n" + accesso)
-    esclusioni = _sezione_esclusioni(b)
-    if esclusioni: lines.append(esclusioni)
+    if accesso: lines.append("## Beneficiari e interventi\n\n" + accesso)
     anz_info = b.get("anzianita_impresa") or {}
     requisiti = []
     spesa_min = b.get("spesa_minima_ammissibile")
     spesa_max = b.get("spesa_massima_ammissibile")
     mesi_min = anz_info.get("mesi_minimi_dalla_costituzione")
     mesi_max = anz_info.get("mesi_massimi_dalla_costituzione")
-    forme = _norm_list(b.get("forme_giuridiche_ammesse"))
+    forme = _compact_legal_forms(_norm_list(b.get("forme_giuridiche_ammesse")))
     if spesa_min is not None:
         try: requisiti.append(f"**Investimento minimo:** {_format_euro(spesa_min)}")
         except Exception: pass
@@ -733,35 +1084,36 @@ def genera_scheda(bando: dict[str, Any]) -> str:
         requisiti.append(f"**Anzianità massima:** {int(mesi_max)} mesi")
     if forme:
         requisiti.append(f"**Forme giuridiche:** {', '.join(forme)}")
-    modalita = MODALITA_PRESENTAZIONE_LABELS.get(b.get("modalita_presentazione") or "")
-    if modalita:
-        requisiti.append(f"**Modalità di presentazione:** {modalita}")
-    cumulabilita = _norm_str(b.get("cumulabilita"))
+    if requisiti:
+        lines.append("## Requisiti principali\n\n" + "\n".join(f"- {item}" for item in requisiti))
+    econ_parts = _format_agevolazioni(b.get("agevolazioni"))
+    if not econ_parts:
+        contributo = _format_euro(b.get("contributo_max"))
+        pct_fasce = normalize_percentuale_fondo_perduto(b.get("percentuale_fondo_perduto"))
+        if contributo: econ_parts.append(f"**Contributo massimo:** {contributo}")
+        fasce_valorizzate = [
+            (label, pct_fasce.get(chiave)) for chiave, label in (
+                ("micro", "Micro"), ("piccola", "Piccola"), ("media", "Media"),
+            ) if pct_fasce.get(chiave) is not None
+        ]
+        if fasce_valorizzate:
+            dettaglio = "; ".join(f"{label} {_format_pct(val)}" for label, val in fasce_valorizzate)
+            econ_parts.append(f"**Fondo perduto per fascia:** {dettaglio}")
+        elif pct_fasce.get("default") is not None:
+            econ_parts.append(f"**Fondo perduto:** {_format_pct(pct_fasce['default'])}")
+        tipo_ag = [TIPO_AGEVOLAZIONE_LABELS[t] for t in _norm_list(b.get("tipo_agevolazione")) if t in TIPO_AGEVOLAZIONE_LABELS]
+        if tipo_ag:
+            econ_parts.append(f"**Tipo di agevolazione:** {', '.join(tipo_ag)}")
+    cumulabilita = _format_cumulabilita(b.get("cumulabilita"))
     if cumulabilita:
-        requisiti.append(f"**Cumulabilità:** “{cumulabilita}”")
-    if requisiti: lines.append("## Requisiti di accesso\n\n" + "\n\n".join(requisiti))
-    contributo = _format_euro(b.get("contributo_max"))
-    pct_fasce = normalize_percentuale_fondo_perduto(b.get("percentuale_fondo_perduto"))
-    econ_parts = []
-    if contributo: econ_parts.append(f"**Contributo massimo:** {contributo}")
-    fasce_valorizzate = [
-        (label, pct_fasce.get(chiave)) for chiave, label in (
-            ("micro", "Micro"), ("piccola", "Piccola"), ("media", "Media"),
-        ) if pct_fasce.get(chiave) is not None
-    ]
-    if fasce_valorizzate:
-        dettaglio = "; ".join(f"{label} {_format_pct(val)}" for label, val in fasce_valorizzate)
-        econ_parts.append(f"**Fondo perduto per fascia:** {dettaglio}")
-    elif pct_fasce.get("default") is not None:
-        econ_parts.append(f"**Fondo perduto:** {_format_pct(pct_fasce['default'])}")
-    tipo_ag = [TIPO_AGEVOLAZIONE_LABELS[t] for t in _norm_list(b.get("tipo_agevolazione")) if t in TIPO_AGEVOLAZIONE_LABELS]
-    if tipo_ag:
-        econ_parts.append(f"**Tipo di agevolazione:** {', '.join(tipo_ag)}")
-    if econ_parts: lines.append("## Contributi\n\n" + "\n\n".join(econ_parts))
-    spese = _norm_list(b.get("spese_ammissibili"))
-    if spese: lines.append("## Spese ammissibili\n\n" + "\n".join(f"- {s}" for s in spese))
-    link = _norm_str(b.get("url_fonte") or b.get("link_fonte_ufficiale") or b.get("link_fonte"))
-    if link: lines.append(f"## Fonte ufficiale\n\n[{link}]({link})")
+        econ_parts.append(f"**Cumulabilità:** {cumulabilita}")
+    if econ_parts: lines.append("## Contributi e agevolazioni\n\n" + "\n\n".join(econ_parts))
+    spese = _compact_expense_labels(_norm_list(b.get("spese_ammissibili")))
+    if spese: lines.append("## Spese ammissibili\n\n" + _all_bullets(spese))
+    esclusioni = _sezione_esclusioni(b)
+    if esclusioni: lines.append(esclusioni)
+    link = _norm_str(b.get("url_documento_origine"))
+    if link: lines.append(f"## Documento di origine\n\n[{link}]({link})")
     if not lines:
         return "*Scheda non disponibile — dati bando insufficienti.*"
     lines.append("---")
@@ -835,13 +1187,14 @@ def genera_spiegazione_score(
 
 def get_fonte_url(bando: dict[str, Any]) -> str | None:
     b = _unwrap_bando(bando if isinstance(bando, dict) else {})
-    link = _norm_str(b.get("url_fonte") or b.get("link_fonte_ufficiale") or b.get("link_fonte"))
+    link = _norm_str(b.get("url_documento_origine"))
     return link or None
 
 def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
     rows = conn.execute(
         '''SELECT mr.bando_id, mr.cliente_id, mr.score, mr.data_match,
         b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo, b.scheda_cached,
+        (b.pdf_original IS NOT NULL) AS has_pdf,
         c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
         c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa,
         c.data_costituzione AS cliente_data_costituzione, c.numero_dipendenti AS cliente_numero_dipendenti, c.forma_giuridica AS cliente_forma_giuridica

@@ -262,7 +262,7 @@ Score 0-100, calcolato da `calculate_score(bando, cliente)`:
 
 ### Estrazione PDF
 1. Upload PDF via `POST /api/estrazione`
-2. `extract_text_from_pdf()` — PyMuPDF, max 120.000 char, lancia `EmptyPDFException` se < 50 char
+2. `extract_text_from_pdf()` — PyMuPDF, lancia `EmptyPDFException` se < 50 caratteri; l'estrazione AI usa blocchi sovrapposti da circa 60.000 caratteri e copertura integrale del documento
 3. `extract_bando_data()` — chiama DeepSeek via OpenRouter (retry 3x con 5 min tra tentativi)
 4. `validate_bando()` — struttura + formato + logica; se >50% null → `needs_manual_review`
 5. Fallback: se `data_scadenza` vuota, `date_infer.py` cerca date nel testo tramite regex + pesi keyword
