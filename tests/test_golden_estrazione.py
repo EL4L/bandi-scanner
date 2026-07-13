@@ -89,23 +89,16 @@ class TestGoldenNuovaSabatini:
         del finanziamento è accettabile come proxy per la spesa minima."""
         assert nuova_sabatini["spesa_minima_ammissibile"] == 20000
 
-    @pytest.mark.xfail(
-        reason=(
-            "Audit Fable #1 (bug più grave, non ancora risolto): 4.000.000 è il "
-            "tetto del FINANZIAMENTO bancario, non il contributo. Il contributo "
-            "reale è il valore attualizzato degli interessi (2,75-5,5% su 5 anni), "
-            "poche centinaia di migliaia di euro al massimo. Richiede la modifica "
-            "#1 (regola prompt sulle misure a leva) in Fase 3."
-        ),
-        strict=False,
-    )
     def test_contributo_max_non_e_il_tetto_del_finanziamento(self, nuova_sabatini):
+        """Fix #1 (Fase 3) applicato e confermato: prima del fix questo test
+        era xfail (l'estrazione prendeva 4.000.000, il tetto del finanziamento,
+        come contributo_max). Dopo il fix, verificato PASS su chiamata LLM
+        reale il 2026-07-13 — xfail rimosso."""
         contributo = nuova_sabatini.get("contributo_max")
         # Il vero contributo (valore attualizzato interessi) è nell'ordine di
         # poche centinaia di migliaia di euro, non 4 milioni. Consideriamo
-        # corretto anche `null` se il prompt, dopo il fix, preferisce non
-        # esprimere una cifra certa (comportamento esplicitamente ammesso
-        # dalla regola proposta in #1).
+        # corretto anche `null` se il prompt preferisce non esprimere una
+        # cifra certa (comportamento esplicitamente ammesso dalla regola #1).
         assert contributo is None or contributo < 1_000_000
 
     def test_note_esclusioni_menziona_sezione_k(self, nuova_sabatini):
@@ -141,28 +134,20 @@ class TestGoldenFondoFemminile:
         forme = [f.lower() for f in (fondo_femminile.get("forme_giuridiche_ammesse") or [])]
         assert any("cooperativ" in f for f in forme)
 
-    @pytest.mark.xfail(
-        reason=(
-            "Audit Fable #1: 400.000 è il tetto del PIANO DI SPESA, non "
-            "dell'incentivo. Il testo dice esplicitamente 'Importo max € 320.000' "
-            "(copertura 80% su 400.000 di spesa). Richiede la modifica #1 in Fase 3."
-        ),
-        strict=False,
-    )
     def test_contributo_max_e_incentivo_non_piano_di_spesa(self, fondo_femminile):
+        """Fix #1 (Fase 3) applicato e confermato: prima del fix questo test
+        era xfail (l'estrazione prendeva 400.000, il piano di spesa, invece di
+        320.000, l'incentivo dichiarato esplicitamente nel testo). Dopo il
+        fix, verificato PASS su chiamata LLM reale il 2026-07-13 — xfail
+        rimosso."""
         assert fondo_femminile.get("contributo_max") == 320000
 
-    @pytest.mark.xfail(
-        reason=(
-            "Audit Fable #1: il 25% nel testo è la quota massima di CAPITALE "
-            "CIRCOLANTE sul piano di spesa (>36 mesi), non una percentuale di "
-            "fondo perduto. Applicando la regola matematica del prompt (80% "
-            "coperto, metà fondo perduto e metà tasso zero) il valore corretto "
-            "è 40. Richiede la modifica #1 in Fase 3."
-        ),
-        strict=False,
-    )
     def test_percentuale_fondo_perduto_corretta(self, fondo_femminile):
+        """Fix #1 (Fase 3) applicato e confermato: prima del fix questo test
+        era xfail (l'estrazione prendeva 25, la quota di capitale circolante,
+        invece di 40, il valore corretto secondo la regola matematica del
+        prompt). Dopo il fix, verificato PASS su chiamata LLM reale il
+        2026-07-13 — xfail rimosso."""
         pct = fondo_femminile.get("percentuale_fondo_perduto")
         valore = pct.get("default") if isinstance(pct, dict) else pct
         assert valore == 40

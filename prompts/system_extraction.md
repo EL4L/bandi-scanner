@@ -82,14 +82,49 @@ Restituisci SOLO un oggetto JSON valido, senza testo aggiuntivo, senza markdown 
   - "attivita_vietate": (lista di stringhe) es: ["gioco d'azzardo", "tabacco", "silvicoltura", "pesca"].
 
 * "contributo_max": (numero o null).
-  - Usa SOLO l'importo massimo del contributo o agevolazione erogabile al beneficiario.
-  - Se il bando indica una percentuale di agevolazione E un massimale di spese,
-    calcola: contributo_max = spesa_massima × percentuale_fondo_perduto / 100.
-    Esempio: "spese ammissibili fino a €5.000.000, contributo del 50%" → 2500000.
-  - Se c'è una percentuale ma non un massimale di spese esplicito, lascia null.
-  - Se non c'è né un importo fisso né una percentuale calcolabile, lascia null.
-  - NON usare il massimale di spese ammissibili come contributo_max: sono due
-    campi distinti con semantica diversa.
+  - Usa SOLO l'importo massimo del contributo o agevolazione EFFETTIVAMENTE
+    EROGATO al beneficiario. Segui questo ordine di priorità:
+
+  1) Se il testo indica ESPLICITAMENTE un importo massimo dell'agevolazione/
+     incentivo (es. "Importo massimo dell'agevolazione: € 320.000", "contributo
+     fino a un massimo di € X"), usa SEMPRE quella cifra dichiarata, anche se è
+     diversa dal tetto del piano di spesa/progetto ammissibile. Non confondere
+     il "piano di spesa massimo ammissibile" (il tetto dei COSTI del progetto)
+     con il "contributo massimo" (il tetto di quanto viene EROGATO): restano
+     concetti diversi anche quando collegati da una percentuale di copertura.
+     ESEMPIO NEGATIVO (Fondo impresa femminile): il testo dice "Progetti fino a
+     €400.000" (piano di spesa) e separatamente "Importo max €320.000"
+     (incentivo, copertura 80%): contributo_max = 320000, MAI 400000.
+
+  2) Se manca un importo esplicito ma il bando indica una percentuale di
+     agevolazione E un massimale di spese, calcola:
+     contributo_max = spesa_massima × percentuale_fondo_perduto / 100.
+     Esempio: "spese ammissibili fino a €5.000.000, contributo del 50%" → 2500000.
+
+  3) DISTINGUI SEMPRE il "tetto del finanziamento/prestito" dal contributo
+     effettivo: se il bando è un finanziamento agevolato (prestito, mutuo,
+     contributo in conto interessi) e NON un contributo diretto a fondo perduto,
+     l'importo massimo del finanziamento/prestito NON è il contributo_max. Il
+     vero beneficio in questi casi è il valore attualizzato degli interessi
+     risparmiati (tasso agevolato rispetto al tasso di mercato), quasi mai
+     espresso come cifra unica nel testo. Se il testo non fornisce una cifra
+     ESPLICITA e certa per il beneficio effettivo (distinta dal tetto del
+     prestito), lascia contributo_max a null — non usare MAI il tetto del
+     finanziamento/prestito come proxy del contributo, indipendentemente da
+     quanto sia un numero grande e visibile nel testo.
+     ESEMPIO NEGATIVO (Nuova Sabatini): il testo dice "il finanziamento deve
+     essere deliberato per un valore compreso tra 20.000 euro e 4 milioni di
+     euro" e "tasso d'interesse annuo pari al 2,75%": contributo_max = null
+     (4.000.000 è il tetto del PRESTITO, non il contributo — il vero beneficio
+     è il valore attualizzato degli interessi, non calcolabile con certezza dal
+     testo).
+
+  4) Se non c'è né un importo fisso né una percentuale calcolabile, lascia null.
+
+  - NON usare MAI il massimale di spese ammissibili, né il tetto di un
+    finanziamento/prestito, come contributo_max: sono campi concettualmente
+    distinti dal contributo/agevolazione effettivamente ricevuta dal
+    beneficiario.
 
 * "numero_dipendenti_min": (numero intero o null).
   - Numero minimo di dipendenti richiesto per accedere al bando.
