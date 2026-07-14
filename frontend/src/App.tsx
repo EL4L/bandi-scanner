@@ -1,10 +1,12 @@
-import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Dashboard from './components/Dashboard'
+import DashboardBandoDetail from './components/DashboardBandoDetail'
 import Bandi from './components/Bandi'
 import Clienti from './components/Clienti'
 import CaricaBando from './components/CaricaBando'
 import ToastHost from './components/ToastHost'
+import './dashboard.css'
 
 function IconGrid() {
   return (
@@ -51,23 +53,25 @@ function IconUpload() {
 }
 
 function Sidebar() {
+  const location = useLocation()
   const navClass = ({ isActive }: { isActive: boolean }) =>
     'sidebar-nav-item' + (isActive ? ' active' : '')
 
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">BS</div>
-          <div>
-            <span className="sidebar-brand-name">BandiScanner</span>
-            <span className="sidebar-brand-sub">per Commercialisti</span>
-          </div>
+        <div className="sidebar-logo" aria-label="BandoMatch AI">
+          <img
+            src="/bandomatch-ai-logo.jpeg"
+            alt="BandoMatch AI"
+            className="sidebar-logo-image"
+          />
         </div>
       </div>
 
       <nav className="sidebar-nav">
-        <NavLink to="/" end className={navClass}>
+        <NavLink to="/" end className={({ isActive }) =>
+          'sidebar-nav-item' + (isActive || location.pathname.startsWith('/dashboard/') ? ' active' : '')}>
           <IconGrid /> Dashboard
         </NavLink>
         <NavLink to="/bandi" className={navClass}>
@@ -82,7 +86,7 @@ function Sidebar() {
       </nav>
 
       <div className="sidebar-footer">
-        <p className="sidebar-version">BandiScanner AI · v1.0</p>
+        <p className="sidebar-version">BandoMatch AI · v1.0</p>
       </div>
     </aside>
   )
@@ -101,6 +105,7 @@ export default function App() {
           <main className="main-content">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard/bandi/:bandoId" element={<DashboardBandoDetail />} />
               <Route path="/bandi" element={<Bandi />} />
               <Route path="/clienti" element={<Clienti />} />
               <Route path="/carica" element={<CaricaBando />} />

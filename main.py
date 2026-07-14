@@ -285,10 +285,31 @@ def _dashboard_payload() -> dict:
     with get_connection() as conn:
         n_bandi = count_bandi(conn)
         rows = load_dashboard_rows(conn)
+        all_bandi_rows = conn.execute(
+            """
+            SELECT id, titolo, ente, data_scadenza, json_completo, scheda_cached,
+                   (pdf_original IS NOT NULL) AS has_pdf
+            FROM bandi
+            ORDER BY id DESC
+            """
+        ).fetchall()
 
     export_rows = _build_export_rows(rows) if rows else []
 
-    by_bando: dict[int, dict] = {}
+    by_bando: dict[int, dict] = {
+        int(row["id"]): {
+            "id": int(row["id"]),
+            "titolo": row["titolo"] or f"Bando #{row['id']}",
+            "ente": row["ente"],
+            "data_scadenza": row["data_scadenza"],
+            "json_completo": row["json_completo"],
+            "scheda_cached": row.get("scheda_cached"),
+            "has_pdf": bool(row.get("has_pdf")),
+            "matches": [],
+            "max_score": 0,
+        }
+        for row in (dict(item) for item in all_bandi_rows)
+    }
     for row in rows or []:
         bid = row["bando_id"]
         if bid not in by_bando:
@@ -364,6 +385,7 @@ def _dashboard_payload() -> dict:
                 }
 
             matches.append({
+                "cliente_id": m.get("cliente_id"),
                 "nome": m["cliente_nome"],
                 "score": score_cliente,
                 "score_badge_class": score_badge_class(score_cliente),
@@ -392,6 +414,7 @@ def _dashboard_payload() -> dict:
             "titolo": info["titolo"],
             "ente": info["ente"],
             "contributo_max": contributo_max,
+            "contributo_max_valore": valore_contributo if isinstance(valore_contributo, (int, float)) else None,
             "scadenza": scad_fmt,
             "giorni_alla_scadenza": giorni_alla_scadenza(scadenza_grezza_card),
             "urgenza": calcola_urgenza(scadenza_grezza_card),
@@ -420,6 +443,103 @@ def _dashboard_payload() -> dict:
 @app.get("/api/dashboard", dependencies=[Depends(verify_api_key)])
 def api_dashboard():
     return _dashboard_payload()
+
+
+@app.get("/api/dashboard/bandi/{bando_id}", dependencies=[Depends(verify_api_key)])
+def api_dashboard_bando_detail(bando_id: int):
+    """Dettaglio analitico leggero: dati strutturati del bando e confronto con
+    tutti i clienti. Rimane separato dalla lista dashboard per non trasferire
+    fonti ed esclusioni complete per ogni card."""
+    with get_connection() as conn:
+        row = conn.execute(
+            """
+            SELECT id, titolo, ente, data_scadenza, json_completo, scheda_cached,
+                   (pdf_original IS NOT NULL) AS has_pdf
+            FROM bandi
+            WHERE id = %s
+            """,
+            (bando_id,),
+        ).fetchone()
+
+    if not row:
+        return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
+
+    record = dict(row)
+    try:
+        payload = json.loads(record["json_completo"])
+    except Exception:
+        return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
+
+    bando_data = payload.get("bando", {}) if isinstance(payload, dict) else {}
+    if not isinstance(bando_data, dict):
+        bando_data = {}
+
+    clienti_match = []
+    for cliente in list_clienti():
+        try:
+            breakdown = get_score_breakdown(payload, cliente)
+            breakdown_error = None
+        except Exception as exc:
+            breakdown = {
+                "total": 0, "ateco": 0, "regione": 0,
+                "dimensione": 0, "fatturato": 0, "status": "ok",
+            }
+            breakdown_error = str(exc)
+
+        try:
+            ammissibilita = check_ammissibilita(payload, cliente)
+        except Exception:
+            ammissibilita = {
+                "ammissibile": None,
+                "motivi_esclusione": [],
+                "criteri_verificati": [],
+                "errore": True,
+            }
+
+        try:
+            spiegazione = genera_spiegazione_score(payload, cliente, breakdown)
+        except Exception:
+            spiegazione = None
+
+        clienti_match.append({
+            "id": cliente.get("id"),
+            "ragione_sociale": cliente.get("ragione_sociale"),
+            "codice_ateco": cliente.get("codice_ateco"),
+            "regione": cliente.get("regione"),
+            "dimensione_impresa": cliente.get("dimensione_impresa"),
+            "fatturato": cliente.get("fatturato"),
+            "score": int(breakdown.get("total", 0)),
+            "breakdown": breakdown,
+            "breakdown_error": breakdown_error,
+            "ammissibilita": ammissibilita,
+            "spiegazione_score": spiegazione,
+        })
+
+    clienti_match.sort(
+        key=lambda item: (
+            item.get("ammissibilita", {}).get("ammissibile") is True,
+            item.get("breakdown", {}).get("status") != "da_verificare",
+            item.get("score", 0),
+        ),
+        reverse=True,
+    )
+
+    raw_scadenza = record.get("data_scadenza") or bando_data.get("data_scadenza")
+    return {
+        "bando": {
+            "id": record["id"],
+            "titolo": record.get("titolo") or bando_data.get("titolo") or f"Bando #{bando_id}",
+            "ente": record.get("ente") or bando_data.get("ente"),
+            "scadenza": format_scadenza_italiana(raw_scadenza),
+            "giorni_alla_scadenza": giorni_alla_scadenza(raw_scadenza),
+            "urgenza": calcola_urgenza(raw_scadenza),
+            "fonte_url": get_fonte_url(payload),
+            "has_pdf": bool(record.get("has_pdf")),
+            "scheda": _scheda_or_cached(payload, record.get("scheda_cached")),
+            "dati": bando_data,
+        },
+        "clienti": clienti_match,
+    }
 
 
 class DeduplicaRequest(BaseModel):

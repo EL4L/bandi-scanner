@@ -297,7 +297,7 @@ export default function CaricaBando() {
 
       {!result && (
         <div className="carica-layout">
-          <div className="carica-main">
+          <div className="carica-source">
             <input
               ref={fileInputRef}
               type="file"
@@ -326,8 +326,9 @@ export default function CaricaBando() {
                 <IconLink /> Da URL
               </button>
             </div>
+          </div>
 
-            <div className="card">
+          <div className="card carica-upload-card">
               {mode === 'pdf' ? (
                 <div
                   className={`upload-zone${dragOver ? ' drag-over' : ''}`}
@@ -429,8 +430,9 @@ export default function CaricaBando() {
                   </p>
                 </div>
               )}
-            </div>
+          </div>
 
+          <div className="carica-disclaimers">
             <div className="ai-disclaimer">
               <IconInfo />
               <span>
@@ -450,9 +452,9 @@ export default function CaricaBando() {
             </div>
           </div>
 
-          <div className="carica-side">
-            <p className="carica-side-title">Come funziona</p>
+          <p className="carica-side-title">Come funziona</p>
 
+          <div className="carica-side-features">
             <div className="feature-card">
               <div className="feature-card-icon"><IconSparkles /></div>
               <p className="feature-card-title">Estrazione AI</p>

@@ -26,6 +26,11 @@ interface Props {
 
 type Tab = 'bandi' | 'anagrafica'
 
+function formatFatturatoInput(value: string): string {
+  const digits = value.replace(/\D/g, '').replace(/^0+(?=\d)/, '')
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
 export function ClienteDetailPage({
   cliente, bandi, loading, onBack, onScheda, schedaLoading,
   regioni, dimensioni,
@@ -254,9 +259,11 @@ export function ClienteDetailPage({
               </div>
               <div className="field">
                 <label htmlFor="an-fatturato">Fatturato annuo (€) *</label>
-                <input id="an-fatturato" type="number" min="0" step="1000" required
-                  value={anagraficaForm.fatturato}
-                  onChange={e => onAnagraficaFieldChange('fatturato', e.target.value)} />
+                <input id="an-fatturato" type="text" inputMode="numeric" pattern="[0-9.]*" required
+                  placeholder="Es. 1.000.000"
+                  value={formatFatturatoInput(anagraficaForm.fatturato)}
+                  onChange={e => onAnagraficaFieldChange('fatturato', e.target.value.replace(/\D/g, ''))} />
+                <p className="help">Separazione automatica: 1.000, 100.000, 1.000.000</p>
               </div>
               <div className="field">
                 <label htmlFor="an-dipendenti">Numero dipendenti</label>

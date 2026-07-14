@@ -29,7 +29,7 @@ URL_FETCH_TIMEOUT_SECONDS = 15
 URL_FETCH_MAX_BYTES = 10_000_000  # 10 MB, stesso limite dell'upload PDF
 URL_FETCH_MAX_REDIRECTS = 3
 URL_FETCH_CHUNK_SIZE = 65536
-USER_AGENT = "BandiScannerBot/1.0 (+estrazione automatica bandi)"
+USER_AGENT = "BandoMatchAIBot/1.0 (+estrazione automatica bandi)"
 
 
 class InvalidUrlException(Exception):

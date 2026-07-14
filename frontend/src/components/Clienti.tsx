@@ -346,7 +346,7 @@ export default function Clienti() {
                 <th>Regione</th>
                 <th>Fatturato</th>
                 <th>Dimensione</th>
-                <th>Bandi compatibili</th>
+                <th className="clienti-match-count">Bandi compatibili</th>
                 <th>Azioni</th>
                 <th aria-hidden="true"></th>
               </tr>
@@ -366,7 +366,7 @@ export default function Clienti() {
                   <td>
                     <span className="badge badge-neutral">{c.dimensione_impresa}</span>
                   </td>
-                  <td>
+                  <td className="clienti-match-count">
                     <span className={`count-badge ${matchCountBadgeClass(c.match_count)}`}>
                       {c.match_count}
                     </span>

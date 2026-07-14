@@ -136,15 +136,6 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
                 ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                 : 'Scheda'}
             </button>
-            <a
-              href={apiHref(`/api/bandi/${b.id}/scheda.md`)}
-              download
-              className="btn btn-sm"
-              title="Scarica .md"
-              aria-label={`Scarica scheda di ${b.titolo ?? `Bando #${b.id}`}`}
-            >
-              <IconDownload />
-            </a>
             {b.has_pdf ? (
               <a
                 href={apiHref(`/api/bandi/${b.id}/pdf`)}

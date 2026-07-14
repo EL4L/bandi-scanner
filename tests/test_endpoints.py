@@ -210,6 +210,68 @@ def test_get_dashboard_200(client, mock_db):
     assert "cards" in data
 
 
+def test_get_dashboard_bando_detail_include_dati_e_tutti_clienti(client, mock_db, cliente_matching):
+    import json as jsonlib
+
+    payload = {
+        "bando": {
+            "titolo": "Bando Digitale",
+            "ente": "Regione Lombardia",
+            "data_scadenza": "2030-12-31",
+            "regioni_ammesse": ["Lombardia"],
+            "codici_ateco_ammessi": ["62.01"],
+            "dimensione_impresa": {"micro": False, "piccola": True, "media": True, "grande": False},
+            "spese_ammissibili": ["Software"],
+            "url_documento_origine": "https://example.test/bando",
+        }
+    }
+    mock_db.execute.return_value.fetchone.return_value = {
+        "id": 1,
+        "titolo": "Bando Digitale",
+        "ente": "Regione Lombardia",
+        "data_scadenza": "2030-12-31",
+        "json_completo": jsonlib.dumps(payload),
+        "scheda_cached": "# Scheda",
+        "has_pdf": True,
+    }
+
+    with patch("main.list_clienti", return_value=[cliente_matching]):
+        response = client.get("/api/dashboard/bandi/1")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["bando"]["dati"]["spese_ammissibili"] == ["Software"]
+    assert data["bando"]["fonte_url"] == "https://example.test/bando"
+    assert data["bando"]["has_pdf"] is True
+    assert len(data["clienti"]) == 1
+    assert data["clienti"][0]["id"] == cliente_matching["id"]
+    assert data["clienti"][0]["breakdown"]["regione"] == 30
+    assert "ammissibilita" in data["clienti"][0]
+
+
+def test_get_dashboard_include_bando_senza_clienti(client, mock_db):
+    import json as jsonlib
+
+    mock_db.execute.return_value.fetchall.return_value = [{
+        "id": 7,
+        "titolo": "Bando senza clienti",
+        "ente": "Ente Test",
+        "data_scadenza": None,
+        "json_completo": jsonlib.dumps({"bando": {"titolo": "Bando senza clienti"}}),
+        "scheda_cached": None,
+        "has_pdf": False,
+    }]
+
+    with patch("main.count_bandi", return_value=1), patch("main.load_dashboard_rows", return_value=[]):
+        response = client.get("/api/dashboard")
+
+    assert response.status_code == 200
+    cards = response.json()["cards"]
+    assert len(cards) == 1
+    assert cards[0]["id"] == 7
+    assert cards[0]["matches"] == []
+
+
 def test_get_dashboard_check_ammissibilita_errore_non_fail_open(client):
     """#2 (audit Fable): se check_ammissibilita solleva un'eccezione, l'esito
     NON deve mai essere "ammissibile: true" (fail-open) — deve essere

@@ -1,0 +1,519 @@
+Devi realizzare una presentazione HTML completa per l’esame finale del progetto ARAS.
+Lavora direttamente sui file e genera il risultato finale funzionante. Non limitarti a proporre una struttura o a descrivere il codice.
+Obiettivo
+Creare una presentazione web professionale, interattiva e utilizzabile offline, basata esclusivamente sullo speech fornito in fondo a questo prompt.
+La presentazione introduce il progetto prima della dimostrazione dal vivo dell’MVP.
+Deve quindi essere:
+chiara;
+sintetica;
+visivamente coerente con ARAS;
+leggibile durante un’esposizione orale;
+utile come supporto mnemonico per il relatore;
+meno dettagliata dello speech;
+composta da massimo 10 slide;
+pronta per essere aperta direttamente nel browser.
+Non creare una presentazione che sostituisca lo speech. Le slide devono contenere abbastanza informazioni da aiutarmi a ricordare cosa dire, ma non devono riportare interi paragrafi.
+Fonte vincolante
+Lo speech inserito alla fine del prompt è la fonte principale e vincolante.
+Regole:
+non aggiungere funzionalità non presenti nello speech;
+non inventare dati, metriche, risultati, utenti o tecnologie;
+non modificare il significato delle informazioni;
+puoi sintetizzare, accorpare e riorganizzare i contenuti;
+puoi scegliere autonomamente titoli, sottotitoli e microtesti;
+non inserire informazioni tecniche soltanto perché presenti nel repository;
+in caso di conflitto tra codice, documentazione e speech, per i contenuti visibili della presentazione prevale lo speech;
+il nome deve essere sempre scritto ARAS, tutto maiuscolo.
+Struttura narrativa
+Segui l’ordine dello speech, ma accorpa i contenuti in massimo 10 slide.
+Usa questa struttura indicativa:
+Slide 1 — Copertina
+Contenuto:
+logo ufficiale ARAS;
+simbolo nella parte superiore;
+scritta ARAS sotto;
+sottotitolo breve, per esempio:
+Assistente AI desktop locale;
+nome:
+Andrea Cresca;
+eventuale dicitura discreta:
+Progetto finale;
+La slide deve essere molto pulita e con forte impatto visivo.
+Non inserire un lungo testo introduttivo.
+Usa preferibilmente uno dei file ufficiali forniti:
+Logo_Text_Horizonal(1).pdf;
+Logo_Text(1).pdf;
+oppure una versione PNG equivalente già presente negli asset.
+Verifica visivamente quale file contiene correttamente simbolo e scritta.
+Se il file scelto non ha la disposizione richiesta, componi simbolo e logotipo usando gli asset disponibili, senza ridisegnare o alterare il logo.
+Il logo deve mantenere proporzioni, colori e forme originali.
+Slide 2 — Il principio del progetto
+Accorpa:
+apertura;
+concetto di elaborazione locale;
+problema dei servizi cloud;
+obiettivo generale.
+Messaggio principale:
+Usare l’intelligenza artificiale mantenendo il controllo diretto sui propri dati.
+Elementi visivi possibili:
+confronto semplice Cloud / Locale;
+freccia o linea che mostra che conversazioni, documenti, note e memoria restano sul dispositivo;
+una frase chiave evidenziata.
+Non trasformare questa slide in un elenco lungo.
+Slide 3 — Cosa è ARAS
+Accorpa:
+obiettivo del progetto;
+applicazione desktop;
+funzionalità principali;
+differenza tra ARAS e una semplice chat.
+Mostra sinteticamente:
+conversazioni separate;
+note;
+memoria controllata;
+documenti;
+applicazione desktop locale.
+Messaggio principale:
+Il modello linguistico è una parte del sistema, non l’intero progetto.
+Puoi usare una composizione a moduli o nodi collegati.
+Slide 4 — Vincoli reali
+Contenuto principale:
+Mac M2;
+8 GB di RAM;
+modello locale;
+Gemma 3 4B;
+esecuzione tramite Ollama;
+compromesso tra qualità, velocità e memoria.
+Deve emergere che la scelta tecnologica deriva da un vincolo reale e non da una selezione teorica.
+Puoi mostrare una bilancia visiva tra:
+qualità;
+velocità;
+consumo di memoria.
+Non presentare Gemma 3 4B come infallibile.
+Slide 5 — Architettura completamente locale
+Rappresenta graficamente il flusso:
+Utente → React/Vite → Electron → Flask → Ollama → risposta
+Collega inoltre:
+Flask ↔️ SQLite
+Ruoli da mostrare:
+React/Vite: interfaccia;
+Electron: applicazione desktop e gestione del backend;
+Flask: logica applicativa;
+Ollama + Gemma 3 4B: generazione locale;
+SQLite: sessioni, messaggi, note, memoria e documenti.
+Il diagramma deve essere semplice e leggibile.
+Non inserire codice sorgente.
+Evidenzia visivamente che tutto resta all’interno del dispositivo.
+Slide 6 — Documenti locali e RAG
+Contenuto:
+PDF, TXT, DOCX e Markdown;
+validazione locale;
+recupero delle parti pertinenti;
+risposta basata sul documento;
+isolamento dei file per sessione;
+fonti;
+modifica, versioning ed esportazione.
+Spiega il RAG con un flusso visivo semplice:
+Documento → segmentazione → ricerca dei contenuti pertinenti → risposta
+Evita definizioni accademiche lunghe.
+Slide 7 — Memoria controllata
+Contenuto:
+memoria della singola conversazione;
+memoria persistente;
+rischio di salvare dati falsi o non pertinenti;
+Memory Firewall;
+controllo, consultazione ed eliminazione delle informazioni.
+Mostra il Memory Firewall come un filtro tra:
+Messaggio dell’utente
+e:
+Memoria persistente
+Il concetto principale deve essere:
+ARAS non salva automaticamente tutto ciò che legge.
+Slide 8 — Sicurezza locale
+Sintetizza:
+Flask limitato a 127.0.0.1;
+token casuale per processo;
+validazione dei file;
+blocco di path traversal e symlink esterni;
+query SQLite parametrizzate;
+separazione tra codice installato e dati runtime.
+Usa una composizione ordinata, non una griglia con troppi riquadri.
+Il messaggio centrale è:
+La privacy non dipende da una singola funzione, ma dall’intera architettura.
+Non dichiarare conformità automatica a GDPR o AI Act, perché non è presente nello speech.
+Non aggiungere affermazioni legali non supportate.
+Slide 9 — Difficoltà, qualità e verifica
+Accorpa:
+limite dell’hardware;
+confronto tra modelli;
+gestione affidabile della memoria;
+Response Quality Gate;
+LanguageTool locale opzionale;
+460 test superati;
+build Vite e controlli statici completati.
+Distingui graficamente due aree:
+Problemi affrontati
+Controlli e risultati
+Evidenzia il dato:
+460 test superati
+senza farlo diventare l’unico elemento della slide.
+Non scrivere “tre difficoltà”, perché nello speech vengono descritte esplicitamente due difficoltà principali.
+Slide 10 — Passaggio alla demo
+Testo principale:
+Grazie per l’attenzione.
+Testo secondario:
+Ora passiamo all’MVP.
+Puoi aggiungere una frase breve:
+Conversazione, memoria e documenti. Tutto sul dispositivo.
+Usa nuovamente il logo ARAS, ma in dimensione inferiore rispetto alla copertina.
+Questa slide deve restare visibile durante il passaggio dalla presentazione all’applicazione.
+Non inserire contatti, QR code o informazioni non richieste.
+Stile grafico ARAS
+La presentazione deve riprendere il design system Spider-Carbon di ARAS.
+Usa questi colori:
+--carbon: #09090B;
+--surface: #111113;
+--surface-2: #18181B;
+--red: #E30022;
+--ice: #E4E4E7;
+--ice-dim: #A1A1AA;
+--titanium: #475569;
+Indicazioni:
+sfondo principale quasi nero;
+testo principale ghiaccio;
+testo secondario grigio freddo;
+rosso ARAS usato come accento, non come colore dominante;
+il rosso non deve occupare grandi superfici;
+evitare gradienti colorati generici;
+evitare blu, viola e palette tipiche delle startup AI;
+evitare effetto gaming;
+evitare estetica cyberpunk eccessiva;
+usare bordi sottili;
+superfici molto scure;
+divisori geometrici;
+piccoli dettagli tecnici;
+glow rosso leggero e controllato;
+ampio spazio negativo;
+composizione precisa e ordinata.
+Lo stile deve sembrare:
+tecnologico;
+locale;
+affidabile;
+minimale;
+professionale;
+coerente con un’app desktop.
+Tipografia
+Per il logo usa soltanto il logotipo ufficiale presente negli asset.
+Per il resto della presentazione:
+preferisci JetBrains Mono;
+usa pesi forti e corsivo soltanto per brevi etichette o titoli;
+mantieni ottima leggibilità;
+non usare tutto il testo in corsivo;
+non usare tutto il testo in maiuscolo;
+titoli grandi e brevi;
+corpo sufficientemente grande per essere letto da lontano.
+Poiché la presentazione deve funzionare offline:
+non usare Google Fonts;
+non usare font caricati da CDN;
+non dipendere da Internet;
+usa font locali o fallback di sistema;
+non includere o distribuire file di font non già autorizzati nel progetto.
+Fallback consigliato:
+font-family:
+  "JetBrains Mono",
+  "SFMono-Regular",
+  "Cascadia Code",
+  "Roboto Mono",
+  monospace;
+Animazioni e micro-interazioni
+Prendi ispirazione visiva e comportamentale da:
+Shadcn UI;
+React Bits;
+componenti moderni basati su Radix;
+interfacce editoriali tecnologiche;
+presentazioni web minimali.
+Non copiare codice direttamente dai siti.
+La presentazione deve funzionare offline, quindi:
+nessun import da ui.shadcn.com;
+nessun import da reactbits.dev;
+nessuna CDN;
+nessuna libreria caricata da Internet;
+nessun asset remoto;
+nessuna richiesta di rete.
+Ricrea localmente con HTML, CSS e JavaScript gli effetti necessari.
+Usa animazioni differenti ma coerenti tra loro, per esempio:
+ingresso progressivo di titolo e contenuto;
+reveal tramite maschera;
+linee che si disegnano;
+diagrammi che si compongono;
+nodi che si attivano;
+piccoli effetti di decryption sul titolo;
+contatori numerici;
+highlight rosso che scorre;
+sfocatura iniziale che si riduce;
+elementi che entrano con stagger;
+indicatori di stato;
+micro-glow su hover.
+Vincoli:
+niente animazioni continue invadenti;
+niente particelle decorative;
+niente sfondi 3D pesanti;
+niente caroselli automatici;
+niente movimenti rapidi;
+niente animazioni che rendano difficile leggere;
+durata generalmente tra 250 e 700 ms;
+un solo concetto animato dominante per slide;
+le animazioni devono partire quando la slide diventa attiva;
+tornando su una slide, l’animazione può ripartire;
+supportare prefers-reduced-motion;
+con movimento ridotto, tutti i contenuti devono apparire immediatamente.
+Formato tecnico
+Crea una cartella dedicata, senza modificare l’app ARAS.
+Nome consigliato:
+aras-presentation/
+Struttura:
+aras-presentation/
+├── index.html
+├── styles.css
+├── script.js
+├── README.md
+└── assets/
+    └── logo e altri asset locali necessari
+Non usare React, Vite o un sistema di build, salvo necessità reale.
+La soluzione preferita è HTML, CSS e JavaScript vanilla perché:
+deve essere portabile;
+deve aprirsi direttamente;
+non deve richiedere installazioni;
+deve funzionare offline;
+deve essere semplice da usare il giorno dell’esame.
+Non modificare:
+il frontend ARAS;
+il backend;
+Electron;
+Flask;
+il database;
+la cartella dist dell’app;
+i file di produzione esistenti.
+Non creare commit Git.
+Layout
+La presentazione deve usare proporzioni 16:9.
+Ogni slide deve:
+occupare l’intero viewport;
+essere progettata per 1920×1080;
+adattarsi anche a risoluzioni inferiori;
+non richiedere scrolling verticale;
+non mostrare più di 3–5 elementi testuali principali;
+mantenere margini di sicurezza;
+evitare testo vicino ai bordi;
+essere leggibile da un proiettore.
+Non simulare una finestra PowerPoint.
+La presentazione deve sembrare una vera esperienza web a schermo intero.
+Navigazione
+Implementa tutte queste modalità:
+freccia destra → slide successiva;
+freccia sinistra → slide precedente;
+spazio → slide successiva;
+PageDown → slide successiva;
+PageUp → slide precedente;
+Home → prima slide;
+End → ultima slide;
+swipe orizzontale su trackpad o touchscreen;
+pulsanti precedente e successiva;
+indicatore slide corrente / totale;
+barra di avanzamento;
+pulsante fullscreen;
+tasto F per fullscreen;
+tasto Esc per uscire dalla modalità relatore o fullscreen secondo il contesto.
+La navigazione deve essere fluida ma non deve permettere di saltare accidentalmente più slide con un singolo input.
+Non cambiare automaticamente slide.
+Modalità relatore
+Implementa una modalità relatore locale.
+Attivazione consigliata:
+tasto P;
+oppure pulsante discreto.
+La modalità relatore deve mostrare:
+numero e titolo della slide;
+note associate alla slide;
+passaggio dello speech corrispondente;
+eventuale suggerimento su cosa evidenziare oralmente;
+timer totale della presentazione;
+tempo trascorso sulla slide;
+anteprima della slide successiva, se realizzabile senza complicare eccessivamente il codice.
+Le note non devono essere visibili al pubblico nella modalità standard.
+Non aprire servizi esterni.
+Le note devono derivare dallo speech e devono restare sintetiche.
+Non copiare necessariamente l’intero speech nella schermata relatore: mostra il passaggio utile a ricordare cosa dire.
+Accessibilità
+Implementa:
+HTML semantico;
+contrasti leggibili;
+focus visibile;
+pulsanti con aria-label;
+navigazione da tastiera;
+prefers-reduced-motion;
+testo alternativo per il logo;
+nessuna informazione trasmessa soltanto tramite colore;
+supporto a viewport ridotti senza sovrapposizioni.
+Asset
+Usa soltanto asset locali.
+Cerca nel materiale fornito i file:
+Logo_Text_Horizonal(1).pdf
+Logo_Text(1).pdf
+Logo_Black.pdf
+Logo_white.pdf
+LOGO_plain(1).pdf
+logo_red.png
+LOGO_4K.png
+Verifica quali siano utilizzabili direttamente dal browser.
+I PDF non sono sempre la scelta migliore per un elemento grafico incorporato.
+Se necessario:
+usa la versione PNG già disponibile;
+oppure converti localmente il PDF in PNG o SVG, preservando fedelmente il logo;
+non ridisegnare il logo;
+non alterare proporzioni, colori o spaziatura;
+non aggiungere effetti pesanti direttamente sul logo;
+non usare screenshot del logo;
+mantieni una risoluzione elevata.
+La copertina deve avere:
+simbolo/logo sopra;
+scritta ARAS sotto;
+composizione centrata;
+proporzioni corrette;
+molto spazio libero.
+Contenuti testuali
+Non usare frasi lunghe.
+Preferisci:
+una frase principale;
+da 2 a 4 concetti secondari;
+micro-etichette;
+parole chiave;
+brevi spiegazioni.
+Le slide devono aiutarmi a ricordare lo speech.
+Devono quindi includere termini importanti come:
+locale;
+controllo dei dati;
+modello linguistico;
+Gemma 3 4B;
+Ollama;
+Flask;
+Electron;
+SQLite;
+RAG;
+documenti isolati;
+Memory Firewall;
+sicurezza locale;
+Response Quality Gate;
+460 test.
+Non è obbligatorio inserire ogni termine in una slide diversa.
+Non mostrare interi paragrafi dello speech.
+Verifiche richieste
+Prima di concludere:
+apri index.html localmente;
+verifica che non siano effettuate richieste di rete;
+verifica tutte e 10 le slide;
+verifica che nessun contenuto esca dal viewport;
+verifica navigazione da tastiera;
+verifica pulsanti precedente/successiva;
+verifica fullscreen;
+verifica modalità relatore;
+verifica barra di avanzamento;
+verifica prefers-reduced-motion;
+verifica che il logo sia nitido e proporzionato;
+verifica che non sia necessario uno scroll;
+verifica che il progetto funzioni senza server;
+verifica che tutti i percorsi degli asset siano relativi;
+verifica la leggibilità a 1920×1080, 1440×900 e 1280×720.
+Non eseguire build o test dell’app ARAS: questa cartella deve restare separata.
+README
+Crea un README.md breve con:
+come aprire la presentazione;
+comandi da tastiera;
+come attivare fullscreen;
+come aprire la modalità relatore;
+posizione degli asset;
+indicazione che la presentazione funziona offline;
+istruzioni per modificare testi e note.
+Report finale
+Al termine indica:
+file creati;
+numero di slide;
+asset usato per il logo;
+modalità di apertura;
+controlli disponibili;
+verifiche eseguite;
+eventuali limiti rimasti.
+Non creare commit.
+SPEECH APPROVATO — FONTE DELLE SLIDE
+Apertura: il principio del progetto
+Buongiorno a tutti. Sono Andrea e oggi vi presento il mio progetto: ARAS, un assistente AI desktop locale.
+La caratteristica fondamentale di ARAS è contenuta proprio nella parola “locale”.
+Le conversazioni, i documenti, le note, la memoria personale e l’elaborazione del modello rimangono sul computer dell’utente. Non vengono inviati a servizi cloud e non dipendono da API esterne.
+ARAS nasce quindi da un principio preciso: utilizzare l’intelligenza artificiale mantenendo il controllo diretto sui propri dati.
+Tutto il resto del progetto — memoria, gestione dei documenti, sicurezza, interfaccia e architettura — è stato costruito partendo da questo principio.
+Il problema affrontato
+Oggi molti assistenti AI funzionano attraverso servizi cloud.
+Questo significa che, per ottenere una risposta, l’utente può dover inviare all’esterno il testo di una conversazione, il contenuto di un documento o altre informazioni personali.
+È un modello molto comodo, ma introduce una dipendenza da infrastrutture esterne. L’utente deve fidarsi del servizio, della connessione, delle politiche di conservazione e delle modalità con cui i dati vengono trattati.
+Con ARAS ho voluto esplorare un’alternativa: costruire un assistente che elabori le richieste direttamente sul dispositivo.
+L’obiettivo non era realizzare una copia locale di una chat online. Volevo creare un’applicazione capace di utilizzare memoria, note e documenti senza perdere il controllo sul percorso dei dati.
+Obiettivo del progetto
+ARAS è stato progettato come un assistente personale, locale e modulare per macOS.
+È installabile e utilizzabile come una normale applicazione desktop. All’avvio, l’applicazione gestisce automaticamente l’interfaccia, il backend e la comunicazione con il modello locale.
+L’utente può conversare con ARAS, creare più chat separate, salvare note, mantenere una memoria personale controllata e lavorare con documenti.
+Il valore del progetto non consiste quindi soltanto nella capacità di generare testo.
+ARAS deve sapere dove sono conservati i dati, quali informazioni possono essere ricordate, quali documenti sono accessibili in una determinata conversazione e quali operazioni devono essere eseguite attraverso logica software invece che affidate liberamente al modello.
+Vincoli reali
+Il progetto è stato sviluppato su un Mac con chip M2 e 8 gigabyte di RAM.
+Questo ha rappresentato un vincolo importante, perché un modello locale deve condividere le risorse con il sistema operativo, il backend, l’interfaccia e il database.
+Non potevo quindi utilizzare modelli molto grandi senza rendere l’esperienza troppo lenta o instabile.
+Il modello principale è Gemma 3 da 4 miliardi di parametri, eseguito localmente tramite Ollama. È stato scelto come compromesso tra qualità dell’italiano, velocità e consumo di memoria.
+Il modello non è considerato infallibile. Proprio perché lavora entro limiti hardware reali, ARAS sposta le operazioni più delicate verso componenti deterministiche, controlli software e fonti documentali locali.
+Architettura locale
+L’architettura di ARAS è composta da più livelli, ma tutti lavorano sullo stesso dispositivo.
+L’interfaccia è sviluppata con React e Vite. Electron la trasforma in un’applicazione desktop per macOS.
+Electron non si limita a mostrare la finestra: avvia automaticamente il backend, verifica che sia attivo e lo chiude insieme all’applicazione.
+Il backend è sviluppato in Python con Flask. Gestisce le richieste, le conversazioni, le note, la memoria, i file e la comunicazione con Ollama.
+Ollama esegue il modello linguistico direttamente sul Mac. Non è necessaria una chiamata a un modello remoto.
+SQLite conserva localmente sessioni, messaggi, note, memoria utente, fonti documentali e versioni dei file.
+Il flusso è quindi completamente locale: l’utente scrive nell’interfaccia, Flask interpreta la richiesta, recupera il contesto necessario, interroga il modello sul dispositivo e restituisce la risposta all’applicazione.
+Nessun passaggio richiede l’invio del contenuto personale a un servizio cloud.
+Documenti locali e RAG
+Una delle funzioni centrali di ARAS è il lavoro sui documenti.
+L’utente può caricare file PDF, TXT, DOCX e Markdown. I file vengono validati e conservati nella cartella dati locale dell’applicazione.
+ARAS utilizza una pipeline RAG, cioè Retrieval-Augmented Generation.
+I documenti sono inoltre isolati per sessione. Un file caricato in una chat non viene utilizzato automaticamente nelle altre.
+L’utente può visualizzare le fonti, modificare il documento, creare nuove versioni ed esportare il risultato, sempre senza trasferire il contenuto all’esterno.
+Memoria locale e controllo
+Anche la memoria è stata progettata partendo dalla privacy.
+ARAS utilizza una memoria conversazionale per mantenere il contesto della singola chat e una memoria persistente per alcune informazioni stabili dell’utente.
+Salvare automaticamente tutto, però, sarebbe pericoloso. Un modello potrebbe interpretare come personale un nome presente in un’email, una data contenuta in un documento o un’informazione temporanea.
+Per questo ho realizzato il Memory Firewall.
+Il Memory Firewall controlla se un messaggio può generare memoria, valida le informazioni candidate e limita il recupero ai dati realmente pertinenti.
+In questo modo la memoria persistente non viene utilizzata come un archivio indiscriminato di tutto ciò che l’utente scrive.
+Le informazioni memorizzate possono essere consultate e cancellate dalle impostazioni.
+Quindi ARAS non si limita a conservare i dati in locale: cerca anche di controllare quali dati debbano essere conservati.
+Sicurezza
+L’elaborazione locale riduce l’esposizione dei dati, ma da sola non basta. Per questo ho aggiunto diversi controlli di sicurezza.
+Il server Flask ascolta esclusivamente su 127.0.0.1, quindi non è esposto alla rete locale.
+Electron genera un token casuale per ogni processo. Le API protette devono presentare quel token per comunicare con il backend.
+I file vengono verificati per formato, dimensione e contenuto. Sono bloccati percorsi assoluti, path traversal, file esterni alla directory autorizzata e collegamenti simbolici non consentiti.
+Le query verso SQLite sono parametrizzate e il frontend non espone direttamente dati sensibili.
+Inoltre, database, upload e altri dati runtime non sono incorporati nel pacchetto dell’applicazione. Vengono conservati nella cartella dati dell’utente, separati dal codice installato.
+La privacy di ARAS non dipende quindi da una singola funzione, ma dall’insieme delle scelte architetturali.
+Due difficoltà tecniche
+Durante lo sviluppo ho affrontato due difficoltà particolarmente significative.
+La prima è stata far funzionare un assistente locale su hardware limitato.
+Modelli più grandi offrivano in alcuni casi una qualità migliore, ma richiedevano più memoria e tempi di avvio incompatibili con un’applicazione da utilizzare quotidianamente. Ho quindi creato un benchmark con casi in italiano e inglese e confrontato diversi modelli. Gemma 3 4B è risultato il compromesso più adatto all’hardware disponibile.
+La seconda difficoltà è stata gestire la memoria senza salvare informazioni false o non pertinenti.
+La causa era la tendenza del modello a confondere dati personali, contenuti operativi e riferimenti temporanei. La soluzione è stata separare memoria di sessione e memoria persistente, introducendo regole deterministiche attraverso il Memory Firewall.
+Qualità delle risposte e verifica
+Un altro punto importante riguarda la qualità dell’output.
+Un modello locale piccolo può produrre frasi grammaticalmente scorrette, ripetizioni o dettagli non richiesti.
+Per email, messaggi e modifica dei documenti ho quindi implementato un Response Quality Gate.
+Dopo la generazione, ARAS controlla la lingua, la presenza di emoji o prefissi indesiderati, la conservazione di nomi, date, numeri e collegamenti, le ripetizioni e l’introduzione di relazioni non fornite dall’utente.
+LanguageTool può essere utilizzato localmente come controllo grammaticale opzionale. Anche in questo caso, nessun testo viene inviato a un servizio esterno.
+La baseline finale del progetto è di 460 test superati, senza fallimenti. I test coprono sicurezza, database, memoria, routing, documenti, messaggi, streaming e Stop.
+La build Vite e i controlli statici sono stati completati correttamente.
+Passaggio alla demo
+Questi risultati rappresentano la parte tecnica e progettuale del lavoro.
+A questo punto vorrei passare dalla descrizione al funzionamento concreto dell’applicazione, mostrando direttamente l’MVP di ARAS.
+Durante la demo vedremo come l’assistente gestisce una conversazione, la memoria e un documento, mantenendo l’intero flusso sul dispositivo.

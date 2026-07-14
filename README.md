@@ -1,4 +1,4 @@
-# AI-Bandi Scanner
+# BandoMatch AI
 
 Analisi automatica di bandi pubblici con AI — estrazione dati da PDF, matching con profili cliente, dashboard di compatibilità.
 

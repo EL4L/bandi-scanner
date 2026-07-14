@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>BandoMatch AI — Presentazione finale</title>
+  <style>
+    :root {
+      --u: min(1vw, 1.7778vh);
+      --bg: #efede6;
+      --paper: #fffefa;
+      --surface: #ffffff;
+      --surface-2: #f7f5ef;
+      --line: #e3dfd4;
+      --line-strong: #cfc9bb;
+      --ink: #101c1b;
+      --muted: #515956;
+      --faint: #8a928d;
+      --teal-950: #042f2d;
+      --teal-900: #063c39;
+      --teal-800: #0a5450;
+      --teal-700: #0f6b65;
+      --teal-600: #17827a;
+      --teal-100: #d6e9e6;
+      --teal-050: #eaf3f1;
+      --gold: #d9a441;
+      --gold-soft: #f5e8cc;
+      --gold-text: #7a5713;
+      --ok: #2c8b57;
+      --ok-soft: #e0f0e5;
+      --warn: #c08423;
+      --warn-soft: #f7ebd3;
+      --danger: #cb5138;
+      --danger-soft: #f8e1da;
+      --display: "Aptos Display", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+      --body: "Aptos", "Segoe UI Variable Text", "Segoe UI", sans-serif;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --shadow: 0 calc(var(--u) * .18) calc(var(--u) * .5) rgba(16, 28, 27, .08), 0 calc(var(--u) * 1.1) calc(var(--u) * 2.8) rgba(16, 28, 27, .08);
+      --shadow-deep: 0 calc(var(--u) * .8) calc(var(--u) * 4) rgba(2, 28, 27, .24);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      background: #d8d4ca;
+      color: var(--ink);
+      font-family: var(--body);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    button { font: inherit; }
+    svg { display: block; }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+    }
+    #deck {
+      position: relative;
+      width: 100vw;
+      height: 56.25vw;
+      max-width: 177.7778vh;
+      max-height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      box-shadow: 0 0 calc(var(--u) * 5) rgba(0, 0, 0, .22);
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: calc(var(--u) * 4.6) calc(var(--u) * 5.4) calc(var(--u) * 3.4);
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 92% 4%, rgba(214, 233, 230, .9), transparent 24%),
+        linear-gradient(90deg, rgba(255,255,255,.32), transparent 30%),
+        var(--bg);
+      opacity: 0;
+    }
+    .slide.active { display: flex; opacity: 1; }
+    .slide::after {
+      content: "";
+      position: absolute;
+      right: calc(var(--u) * -8);
+      bottom: calc(var(--u) * -13);
+      width: calc(var(--u) * 27);
+      height: calc(var(--u) * 27);
+      border: calc(var(--u) * 2.3) solid rgba(10, 84, 80, .055);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .slide.dark {
+      color: white;
+      background:
+        radial-gradient(circle at 86% 18%, rgba(23, 130, 122, .55), transparent 26%),
+        radial-gradient(circle at 65% 110%, rgba(217, 164, 65, .14), transparent 34%),
+        linear-gradient(145deg, #063c39 0%, #0a5450 58%, #06403c 100%);
+    }
+    .slide.dark::after { border-color: rgba(255, 255, 255, .065); }
+
+    .slide-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: calc(var(--u) * 2);
+      position: relative;
+      z-index: 2;
+      margin-bottom: calc(var(--u) * 2.1);
+    }
+    .section-mark {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--u) * .75);
+      color: var(--teal-700);
+      font-family: var(--display);
+      font-size: calc(var(--u) * .86);
+      font-weight: 750;
+      letter-spacing: .14em;
+      line-height: 1;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-bottom: calc(var(--u) * .75);
+    }
+    .section-mark::before {
+      content: "";
+      width: calc(var(--u) * 2.1);
+      height: calc(var(--u) * .16);
+      border-radius: 999px;
+      background: var(--teal-600);
+    }
+    .slide h1, .slide h2, .slide h3, .slide h4, .slide p { margin: 0; }
+    .slide h2 {
+      max-width: 27ch;
+      font-family: var(--display);
+      font-size: calc(var(--u) * 3.02);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+      font-weight: 760;
+    }
+    .slide-subtitle {
+      max-width: 67ch;
+      margin-top: calc(var(--u) * .75) !important;
+      color: var(--muted);
+      font-size: calc(var(--u) * 1.12);
+      line-height: 1.42;
+    }
+    .brand-mini {
+      color: var(--ink);
+      font-family: var(--display);
+      font-size: calc(var(--u) * .86);
+      font-weight: 760;
+      letter-spacing: -.035em;
+      white-space: nowrap;
+      padding-top: calc(var(--u) * .15);
+    }
+    .brand-mini span { color: var(--teal-600); }
+
+    .slide-body { position: relative; z-index: 2; flex: 1; min-height: 0; }
+    .slide-footer {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(var(--u) * 1.2);
+      margin-top: calc(var(--u) * 1.35);
+      padding-top: calc(var(--u) * .75);
+      border-top: 1px solid rgba(81, 89, 86, .17);
+      color: var(--faint);
+      font-size: calc(var(--u) * .7);
+      line-height: 1;
+    }
+    .slide-footer .footer-brand { font-weight: 700; color: var(--muted); }
+    .slide-footer .footer-number { font-family: var(--mono); letter-spacing: .05em; }
+    .dark .slide-footer { border-color: rgba(255,255,255,.16); color: rgba(255,255,255,.55); }
+    .dark .slide-footer .footer-brand { color: rgba(255,255,255,.8); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: calc(var(--u) * .4);
+      padding: calc(var(--u) * .38) calc(var(--u) * .72);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: calc(var(--u) * .68);
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .pill.teal { color: var(--teal-900); background: var(--teal-100); border-color: rgba(23,130,122,.25); }
+    .pill.gold { color: var(--gold-text); background: var(--gold-soft); border-color: rgba(217,164,65,.34); }
+    .pill.ok { color: #1a6238; background: var(--ok-soft); border-color: rgba(44,139,87,.25); }
+    .pill.warn { color: var(--gold-text); background: var(--warn-soft); border-color: rgba(192,132,35,.25); }
+    .pill.danger { color: #8c3420; background: var(--danger-soft); border-color: rgba(203,81,56,.24); }
+
+    .icon-box {
+      width: calc(var(--u) * 2.45);
+      height: calc(var(--u) * 2.45);
+      flex: none;
+      display: grid;
+      place-items: center;
+      border-radius: calc(var(--u) * .62);
+      background: var(--teal-100);
+      color: var(--teal-800);
+    }
+    .icon-box svg { width: calc(var(--u) * 1.25); height: calc(var(--u) * 1.25); }
+    .icon-box.gold { background: var(--gold-soft); color: var(--gold-text); }
+    .icon-box.white { background: rgba(255,255,255,.11); color: white; border: 1px solid rgba(255,255,255,.16); }
+
+    /* Cover */
+    #slide-1 { padding: 0; }
+    .cover-shell { display: grid; grid-template-columns: 57.5% 42.5%; height: 100%; }
+    .cover-copy {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: calc(var(--u) * 4.6) calc(var(--u) * 4.2) calc(var(--u) * 3.2) calc(var(--u) * 5.4);
+      background:
+        radial-gradient(circle at 9% 90%, rgba(214,233,230,.78), transparent 25%),
+        var(--paper);
+    }
+    .cover-copy::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: calc(var(--u) * -3.8);
+      width: calc(var(--u) * 8);
+      height: 100%;
+      background: var(--paper);
+      clip-path: polygon(0 0, 52% 0, 100% 100%, 0 100%);
+      z-index: -1;
+    }
+    .official-logo-crop {
+      position: relative;
+      width: calc(var(--u) * 36.5);
+      height: calc(var(--u) * 21.8);
+      overflow: hidden;
+      margin: calc(var(--u) * -2.1) 0 calc(var(--u) * .1) calc(var(--u) * -.45);
+    }
+    .official-logo-crop img {
+      position: absolute;
+      width: calc(var(--u) * 69.1);
+      max-width: none;
+      height: auto;
+      left: calc(var(--u) * -16.2);
+      top: calc(var(--u) * -9.8);
+    }
+    .cover-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: calc(var(--u) * .5);
+      padding: calc(var(--u) * .42) calc(var(--u) * .78);
+      border-radius: 999px;
+      background: var(--teal-100);
+      color: var(--teal-900);
+      font-size: calc(var(--u) * .74);
+      font-weight: 750;
+      letter-spacing: .04em;
+      margin-bottom: calc(var(--u) * 1.1);
+    }
+    .cover-copy h1 {
+      max-width: 12ch;
+      color: var(--ink);
+      font-family: var(--display);
+      font-size: calc(var(--u) * 3.62);
+      font-weight: 780;
+      line-height: .98;
+      letter-spacing: -.055em;
+    }
+    .cover-copy h1 span { color: var(--teal-700); }
+    .cover-intro {
+      max-width: 50ch;
+      margin-top: calc(var(--u) * 1.15) !important;
+      color: var(--muted);
+      font-size: calc(var(--u) * .92);
+      line-height: 1.47;
+    }
+    .cover-meta {
+      display: flex;
+      align-items: center;
+      gap: calc(var(--u) * 1.2);
+      margin-top: calc(var(--u) * 1.65);
+      color: var(--muted);
+      font-size: calc(var(--u) * .72);
+    }
+    .cover-meta strong { color: var(--ink); font-family: var(--display); font-size: calc(var(--u) * .86); }
+    .cover-meta .meta-line { width: 1px; height: calc(var(--u) * 2); background: var(--line-strong); }
+    .cover-visual {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: calc(var(--u) * 5.6) calc(var(--u) * 3.6) calc(var(--u) * 4.6) calc(var(--u) * 4.2);
+      background:
+        radial-gradient(circle at 82% 14%, rgba(23,130,122,.7), transparent 31%),
+        linear-gradient(155deg, #0a5450 0%, #063c39 72%, #042f2d 100%);
+    }
+    .cover-orbit, .cover-orbit::before {
+      position: absolute;
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+    .cover-orbit {
+      width: calc(var(--u) * 32);
+      height: calc(var(--u) * 32);
+      right: calc(var(--u) * -9);
+      top: calc(var(--u) * -7);
+      border: calc(var(--u) * 2.6) solid rgba(255,255,255,.07);
+    }
+    .cover-orbit::before {
+      width: calc(var(--u) * 19);
+      height: calc(var(--u) * 19);
+      left: calc(var(--u) * -29);
+      top: calc(var(--u) * 40);
+      border: calc(var(--u) * 2) solid rgba(217,164,65,.11);
+    }
+    .app-window {
+      position: relative;
+      z-index: 2;
+      width: calc(var(--u) * 39.5);
+      height: calc(var(--u) * 29.2);
+      display: grid;
+      grid-template-columns: calc(var(--u) * 8.2) 1fr;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.28);
+      border-radius: calc(var(--u) * 1.25);
+      background: var(--surface);
+      box-shadow: var(--shadow-deep);
+      transform: rotate(-1deg) translateX(calc(var(--u) * .6));
+    }
+    .app-side { background: #f7f7f7; border-right: 1px solid var(--line); padding: calc(var(--u) * 1) calc(var(--u) * .65); }
+    .app-brand { font-family: var(--display); font-size: calc(var(--u) * .62); font-weight: 800; color: var(--ink); padding: calc(var(--u) * .4); margin-bottom: calc(var(--u) * .75); }
+    .app-brand span { color: var(--teal-600); }
+    .nav-mini { display: flex; align-items: center; gap: calc(var(--u) * .42); height: calc(var(--u) * 2.25); padding: 0 calc(var(--u) * .5); border-left: calc(var(--u) * .16) solid transparent; border-radius: 0 calc(var(--u) * .5) calc(var(--u) * .5) 0; color: var(--muted); font-size: calc(var(--u) * .49); }
+    .nav-mini::before { content: ""; width: calc(var(--u) * .65); height: calc(var(--u) * .65); border: 1.5px solid currentColor; border-radius: 25%; }
+    .nav-mini.on { color: var(--teal-900); background: var(--teal-100); border-left-color: var(--teal-700); font-weight: 700; }
+    .app-main { padding: calc(var(--u) * 1.35); background: var(--bg); }
+    .app-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: calc(var(--u) * 1); }
+    .app-top h3 { font-family: var(--display); font-size: calc(var(--u) * 1.15); letter-spacing: -.04em; }
+    .app-top span { color: var(--faint); font-size: calc(var(--u) * .45); }
+    .kpi-row { display: grid; grid-template-columns: repeat(3,1fr); gap: calc(var(--u) * .55); }
+    .kpi { padding: calc(var(--u) * .68); border: 1px solid var(--line); border-radius: calc(var(--u) * .55); background: white; }
+    .kpi span { display: block; color: var(--faint); font-size: calc(var(--u) * .4); text-transform: uppercase; letter-spacing: .07em; }
+    .kpi strong { display: block; margin-top: calc(var(--u) * .16); font-family: var(--display); font-size: calc(var(--u) * 1.15); }
+    .dash-label { margin: calc(var(--u) * 1.05) 0 calc(var(--u) * .5); color: var(--ink); font-size: calc(var(--u) * .52); font-weight: 750; }
+    .opportunity { display: grid; grid-template-columns: calc(var(--u) * .25) 1fr auto; gap: calc(var(--u) * .55); align-items: center; padding: calc(var(--u) * .68); margin-bottom: calc(var(--u) * .45); border: 1px solid var(--line); border-radius: calc(var(--u) * .55); background: white; }
+    .opportunity .signal { align-self: stretch; border-radius: 999px; background: var(--ok); }
+    .opportunity.warning .signal { background: var(--warn); }
+    .opportunity h4 { font-family: var(--display); font-size: calc(var(--u) * .55); }
+    .opportunity p { margin-top: calc(var(--u) * .18); color: var(--faint); font-size: calc(var(--u) * .4); }
+    .opportunity .match { padding: calc(var(--u) * .28) calc(var(--u) * .42); border-radius: 999px; background: var(--ok-soft); color: #1a6238; font-size: calc(var(--u) * .42); font-weight: 800; }
+    .opportunity.warning .match { background: var(--warn-soft); color: var(--gold-text); }
+    .cover-side-note {
+      position: absolute;
+      z-index: 3;
+      left: calc(var(--u) * 5.2);
+      bottom: calc(var(--u) * 2.3);
+      color: rgba(255,255,255,.72);
+      font-size: calc(var(--u) * .62);
+      letter-spacing: .02em;
+    }
+
+    /* Slide 2 — problem */
+    .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * 1.25); }
+    .problem-card {
+      min-height: calc(var(--u) * 19.5);
+      display: flex;
+      flex-direction: column;
+      padding: calc(var(--u) * 1.45);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--u) * 1);
+      background: rgba(255,255,255,.88);
+      box-shadow: var(--shadow);
+    }
+    .problem-card .card-top { display: flex; align-items: center; justify-content: space-between; }
+    .problem-card .card-num { color: var(--line-strong); font-family: var(--mono); font-size: calc(var(--u) * .72); font-weight: 800; }
+    .problem-card h3 { margin-top: calc(var(--u) * 1.05); font-family: var(--display); font-size: calc(var(--u) * 1.28); line-height: 1.14; letter-spacing: -.025em; }
+    .problem-card h3 { font-size: calc(var(--u) * 1.4); }
+    .problem-card > p { margin-top: calc(var(--u) * .72); color: var(--muted); font-size: calc(var(--u) * .94); line-height: 1.42; }
+    .problem-detail { margin-top: auto; padding-top: calc(var(--u) * .9); border-top: 1px solid var(--line); color: var(--teal-800); font-size: calc(var(--u) * .78); line-height: 1.35; font-weight: 700; }
+    .problem-conclusion {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: calc(var(--u) * 1.15);
+      align-items: center;
+      margin-top: calc(var(--u) * 1.35);
+      padding: calc(var(--u) * 1.05) calc(var(--u) * 1.25);
+      border: 1px solid rgba(23,130,122,.28);
+      border-radius: calc(var(--u) * .8);
+      background: var(--teal-100);
+    }
+    .problem-conclusion strong { font-family: var(--display); font-size: calc(var(--u) * 1.05); line-height: 1.2; }
+    .problem-conclusion p { color: var(--teal-900); font-size: calc(var(--u) * .86); line-height: 1.35; }
+
+    /* Slide 3 — target */
+    .target-layout { display: grid; grid-template-columns: .88fr 1.12fr; gap: calc(var(--u) * 1.45); height: 100%; }
+    .audience-stack { display: flex; flex-direction: column; gap: calc(var(--u) * .72); }
+    .audience {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: calc(var(--u) * .9);
+      align-items: center;
+      padding: calc(var(--u) * 1.02);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--u) * .78);
+      background: rgba(255,255,255,.9);
+    }
+    .audience.primary { color: white; border-color: var(--teal-800); background: var(--teal-800); box-shadow: var(--shadow); }
+    .audience h3 { font-family: var(--display); font-size: calc(var(--u) * 1.04); }
+    .audience p { margin-top: calc(var(--u) * .25); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.35; }
+    .audience.primary p { color: rgba(255,255,255,.72); }
+    .audience .priority { color: var(--faint); font-size: calc(var(--u) * .57); font-weight: 800; text-transform: uppercase; letter-spacing: .09em; }
+    .audience.primary .priority { color: #c9e9e5; }
+    .target-fit {
+      display: flex;
+      flex-direction: column;
+      padding: calc(var(--u) * 1.4);
+      border: 1px solid var(--line);
+      border-radius: calc(var(--u) * 1);
+      background: var(--surface-2);
+    }
+    .target-fit h3 { font-family: var(--display); font-size: calc(var(--u) * 1.3); letter-spacing: -.025em; }
+    .target-fit > p { margin-top: calc(var(--u) * .42); color: var(--muted); font-size: calc(var(--u) * .88); line-height: 1.4; }
+    .fit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .65); margin-top: calc(var(--u) * 1); }
+    .fit-item { padding: calc(var(--u) * .82); border: 1px solid var(--line); border-radius: calc(var(--u) * .62); background: white; }
+    .fit-item .fit-label { color: var(--teal-700); font-size: calc(var(--u) * .6); font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .fit-item strong { display: block; margin-top: calc(var(--u) * .26); font-family: var(--display); font-size: calc(var(--u) * .96); line-height: 1.25; }
+    .value-line { display: flex; gap: calc(var(--u) * .55); align-items: flex-start; margin-top: auto; padding-top: calc(var(--u) * .95); border-top: 1px solid var(--line); color: var(--muted); font-size: calc(var(--u) * .83); line-height: 1.42; }
+    .value-line strong { color: var(--ink); }
+
+    /* Slide 4 — workflow */
+    .workflow { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(var(--u) * .7); margin-top: calc(var(--u) * .25); }
+    .workflow::before { content: ""; position: absolute; top: calc(var(--u) * 2.18); left: 8%; right: 8%; height: calc(var(--u) * .12); background: linear-gradient(90deg, var(--teal-600), var(--teal-600) 72%, var(--gold)); opacity: .45; }
+    .flow-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .flow-node { width: calc(var(--u) * 4.35); height: calc(var(--u) * 4.35); display: grid; place-items: center; border: calc(var(--u) * .15) solid var(--teal-600); border-radius: calc(var(--u) * 1.1); background: white; color: var(--teal-800); box-shadow: var(--shadow); }
+    .flow-step:last-child .flow-node { color: var(--gold-text); background: var(--gold-soft); border-color: var(--gold); }
+    .flow-node svg { width: calc(var(--u) * 2); height: calc(var(--u) * 2); }
+    .flow-index { display: inline-flex; margin-top: calc(var(--u) * .7); padding: calc(var(--u) * .22) calc(var(--u) * .45); border-radius: 999px; color: var(--teal-800); background: var(--teal-100); font-family: var(--mono); font-size: calc(var(--u) * .52); font-weight: 800; }
+    .flow-step h3 { margin-top: calc(var(--u) * .48); font-family: var(--display); font-size: calc(var(--u) * 1.02); line-height: 1.18; }
+    .flow-step p { margin-top: calc(var(--u) * .35); max-width: 18ch; color: var(--muted); font-size: calc(var(--u) * .84); line-height: 1.32; }
+    .workflow-output { display: grid; grid-template-columns: 1fr 1.15fr .9fr; gap: calc(var(--u) * .8); margin-top: calc(var(--u) * 1.35); }
+    .output-card { display: flex; gap: calc(var(--u) * .7); align-items: center; min-height: calc(var(--u) * 5.2); padding: calc(var(--u) * .9); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: rgba(255,255,255,.88); }
+    .output-card h4 { font-family: var(--display); font-size: calc(var(--u) * .92); }
+    .output-card p { margin-top: calc(var(--u) * .25); color: var(--muted); font-size: calc(var(--u) * .72); line-height: 1.32; }
+    .workflow-message { display: flex; align-items: center; justify-content: center; padding: calc(var(--u) * .75); border-radius: calc(var(--u) * .72); background: var(--teal-800); color: white; font-family: var(--display); font-size: calc(var(--u) * .86); line-height: 1.32; text-align: center; }
+
+    /* Slide 5 — role of AI */
+    .responsibility-grid { display: grid; grid-template-columns: 1fr calc(var(--u) * 31); gap: calc(var(--u) * 1.4); height: 100%; }
+    .responsibility-stack { position: relative; display: flex; flex-direction: column; gap: calc(var(--u) * .55); }
+    .responsibility-stack::before { content: ""; position: absolute; left: calc(var(--u) * 2.15); top: calc(var(--u) * 2.2); bottom: calc(var(--u) * 2.2); width: calc(var(--u) * .12); background: var(--line-strong); }
+    .responsibility {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: calc(var(--u) * 4.3) 1fr auto;
+      gap: calc(var(--u) * .9);
+      align-items: center;
+      min-height: calc(var(--u) * 5.1);
+      padding: calc(var(--u) * .72) calc(var(--u) * .88) calc(var(--u) * .72) 0;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--u) * .78);
+      background: rgba(255,255,255,.92);
+    }
+    .responsibility.ai-layer { color: white; border-color: var(--teal-800); background: var(--teal-800); box-shadow: var(--shadow); }
+    .layer-number { width: calc(var(--u) * 4.3); text-align: center; font-family: var(--mono); font-size: calc(var(--u) * .72); font-weight: 800; color: var(--teal-700); }
+    .ai-layer .layer-number { color: #c9e9e5; }
+    .responsibility h3 { font-family: var(--display); font-size: calc(var(--u) * 1.05); line-height: 1.18; }
+    .responsibility p { margin-top: calc(var(--u) * .25); color: var(--muted); font-size: calc(var(--u) * .81); line-height: 1.3; }
+    .ai-layer p { color: rgba(255,255,255,.72); }
+    .layer-owner { padding: calc(var(--u) * .3) calc(var(--u) * .55); border-radius: 999px; color: var(--teal-900); background: var(--teal-100); font-size: calc(var(--u) * .54); font-weight: 800; white-space: nowrap; }
+    .ai-layer .layer-owner { color: white; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); }
+    .ai-facts { display: grid; grid-template-rows: auto auto 1fr; gap: calc(var(--u) * .72); }
+    .fact-card { padding: calc(var(--u) * .95); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: white; }
+    .fact-card h4 { display: flex; align-items: center; gap: calc(var(--u) * .5); font-family: var(--display); font-size: calc(var(--u) * .78); }
+    .fact-card p { margin-top: calc(var(--u) * .45); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.34; }
+    .fact-card.warning { border-color: rgba(192,132,35,.35); background: var(--warn-soft); }
+    .fact-card.warning p { color: var(--gold-text); }
+    .economic-case { display: flex; flex-direction: column; padding: calc(var(--u) * .95); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: var(--surface-2); }
+    .economic-case > h4 { font-family: var(--display); font-size: calc(var(--u) * .8); }
+    .economic-row { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * .7); padding: calc(var(--u) * .62) 0; border-bottom: 1px solid var(--line); font-size: calc(var(--u) * .64); }
+    .economic-row:last-of-type { border-bottom: 0; }
+    .economic-row span { color: var(--muted); }
+    .economic-row strong { font-family: var(--display); color: var(--ink); font-size: calc(var(--u) * .7); text-align: right; }
+    .economic-note { margin-top: auto !important; padding-top: calc(var(--u) * .55); color: var(--teal-800) !important; font-size: calc(var(--u) * .58) !important; font-weight: 700; }
+
+    /* Slide 6 — stack */
+    .architecture { display: grid; grid-template-columns: 1fr auto 1fr auto 1.16fr auto 1fr; gap: calc(var(--u) * .62); align-items: stretch; }
+    .arch-arrow { display: grid; place-items: center; color: var(--teal-600); font-size: calc(var(--u) * 1.35); font-weight: 800; }
+    .arch-column { min-height: calc(var(--u) * 17.7); padding: calc(var(--u) * 1.05); border: 1px solid var(--line); border-radius: calc(var(--u) * .82); background: rgba(255,255,255,.9); box-shadow: var(--shadow); }
+    .arch-column.accent { color: white; border-color: var(--teal-800); background: var(--teal-800); }
+    .arch-kicker { color: var(--teal-700); font-family: var(--mono); font-size: calc(var(--u) * .52); font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .arch-column.accent .arch-kicker { color: #c9e9e5; }
+    .arch-column h3 { margin-top: calc(var(--u) * .45); font-family: var(--display); font-size: calc(var(--u) * 1.06); line-height: 1.15; }
+    .arch-column > p { margin-top: calc(var(--u) * .45); color: var(--muted); font-size: calc(var(--u) * .62); line-height: 1.32; }
+    .arch-column.accent > p { color: rgba(255,255,255,.72); }
+    .tech-list { display: flex; flex-direction: column; gap: calc(var(--u) * .48); margin-top: calc(var(--u) * .85); }
+    .tech { padding: calc(var(--u) * .48) calc(var(--u) * .55); border: 1px solid var(--line); border-radius: calc(var(--u) * .48); background: var(--surface-2); font-size: calc(var(--u) * .6); line-height: 1.25; }
+    .tech strong { display: block; color: var(--ink); font-family: var(--display); font-size: calc(var(--u) * .68); }
+    .tech span { color: var(--muted); }
+    .arch-column.accent .tech { border-color: rgba(255,255,255,.14); background: rgba(255,255,255,.08); }
+    .arch-column.accent .tech strong { color: white; }
+    .arch-column.accent .tech span { color: rgba(255,255,255,.64); }
+    .construction-strip { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: calc(var(--u) * .75); margin-top: calc(var(--u) * 1.1); }
+    .construction-item { display: flex; align-items: center; gap: calc(var(--u) * .7); padding: calc(var(--u) * .78); border: 1px solid var(--line); border-radius: calc(var(--u) * .65); background: var(--surface-2); }
+    .construction-item strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .72); }
+    .construction-item span { display: block; margin-top: calc(var(--u) * .18); color: var(--muted); font-size: calc(var(--u) * .58); line-height: 1.3; }
+
+    /* Stack semplificato e leggibile da proiezione */
+    .stack-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * 1.15); }
+    .stack-panel {
+      min-height: calc(var(--u) * 20.5);
+      display: flex;
+      flex-direction: column;
+      padding: calc(var(--u) * 1.35);
+      border: 1px solid var(--line);
+      border-top: calc(var(--u) * .28) solid var(--teal-700);
+      border-radius: calc(var(--u) * .9);
+      background: rgba(255,255,255,.94);
+      box-shadow: var(--shadow);
+    }
+    .stack-panel.gold-edge { border-top-color: var(--gold); }
+    .stack-panel.dark-panel { color: white; border-color: var(--teal-800); background: var(--teal-800); }
+    .stack-panel .stack-label { color: var(--teal-700); font-family: var(--mono); font-size: calc(var(--u) * .62); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .stack-panel.dark-panel .stack-label { color: #c9e9e5; }
+    .stack-panel h3 { margin-top: calc(var(--u) * .55); font-family: var(--display); font-size: calc(var(--u) * 1.45); letter-spacing: -.025em; }
+    .stack-panel > p { margin-top: calc(var(--u) * .45); color: var(--muted); font-size: calc(var(--u) * .83); line-height: 1.38; }
+    .stack-panel.dark-panel > p { color: rgba(255,255,255,.72); }
+    .stack-techs { display: flex; flex-direction: column; gap: calc(var(--u) * .58); margin-top: calc(var(--u) * 1); }
+    .stack-tech { padding: calc(var(--u) * .72); border: 1px solid var(--line); border-radius: calc(var(--u) * .58); background: var(--surface-2); }
+    .stack-tech strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .92); }
+    .stack-tech span { display: block; margin-top: calc(var(--u) * .18); color: var(--muted); font-size: calc(var(--u) * .72); line-height: 1.3; }
+    .dark-panel .stack-tech { border-color: rgba(255,255,255,.15); background: rgba(255,255,255,.08); }
+    .dark-panel .stack-tech span { color: rgba(255,255,255,.68); }
+    .deploy-strip { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: calc(var(--u) * .75); margin-top: calc(var(--u) * 1); }
+    .deploy-item { display: flex; align-items: center; gap: calc(var(--u) * .65); padding: calc(var(--u) * .76); border: 1px solid var(--line); border-radius: calc(var(--u) * .62); background: var(--surface-2); }
+    .deploy-item strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .82); }
+    .deploy-item span { display: block; margin-top: calc(var(--u) * .15); color: var(--muted); font-size: calc(var(--u) * .67); }
+
+    /* Slide 7 — regulatory */
+    .data-boundary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: calc(var(--u) * .72); align-items: center; }
+    .boundary-arrow { color: var(--teal-600); font-size: calc(var(--u) * 1.4); font-weight: 800; }
+    .boundary-card { min-height: calc(var(--u) * 10.7); display: flex; flex-direction: column; padding: calc(var(--u) * 1); border: 1px solid var(--line); border-radius: calc(var(--u) * .76); background: white; }
+    .boundary-card.external { border-color: rgba(217,164,65,.45); background: var(--gold-soft); }
+    .boundary-card.local { color: white; border-color: var(--teal-800); background: var(--teal-800); }
+    .boundary-card h3 { margin-top: calc(var(--u) * .6); font-family: var(--display); font-size: calc(var(--u) * .94); }
+    .boundary-card p { margin-top: calc(var(--u) * .35); color: var(--muted); font-size: calc(var(--u) * .63); line-height: 1.35; }
+    .boundary-card.external p { color: var(--gold-text); }
+    .boundary-card.local p { color: rgba(255,255,255,.72); }
+    .boundary-card .boundary-tag { margin-top: auto; padding-top: calc(var(--u) * .55); color: var(--teal-700); font-size: calc(var(--u) * .56); font-weight: 800; }
+    .boundary-card.external .boundary-tag { color: var(--gold-text); }
+    .boundary-card.local .boundary-tag { color: #c9e9e5; }
+    .normative-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: calc(var(--u) * 1); margin-top: calc(var(--u) * 1); }
+    .principles { padding: calc(var(--u) * 1); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: rgba(255,255,255,.84); }
+    .principles h3, .compliance-gap h3 { font-family: var(--display); font-size: calc(var(--u) * .82); }
+    .principle-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .5); margin-top: calc(var(--u) * .7); }
+    .principle { padding: calc(var(--u) * .58); border-radius: calc(var(--u) * .48); background: var(--teal-050); color: var(--teal-900); font-size: calc(var(--u) * .58); line-height: 1.28; font-weight: 700; }
+    .compliance-gap { padding: calc(var(--u) * 1); border: 1px solid rgba(203,81,56,.25); border-radius: calc(var(--u) * .72); background: var(--danger-soft); }
+    .compliance-gap p { margin-top: calc(var(--u) * .45); color: #7f3728; font-size: calc(var(--u) * .61); line-height: 1.36; }
+    .compliance-gap strong { color: #67291f; }
+
+    /* Messaggi privacy ripresi dall'interfaccia */
+    .privacy-messages { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.15); }
+    .privacy-message { min-height: calc(var(--u) * 16.2); padding: calc(var(--u) * 1.35); border: 1px solid var(--line); border-radius: calc(var(--u) * .88); background: white; box-shadow: var(--shadow); }
+    .privacy-message.teal-message { color: white; border-color: var(--teal-800); background: var(--teal-800); }
+    .message-head { display: flex; align-items: center; gap: calc(var(--u) * .75); }
+    .message-head h3 { font-family: var(--display); font-size: calc(var(--u) * 1.25); }
+    .privacy-message > p { margin-top: calc(var(--u) * .9); color: var(--muted); font-size: calc(var(--u) * .9); line-height: 1.48; }
+    .privacy-message.teal-message > p { color: rgba(255,255,255,.78); }
+    .message-result { margin-top: calc(var(--u) * 1); padding-top: calc(var(--u) * .78); border-top: 1px solid var(--line); color: var(--teal-800); font-size: calc(var(--u) * .76); line-height: 1.35; font-weight: 800; }
+    .teal-message .message-result { border-color: rgba(255,255,255,.18); color: #d6e9e6; }
+    .regulatory-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .72); margin-top: calc(var(--u) * 1); }
+    .regulatory-item { padding: calc(var(--u) * .82); border: 1px solid var(--line); border-radius: calc(var(--u) * .62); background: var(--surface-2); }
+    .regulatory-item strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .9); }
+    .regulatory-item span { display: block; margin-top: calc(var(--u) * .22); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.32; }
+
+    /* Slide 8 — problems and resolutions */
+    .challenge-table { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: calc(var(--u) * .82); overflow: hidden; background: rgba(255,255,255,.86); }
+    .challenge-head, .challenge-row { display: grid; grid-template-columns: .9fr 1.25fr .85fr; gap: calc(var(--u) * 1); }
+    .challenge-head { padding: calc(var(--u) * .55) calc(var(--u) * .9); color: var(--faint); background: var(--surface-2); font-size: calc(var(--u) * .55); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .challenge-row { align-items: center; min-height: calc(var(--u) * 5.15); padding: calc(var(--u) * .72) calc(var(--u) * .9); border-top: 1px solid var(--line); }
+    .challenge-problem { display: flex; gap: calc(var(--u) * .62); align-items: center; }
+    .challenge-problem h3 { font-family: var(--display); font-size: calc(var(--u) * .76); line-height: 1.22; }
+    .challenge-solution { color: var(--muted); font-size: calc(var(--u) * .63); line-height: 1.34; }
+    .challenge-solution strong { color: var(--ink); }
+    .residual { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * .5); color: var(--muted); font-size: calc(var(--u) * .58); line-height: 1.3; }
+    .quality-proof { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; gap: calc(var(--u) * .62); margin-top: calc(var(--u) * .9); }
+    .proof { padding: calc(var(--u) * .72); border-radius: calc(var(--u) * .62); background: var(--teal-800); color: white; }
+    .proof strong { display: block; font-family: var(--display); font-size: calc(var(--u) * 1.08); line-height: 1; }
+    .proof span { display: block; margin-top: calc(var(--u) * .28); color: rgba(255,255,255,.7); font-size: calc(var(--u) * .52); line-height: 1.25; }
+    .proof.note { background: var(--gold-soft); color: var(--gold-text); }
+    .proof.note strong { font-size: calc(var(--u) * .68); line-height: 1.2; }
+    .proof.note span { color: var(--gold-text); }
+
+    /* Problema → soluzione */
+    .resolution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.15); }
+    .resolution-card { min-height: calc(var(--u) * 23.4); padding: calc(var(--u) * 1.25); border: 1px solid var(--line); border-radius: calc(var(--u) * .88); background: white; box-shadow: var(--shadow); }
+    .resolution-card h3 { margin-top: calc(var(--u) * .72); font-family: var(--display); font-size: calc(var(--u) * 1.35); line-height: 1.15; }
+    .resolution-card > p { margin-top: calc(var(--u) * .55); color: var(--muted); font-size: calc(var(--u) * .84); line-height: 1.42; }
+    .solution-box { margin-top: calc(var(--u) * 1); padding: calc(var(--u) * .9); border-radius: calc(var(--u) * .66); background: var(--teal-050); }
+    .solution-box .solution-label { color: var(--teal-700); font-size: calc(var(--u) * .65); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .solution-box strong { display: block; margin-top: calc(var(--u) * .34); font-family: var(--display); font-size: calc(var(--u) * .96); line-height: 1.3; }
+    .solution-points { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .45); margin-top: calc(var(--u) * .68); }
+    .solution-points span { padding: calc(var(--u) * .46); border: 1px solid rgba(23,130,122,.2); border-radius: calc(var(--u) * .42); background: white; color: var(--teal-900); font-size: calc(var(--u) * .68); font-weight: 700; }
+    .resolution-result { display: flex; align-items: center; gap: calc(var(--u) * .5); margin-top: calc(var(--u) * .85); color: var(--ok); font-size: calc(var(--u) * .76); line-height: 1.32; font-weight: 800; }
+    .quality-line { display: grid; grid-template-columns: auto auto auto 1fr; gap: calc(var(--u) * .62); margin-top: calc(var(--u) * .85); }
+    .quality-chip { padding: calc(var(--u) * .65) calc(var(--u) * .85); border-radius: calc(var(--u) * .58); background: var(--teal-800); color: white; }
+    .quality-chip strong { font-family: var(--display); font-size: calc(var(--u) * .98); }
+    .quality-chip span { margin-left: calc(var(--u) * .28); color: rgba(255,255,255,.72); font-size: calc(var(--u) * .64); }
+    .quality-chip.note { background: var(--gold-soft); color: var(--gold-text); font-size: calc(var(--u) * .68); line-height: 1.3; }
+
+    /* Slide 9 — future */
+    .future-layout { display: grid; grid-template-columns: 1.28fr .72fr; gap: calc(var(--u) * 1.2); height: 100%; }
+    .roadmap { display: flex; flex-direction: column; gap: calc(var(--u) * .66); }
+    .roadmap-step { display: grid; grid-template-columns: calc(var(--u) * 7.8) 1fr; gap: calc(var(--u) * .9); min-height: calc(var(--u) * 5.45); padding: calc(var(--u) * .82); border: 1px solid rgba(255,255,255,.16); border-radius: calc(var(--u) * .72); background: rgba(255,255,255,.07); }
+    .roadmap-step .when { color: #c9e9e5; font-family: var(--mono); font-size: calc(var(--u) * .58); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .roadmap-step h3 { color: white; font-family: var(--display); font-size: calc(var(--u) * .86); }
+    .roadmap-step p { margin-top: calc(var(--u) * .28); color: rgba(255,255,255,.66); font-size: calc(var(--u) * .62); line-height: 1.34; }
+    .future-side { display: flex; flex-direction: column; gap: calc(var(--u) * .75); }
+    .today-card { padding: calc(var(--u) * 1); border: 1px solid rgba(255,255,255,.18); border-radius: calc(var(--u) * .8); background: rgba(255,255,255,.1); }
+    .today-card h3 { color: white; font-family: var(--display); font-size: calc(var(--u) * .88); }
+    .today-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .5); margin-top: calc(var(--u) * .7); }
+    .today-metric { padding: calc(var(--u) * .58); border-radius: calc(var(--u) * .5); background: rgba(255,255,255,.08); }
+    .today-metric strong { display: block; color: white; font-family: var(--display); font-size: calc(var(--u) * .9); }
+    .today-metric span { color: rgba(255,255,255,.62); font-size: calc(var(--u) * .5); }
+    .demo-card { flex: 1; display: flex; flex-direction: column; padding: calc(var(--u) * 1); border-radius: calc(var(--u) * .8); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-deep); }
+    .demo-card .demo-kicker { color: var(--teal-700); font-size: calc(var(--u) * .55); font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .demo-card h3 { margin-top: calc(var(--u) * .4); font-family: var(--display); font-size: calc(var(--u) * 1.15); line-height: 1.1; letter-spacing: -.03em; }
+    .demo-path { display: flex; flex-direction: column; gap: calc(var(--u) * .43); margin-top: calc(var(--u) * .75); }
+    .demo-step { display: flex; align-items: center; gap: calc(var(--u) * .55); color: var(--muted); font-size: calc(var(--u) * .6); }
+    .demo-step span { width: calc(var(--u) * 1.35); height: calc(var(--u) * 1.35); display: grid; place-items: center; border-radius: 50%; background: var(--teal-100); color: var(--teal-900); font-family: var(--mono); font-size: calc(var(--u) * .5); font-weight: 800; }
+    .demo-card .closing-line { margin-top: auto; padding-top: calc(var(--u) * .7); border-top: 1px solid var(--line); color: var(--teal-800); font-family: var(--display); font-size: calc(var(--u) * .72); font-weight: 800; }
+
+    /* Roadmap finale a quattro priorità */
+    .future-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .82); }
+    .future-card { min-height: calc(var(--u) * 10.3); display: grid; grid-template-columns: auto 1fr; gap: calc(var(--u) * .9); padding: calc(var(--u) * 1); border: 1px solid rgba(255,255,255,.18); border-radius: calc(var(--u) * .76); background: rgba(255,255,255,.08); }
+    .future-card .future-num { width: calc(var(--u) * 3); height: calc(var(--u) * 3); display: grid; place-items: center; border-radius: calc(var(--u) * .72); background: rgba(255,255,255,.12); color: #d6e9e6; font-family: var(--mono); font-size: calc(var(--u) * .78); font-weight: 800; }
+    .future-card h3 { color: white; font-family: var(--display); font-size: calc(var(--u) * 1.14); }
+    .future-card > div:last-child { display: flex; flex-direction: column; min-width: 0; }
+    .future-card p { margin-top: calc(var(--u) * .38); color: rgba(255,255,255,.7); font-size: calc(var(--u) * .84); line-height: 1.36; }
+    .future-tags { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .36); margin-top: auto; padding-top: calc(var(--u) * .72); }
+    .future-tags span { padding: calc(var(--u) * .3) calc(var(--u) * .48); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: rgba(255,255,255,.08); color: #d6e9e6; font-size: calc(var(--u) * .62); font-weight: 700; }
+    .future-closing { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * 1); margin-top: calc(var(--u) * .88); padding: calc(var(--u) * .82) calc(var(--u) * 1); border-radius: calc(var(--u) * .68); background: var(--paper); color: var(--ink); }
+    .future-closing strong { font-family: var(--display); font-size: calc(var(--u) * .92); }
+    .future-closing span { color: var(--teal-800); font-size: calc(var(--u) * .78); font-weight: 800; }
+    .dark .section-mark { color: #c9e9e5; }
+    .dark .section-mark::before { background: var(--gold); }
+    .dark .slide-subtitle { color: rgba(255,255,255,.68); }
+    .dark .brand-mini { color: white; }
+    .dark .brand-mini span { color: #bfe1dc; }
+
+    /* Controls and presenter */
+    #controls {
+      position: fixed;
+      z-index: 100;
+      left: 50%;
+      bottom: calc(var(--u) * 1.1);
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: calc(var(--u) * .42);
+      padding: calc(var(--u) * .4);
+      border: 1px solid rgba(255,255,255,.55);
+      border-radius: 999px;
+      background: rgba(4, 47, 45, .9);
+      color: white;
+      box-shadow: 0 calc(var(--u) * .5) calc(var(--u) * 2.2) rgba(0,0,0,.23);
+      backdrop-filter: blur(12px);
+      transition: opacity .2s ease;
+    }
+    #controls button {
+      width: calc(var(--u) * 2.35);
+      height: calc(var(--u) * 2.35);
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+    }
+    #controls button:hover { background: rgba(255,255,255,.12); }
+    #controls button:focus-visible { outline: calc(var(--u) * .14) solid var(--gold); outline-offset: calc(var(--u) * .12); }
+    #controls button svg { width: calc(var(--u) * 1.05); height: calc(var(--u) * 1.05); }
+    #counter { min-width: calc(var(--u) * 3.8); text-align: center; font-family: var(--mono); font-size: calc(var(--u) * .62); }
+    #progress-track { position: fixed; z-index: 101; left: 0; right: 0; bottom: 0; height: calc(var(--u) * .22); background: rgba(255,255,255,.2); }
+    #progress { height: 100%; width: 0; background: var(--gold); transition: width .32s ease; }
+    #keyboard-hint { position: fixed; z-index: 90; right: calc(var(--u) * 1.2); bottom: calc(var(--u) * 1.3); padding: calc(var(--u) * .38) calc(var(--u) * .62); border-radius: calc(var(--u) * .45); background: rgba(4,47,45,.78); color: rgba(255,255,255,.82); font-size: calc(var(--u) * .55); transition: opacity .3s ease; }
+
+    #presenter {
+      position: fixed;
+      z-index: 200;
+      inset: 0;
+      display: none;
+      grid-template-columns: 1.28fr .72fr;
+      background: #071d1c;
+      color: white;
+    }
+    #presenter.open { display: grid; }
+    .presenter-preview { position: relative; display: grid; place-items: center; padding: calc(var(--u) * 2.2); background: #0a2725; }
+    #preview-frame { width: 100%; aspect-ratio: 16 / 9; border: 1px solid rgba(255,255,255,.18); background: var(--bg); box-shadow: var(--shadow-deep); }
+    .presenter-panel { display: flex; flex-direction: column; min-width: 0; padding: calc(var(--u) * 2); border-left: 1px solid rgba(255,255,255,.12); }
+    .presenter-top { display: flex; justify-content: space-between; align-items: center; gap: calc(var(--u) * 1); }
+    .presenter-top .slide-meta { color: #a9c8c4; font-family: var(--mono); font-size: calc(var(--u) * .68); }
+    .presenter-actions { display: flex; gap: calc(var(--u) * .5); }
+    .presenter-actions button { padding: calc(var(--u) * .45) calc(var(--u) * .65); border: 1px solid rgba(255,255,255,.18); border-radius: calc(var(--u) * .45); background: rgba(255,255,255,.07); color: white; cursor: pointer; font-size: calc(var(--u) * .6); }
+    #presenter-title { margin-top: calc(var(--u) * 1.2); font-family: var(--display); font-size: calc(var(--u) * 1.55); line-height: 1.1; }
+    .timers { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * .65); margin-top: calc(var(--u) * 1); }
+    .timer { padding: calc(var(--u) * .7); border-radius: calc(var(--u) * .55); background: rgba(255,255,255,.07); }
+    .timer span { color: #9cb8b5; font-size: calc(var(--u) * .54); text-transform: uppercase; letter-spacing: .08em; }
+    .timer strong { display: block; margin-top: calc(var(--u) * .25); font-family: var(--mono); font-size: calc(var(--u) * 1.2); }
+    #presenter-notes { flex: 1; overflow: auto; margin-top: calc(var(--u) * 1.15); padding-right: calc(var(--u) * .5); color: #d9e5e3; font-size: calc(var(--u) * .72); line-height: 1.5; }
+    #presenter-notes .say { padding: calc(var(--u) * .72); border-left: calc(var(--u) * .18) solid var(--gold); background: rgba(255,255,255,.06); color: white; font-weight: 700; }
+    #presenter-notes ul { margin: calc(var(--u) * .8) 0 0; padding-left: calc(var(--u) * 1.15); }
+    #presenter-notes li { margin-bottom: calc(var(--u) * .45); }
+    .next-up { padding-top: calc(var(--u) * .8); border-top: 1px solid rgba(255,255,255,.12); color: #9cb8b5; font-size: calc(var(--u) * .58); }
+    .next-up strong { display: block; margin-top: calc(var(--u) * .25); color: white; font-size: calc(var(--u) * .7); }
+    .speaker-notes { display: none !important; }
+
+    /* Reveal */
+    .reveal { opacity: 0; transform: translateY(calc(var(--u) * .75)); }
+    .active .reveal { animation: reveal .52s cubic-bezier(.22,.61,.36,1) forwards; }
+    .active .d1 { animation-delay: .04s; }
+    .active .d2 { animation-delay: .12s; }
+    .active .d3 { animation-delay: .20s; }
+    .active .d4 { animation-delay: .28s; }
+    .active .d5 { animation-delay: .36s; }
+    @keyframes reveal { to { opacity: 1; transform: none; } }
+
+    /* Overview, reduced motion and print */
+    body.overview { --u: min(.32vw, .569vh); overflow: auto; background: #d8d4ca; }
+    body.overview #stage { position: relative; display: block; padding: 18px; }
+    body.overview #deck { width: calc(100vw - 36px); height: auto; max-width: none; max-height: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; overflow: visible; background: transparent; box-shadow: none; }
+    body.overview .slide { position: relative; inset: auto; display: flex; width: 100%; aspect-ratio: 16 / 9; opacity: 1; box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+    body.overview .reveal { opacity: 1; transform: none; animation: none; }
+    body.overview #controls, body.overview #progress-track, body.overview #keyboard-hint, body.overview #presenter { display: none !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      :root { --u: 1vw; }
+      html, body { width: 16in; height: auto; overflow: visible; background: white; }
+      #stage { position: static; display: block; }
+      #deck { width: 16in; height: auto; max-width: none; max-height: none; overflow: visible; box-shadow: none; }
+      .slide { position: relative; inset: auto; display: flex !important; width: 16in; height: 9in; break-after: page; page-break-after: always; opacity: 1 !important; }
+      .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
+      #controls, #progress-track, #keyboard-hint, #presenter { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main id="stage">
+    <div id="deck" aria-live="polite">
+
+      <section class="slide active" id="slide-1" aria-labelledby="title-1">
+        <div class="cover-shell">
+          <div class="cover-copy">
+            <div class="official-logo-crop reveal d1" aria-label="BandoMatch AI">
+              <img src="assets/bandomatch-logo-transparent.png" alt="Logo ufficiale BandoMatch AI">
+            </div>
+            <div class="cover-label reveal d2">Progetto finale · per Commercialisti</div>
+            <h1 id="title-1" class="reveal d2">Dai bandi ai clienti <span>compatibili.</span></h1>
+            <p class="cover-intro reveal d3">Un sistema di pre-screening che trasforma documenti complessi in criteri strutturati, confrontabili e verificabili.</p>
+            <div class="cover-meta reveal d4">
+              <div><strong>Matteo Pizziconi</strong><br>Autore del progetto</div>
+              <div class="meta-line"></div>
+              <div>AI Projects Development<br>ITS ICT Academy Roma</div>
+            </div>
+          </div>
+          <div class="cover-visual">
+            <div class="cover-orbit"></div>
+            <div class="app-window reveal d3" aria-label="Mockup della dashboard BandoMatch AI">
+              <aside class="app-side">
+                <div class="app-brand">BandoMatch<span> AI</span></div>
+                <div class="nav-mini on">Dashboard</div>
+                <div class="nav-mini">Bandi</div>
+                <div class="nav-mini">Clienti</div>
+                <div class="nav-mini">Carica bando</div>
+              </aside>
+              <div class="app-main">
+                <div class="app-top"><h3>Dashboard</h3><span>Pre-screening operativo</span></div>
+                <div class="kpi-row">
+                  <div class="kpi"><span>Bandi</span><strong>14</strong></div>
+                  <div class="kpi"><span>Clienti</span><strong>5</strong></div>
+                  <div class="kpi"><span>Da verificare</span><strong>1</strong></div>
+                </div>
+                <div class="dash-label">Opportunità con clienti compatibili</div>
+                <div class="opportunity"><span class="signal"></span><div><h4>Digitalizzazione delle imprese</h4><p>Fonte e PDF sempre disponibili</p></div><span class="match">Ammissibile</span></div>
+                <div class="opportunity warning"><span class="signal"></span><div><h4>Investimenti produttivi</h4><p>Un requisito richiede controllo</p></div><span class="match">Da verificare</span></div>
+              </div>
+            </div>
+            <div class="cover-side-note reveal d5">L’AI comprende i bandi. Le regole locali li confrontano con i clienti.</div>
+          </div>
+        </div>
+        <div class="speaker-notes">
+          <p class="say">“Buongiorno, sono Matteo Pizziconi e vi presento BandoMatch AI, il progetto che ho sviluppato per supportare commercialisti e consulenti nella prima analisi dei bandi.”</p>
+          <ul>
+            <li>Definire subito il posizionamento: pre-screening e supporto alla decisione.</li>
+            <li>Il risultato non è una decisione legale automatica: la verifica finale resta al professionista.</li>
+            <li>Frase guida: l’AI comprende il linguaggio; le regole locali rendono il confronto ripetibile e spiegabile.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-2" aria-labelledby="title-2">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">02 · Problema</div><h2 id="title-2">Il bando non è il problema.<br>Il confronto ripetuto sì.</h2><p class="slide-subtitle">Leggere è solo il primo passo: bisogna trasformare informazioni disperse in criteri coerenti e riutilizzabili su molti clienti.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="problem-grid">
+            <article class="problem-card reveal d2">
+              <div class="card-top"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></div><span class="card-num">01</span></div>
+              <h3>Informazioni distribuite</h3>
+              <p>Scadenze, destinatari, ATECO, importi, spese ed esclusioni possono trovarsi in sezioni e allegati diversi.</p>
+              <div class="problem-detail">PDF lunghi, strutture eterogenee, terminologie non uniformi.</div>
+            </article>
+            <article class="problem-card reveal d3">
+              <div class="card-top"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M17 7.5c0-1.4-1.8-2.5-4-2.5S9 6.1 9 7.5s1.8 2.5 4 2.5 4 1.1 4 2.5-1.8 2.5-4 2.5-4-1.1-4-2.5"/></svg></div><span class="card-num">02</span></div>
+              <h3>Significati da distinguere</h3>
+              <p>Investimento massimo, finanziamento massimo e contributo a fondo perduto non sono lo stesso dato.</p>
+              <div class="problem-detail">Una semplificazione sbagliata può alterare l’intero pre-screening.</div>
+            </article>
+            <article class="problem-card reveal d4">
+              <div class="card-top"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div><span class="card-num">03</span></div>
+              <h3>Controllo moltiplicato</h3>
+              <p>Lo stesso lavoro viene ripetuto per ogni cliente, mantenendo anche una motivazione chiara di compatibilità o esclusione.</p>
+              <div class="problem-detail">Il rischio: perdere opportunità o approfondire casi poco pertinenti.</div>
+            </article>
+          </div>
+          <div class="problem-conclusion reveal d5">
+            <span class="pill teal">Il vero collo di bottiglia</span>
+            <strong>Dal documento ai criteri confrontabili.</strong>
+            <p>La sola ricerca per parole chiave non gestisce sinonimi, eccezioni e relazioni fra requisiti.</p>
+          </div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problema</span><span class="footer-number">02 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Il problema non consiste soltanto nel leggere un PDF, ma nel trasformarlo in criteri confrontabili per molti clienti.”</p>
+          <ul>
+            <li>I bandi usano formulazioni e strutture differenti; le informazioni importanti non stanno sempre nello stesso punto.</li>
+            <li>Le ricerche per parola chiave non bastano quando cambiano sinonimi, condizioni o eccezioni.</li>
+            <li>L’esempio economico è utile: investimento, finanziamento e contributo devono restare concetti distinti.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-3" aria-labelledby="title-3">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">03 · Target</div><h2 id="title-3">Pensato per chi gestisce<br>un portafoglio di opportunità.</h2><p class="slide-subtitle">Il valore cresce quando lo stesso studio deve confrontare più bandi con una base clienti ricorrente e spiegare le proprie priorità.</p></div>
+        </header>
+        <div class="slide-body target-layout">
+          <div class="audience-stack">
+            <article class="audience primary reveal d2"><div class="icon-box white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M10 21v-4h4v4"/></svg></div><div><h3>Commercialisti</h3><p>Individuano rapidamente i clienti su cui approfondire un’opportunità.</p></div><span class="priority">Target primario</span></article>
+            <article class="audience reveal d3"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h3>Consulenti d’impresa</h3><p>Riducono il tempo del primo controllo e mantengono una traccia delle motivazioni.</p></div><span class="priority">Uso operativo</span></article>
+            <article class="audience reveal d4"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg></div><div><h3>Studi di finanza agevolata</h3><p>Organizzano bandi, fonti e confronti in un flusso unico e consultabile.</p></div><span class="priority">Specialisti</span></article>
+          </div>
+          <aside class="target-fit reveal d3">
+            <h3>Quando il sistema crea più valore</h3>
+            <p>Non sostituisce l’analisi specialistica: porta in cima i casi che meritano attenzione e rende visibili quelli incompleti.</p>
+            <div class="fit-grid">
+              <div class="fit-item"><span class="fit-label">Molti clienti</span><strong>Profili ricorrenti da confrontare</strong></div>
+              <div class="fit-item"><span class="fit-label">Molti bandi</span><strong>Opportunità da ordinare e seguire</strong></div>
+              <div class="fit-item"><span class="fit-label">Poco tempo</span><strong>Priorità prima dell’analisi completa</strong></div>
+              <div class="fit-item"><span class="fit-label">Responsabilità</span><strong>Motivi e fonte sempre consultabili</strong></div>
+            </div>
+            <div class="value-line"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 12 5 5L20 6"/></svg></div><div><strong>Valore atteso:</strong> meno lavoro iniziale ripetitivo, più tracciabilità e una selezione più ordinata delle opportunità da verificare.</div></div>
+          </aside>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Target</span><span class="footer-number">03 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Il target principale è formato da commercialisti, consulenti d’impresa e piccoli studi di finanza agevolata che seguono più clienti.”</p>
+          <ul>
+            <li>Il prodotto è B2B professionale: il vantaggio aumenta con la ripetizione del confronto.</li>
+            <li>Non promettere sostituzione del professionista o tempi risparmiati non misurati.</li>
+            <li>Il valore dimostrabile è la priorità operativa, la tracciabilità e la capacità di tornare sempre alla fonte.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-4" aria-labelledby="title-4">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">04 · Funzionamento</div><h2 id="title-4">Dal PDF alla motivazione,<br>in un flusso completo.</h2><p class="slide-subtitle">Il sistema collega acquisizione, comprensione, controllo, archivio e confronto con i clienti: non è una semplice chiamata a un modello.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="workflow">
+            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></svg></div><span class="flow-index">01</span><h3>Acquisisce</h3><p>PDF locale oppure URL HTTPS pubblico.</p></article>
+            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 1.8 5.2H19l-4.2 3.1 1.6 5.2-4.4-3.1-4.4 3.1 1.6-5.2L5 8.2h5.2z"/></svg></div><span class="flow-index">02</span><h3>Comprende</h3><p>Estrazione AI in uno schema comune.</p></article>
+            <article class="flow-step reveal d3"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="m8 12 2.5 2.5L16 9"/></svg></div><span class="flow-index">03</span><h3>Controlla</h3><p>Normalizzazione, evidenze, coerenza e warning.</p></article>
+            <article class="flow-step reveal d3"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="7" r="2"/><path d="M2 20v-2a6 6 0 0 1 12 0v2M14 18a4 4 0 0 1 8 0v2"/></svg></div><span class="flow-index">04</span><h3>Confronta</h3><p>Matching locale con tutti i profili cliente.</p></article>
+            <article class="flow-step reveal d4"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h18v16H3z"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></div><span class="flow-index">05</span><h3>Spiega</h3><p>Dashboard, scheda, motivo e PDF originale.</p></article>
+          </div>
+          <div class="workflow-output">
+            <article class="output-card reveal d4"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 3h16v18H4z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div><div><h4>Scheda strutturata</h4><p>29 campi principali, fonti, evidenze e dati economici distinti.</p></div></article>
+            <article class="output-card reveal d4"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="8"/></svg></div><div><h4>Tre esiti operativi</h4><p>Ammissibile sui dati disponibili, non ammissibile con motivo, da verificare.</p></div></article>
+            <div class="workflow-message reveal d5">La fonte ufficiale resta sempre il punto di arrivo della verifica professionale.</div>
+          </div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Funzionamento</span><span class="footer-number">04 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Il flusso parte da un PDF o da un URL HTTPS e arriva a una scheda confrontata localmente con i clienti.”</p>
+          <ul>
+            <li>Il file viene controllato, il testo viene estratto e l’AI produce una prima struttura.</li>
+            <li>Il JSON non viene salvato alla cieca: passa da normalizzazioni, evidenze, validazione e warning.</li>
+            <li>Dopo il salvataggio della scheda e del PDF, il matching locale aggiorna i risultati visibili in dashboard e nel dettaglio cliente.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-5" aria-labelledby="title-5">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">05 · Ruolo dell’AI</div><h2 id="title-5">L’AI propone una lettura.<br>La responsabilità resta distribuita.</h2><p class="slide-subtitle">Ogni livello ha un compito preciso: interpretare, rendere i dati controllabili, confrontare e infine verificare sulla fonte.</p></div>
+        </header>
+        <div class="slide-body responsibility-grid">
+          <div class="responsibility-stack">
+            <article class="responsibility ai-layer reveal d2"><div class="layer-number">01</div><div><h3>Interpretazione semantica</h3><p>DeepSeek via OpenRouter comprende formulazioni diverse, estrae lo schema e consolida le parti del documento; Claude è il fallback.</p></div><span class="layer-owner">AI esterna</span></article>
+            <article class="responsibility reveal d3"><div class="layer-number">02</div><div><h3>Dati controllabili</h3><p>Schema, normalizzazione, fonti, evidenze e validazione distinguono date, percentuali, contributi, finanziamenti e investimenti.</p></div><span class="layer-owner">Regole locali</span></article>
+            <article class="responsibility reveal d3"><div class="layer-number">03</div><div><h3>Pre-screening spiegabile</h3><p>Il matching locale calcola lo score — ATECO 40, regione 30, dimensione 20, fatturato 10 — e applica controlli rigidi separati.</p></div><span class="layer-owner">Algoritmo locale</span></article>
+            <article class="responsibility reveal d4"><div class="layer-number">04</div><div><h3>Decisione e responsabilità</h3><p>Il professionista controlla scadenze, requisiti determinanti e aspetti non presenti nel profilo cliente prima di procedere.</p></div><span class="layer-owner">Revisione umana</span></article>
+          </div>
+          <aside class="ai-facts">
+            <article class="fact-card reveal d3"><h4><span class="pill teal">Confine</span> Cosa vede il modello</h4><p>Solo il testo pubblico del bando. I dati cliente non vengono inviati al provider AI.</p></article>
+            <article class="fact-card warning reveal d4"><h4><span class="pill warn">RF-007</span> Incertezza esplicita</h4><p>Oltre il 50% di campi nulli: “da revisionare manualmente”. Completezza non significa correttezza.</p></article>
+            <article class="economic-case reveal d4"><h4>Un esempio che evita errori semantici</h4><div class="economic-row"><span>Investimento massimo</span><strong>800.000 €</strong></div><div class="economic-row"><span>Finanziamento massimo</span><strong>400.000 €</strong></div><div class="economic-row"><span>Contributo a fondo perduto</span><strong>Non applicabile</strong></div><p class="economic-note">L’AI interpreta; le regole mantengono separati i significati economici.</p></article>
+          </aside>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Ruolo dell’AI</span><span class="footer-number">05 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“L’intelligenza artificiale viene usata dove serve comprendere il linguaggio; non esegue il matching e non decide l’ammissibilità legale.”</p>
+          <ul>
+            <li>Dopo l’AI intervengono regole deterministiche: tipi, date, importi, percentuali, unità temporali, deduplicazione ed evidenze.</li>
+            <li>Lo score ordina le opportunità; i controlli rigidi di ammissibilità sono un passaggio separato.</li>
+            <li>RF-007 rende visibile l’incertezza. Oltre metà campi nulli significa revisione manuale, non “bassa probabilità”.</li>
+            <li>L’esempio 800.000 / 400.000 / non applicabile mostra perché i campi economici non possono essere confusi.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-6" aria-labelledby="title-6">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">06 · Stack e costruzione</div><h2 id="title-6">Tecnologie diverse,<br>un solo flusso applicativo.</h2><p class="slide-subtitle">Un’architettura ibrida: componenti web, AI esterna e regole Python lavorano insieme, con un confine dei dati esplicito.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="stack-board">
+            <article class="stack-panel reveal d2"><div class="stack-label">Interfaccia</div><h3>React + TypeScript</h3><p>La parte visibile: dashboard, archivio bandi, clienti e caricamento dei documenti.</p><div class="stack-techs"><div class="stack-tech"><strong>React 19</strong><span>Single-page application</span></div><div class="stack-tech"><strong>Vite</strong><span>Build e ambiente di sviluppo</span></div><div class="stack-tech"><strong>Router + React Query</strong><span>Navigazione e gestione dei dati</span></div></div></article>
+            <article class="stack-panel dark-panel reveal d3"><div class="stack-label">Backend e regole</div><h3>Python + FastAPI</h3><p>Orchestra upload, controlli, validazione, database e matching deterministico.</p><div class="stack-techs"><div class="stack-tech"><strong>Pydantic</strong><span>Schema e validazione</span></div><div class="stack-tech"><strong>PyMuPDF</strong><span>Testo e riferimenti di pagina</span></div><div class="stack-tech"><strong>Moduli locali</strong><span>Evidenze, normalizzazione e score</span></div></div></article>
+            <article class="stack-panel gold-edge reveal d4"><div class="stack-label">AI e dati</div><h3>OpenRouter + Neon</h3><p>L’AI interpreta il testo pubblico; database e regole conservano e confrontano i dati.</p><div class="stack-techs"><div class="stack-tech"><strong>DeepSeek</strong><span>Modello principale</span></div><div class="stack-tech"><strong>Claude</strong><span>Fallback dell’estrazione</span></div><div class="stack-tech"><strong>PostgreSQL Neon</strong><span>Bandi, PDF, clienti e risultati</span></div></div></article>
+          </div>
+          <div class="deploy-strip">
+            <article class="deploy-item reveal d4"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4zM8 8h8v8H8z"/></svg></div><div><strong>Docker</strong><span>Build riproducibile</span></div></article>
+            <article class="deploy-item reveal d5"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg></div><div><strong>Render</strong><span>Deploy del servizio web</span></div></article>
+            <article class="deploy-item reveal d5"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5v14"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Principio costruttivo</strong><span>AI per comprendere; software locale per controllare e confrontare.</span></div></article>
+          </div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Stack e costruzione</span><span class="footer-number">06 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Il frontend è una SPA React e TypeScript; FastAPI orchestra estrazione, database e matching.”</p>
+          <ul>
+            <li>PyMuPDF legge il testo e mantiene i marcatori di pagina.</li>
+            <li>OpenRouter usa DeepSeek come modello principale e Claude come fallback.</li>
+            <li>PostgreSQL Neon conserva bandi, PDF originali, clienti e risultati; Docker e Render rendono il deploy riproducibile.</li>
+            <li>In produzione FastAPI serve API e build frontend nello stesso servizio.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-7" aria-labelledby="title-7">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">07 · Aspetti normativi</div><h2 id="title-7">Trasparenza prima<br>della conformità dichiarata.</h2><p class="slide-subtitle">Il prototipo applica principi di minimizzazione, sicurezza e controllo umano, ma non dichiara una certificazione GDPR o AI Act.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="privacy-messages">
+            <article class="privacy-message teal-message reveal d2"><div class="message-head"><div class="icon-box white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Come vengono trattati i dati</h3></div><p>Il testo pubblico del bando viene inviato al provider AI. Il PDF originale viene conservato per consultazione e download. I dati dei clienti restano nel sistema e il matching viene calcolato localmente.</p><div class="message-result">I profili cliente non vengono inviati al modello AI.</div></article>
+            <article class="privacy-message reveal d3"><div class="message-head"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Trasparenza sui limiti dell’AI</h3></div><p>I dati vengono estratti automaticamente e possono contenere imprecisioni. Scadenze, importi e requisiti devono essere sempre verificati sulla fonte ufficiale prima di essere utilizzati con i clienti.</p><div class="message-result">L’applicazione supporta la decisione: non sostituisce la verifica professionale.</div></article>
+          </div>
+          <div class="regulatory-strip">
+            <article class="regulatory-item reveal d4"><strong>GDPR · minimizzazione</strong><span>Al provider esterno viene inviato solo il testo necessario all’estrazione.</span></article>
+            <article class="regulatory-item reveal d4"><strong>AI Act · trasparenza</strong><span>L’utente sa dove viene usata l’AI e quali risultati richiedono controllo.</span></article>
+            <article class="regulatory-item reveal d5"><strong>Nessuna certificazione dichiarata</strong><span>Per la produzione servono login, ruoli, separazione dei dati e valutazione legale dedicata.</span></article>
+          </div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Aspetti normativi</span><span class="footer-number">07 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Il punto centrale è il confine dei dati: il provider AI riceve il testo pubblico del bando, non i dati dei clienti.”</p>
+          <ul>
+            <li>Il PDF originale viene conservato in PostgreSQL per consultazione e download; i file temporanei vengono eliminati.</li>
+            <li>Il matching avviene nel backend con regole locali e la decisione finale resta a una persona.</li>
+            <li>Le misure presenti migliorano privacy e sicurezza del prototipo, ma non costituiscono certificazione normativa.</li>
+            <li>Per produzione servono autenticazione, ruoli, tenant, policy, valutazioni e documentazione dedicate.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-8" aria-labelledby="title-8">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">08 · Problemi e risoluzioni</div><h2 id="title-8">Gli errori più utili<br>sono diventati architettura.</h2><p class="slide-subtitle">Le principali difficoltà emerse nello sviluppo hanno prodotto controlli espliciti, fallback e limiti dichiarati.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="resolution-grid">
+            <article class="resolution-card reveal d2"><span class="pill danger">Problema 01</span><h3>I PDF lunghi venivano troncati</h3><p>La prima soluzione poteva perdere le informazioni presenti nelle sezioni finali del documento.</p><div class="solution-box"><span class="solution-label">Soluzione implementata</span><strong>Chunking e consolidamento senza taglio rigido</strong><div class="solution-points"><span>Blocchi ~60.000 caratteri</span><span>Overlap ~2.000</span><span>Fino a 3 worker</span><span>Merge di emergenza</span></div></div><div class="resolution-result">✓ Tutto il testo estratto viene coperto dal processo.</div></article>
+            <article class="resolution-card reveal d3"><span class="pill danger">Problema 02</span><h3>Falsi positivi sulle esclusioni ATECO</h3><p>Senza una tabella ATECO, l’AI poteva ignorare divieti discorsivi come tabacco o attività finanziarie.</p><div class="solution-box"><span class="solution-label">Soluzione implementata</span><strong>Quattro controlli sulle restrizioni settoriali</strong><div class="solution-points"><span>Prompt più esplicito</span><span>Esclusioni separate</span><span>Normalizzazione locale</span><span>“Aperto a tutti” = false</span></div></div><div class="resolution-result">✓ Una sola esclusione esplicita impedisce la classificazione “aperto a tutti”.</div></article>
+          </div>
+          <div class="quality-line reveal d4"><div class="quality-chip"><strong>349</strong><span>test superati</span></div><div class="quality-chip"><strong>83,32%</strong><span>copertura</span></div><div class="quality-chip"><strong>RF-007</strong><span>revisione manuale</span></div><div class="quality-chip note">I controlli riducono gli errori, ma la fonte ufficiale resta sempre necessaria.</div></div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problemi e risoluzioni</span><span class="footer-number">08 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Le difficoltà principali non sono state nascoste: sono diventate regole, warning e limiti dichiarati.”</p>
+          <ul>
+            <li>Il troncamento dei documenti lunghi è stato sostituito da blocchi di circa 60.000 caratteri, overlap di circa 2.000 e consolidamento finale.</li>
+            <li>Per le esclusioni settoriali abbiamo rafforzato prompt, struttura dei dati e normalizzazione locale.</li>
+            <li>Se compare anche un solo divieto esplicito, il sistema forza “aperto a tutti” a false.</li>
+            <li>La suite conferma la stabilità del software: 349 test superati e copertura dell’83,32%.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="slide dark" id="slide-9" aria-labelledby="title-9">
+        <header class="slide-header reveal d1">
+          <div><div class="section-mark">09 · Evoluzione futura</div><h2 id="title-9">Più accessibile, sicuro<br>e veloce.</h2><p class="slide-subtitle">Quattro evoluzioni concrete per trasformare l’MVP in uno strumento pronto a crescere.</p></div>
+        </header>
+        <div class="slide-body">
+          <div class="future-grid">
+            <article class="future-card reveal d2"><div class="future-num">01</div><div><h3>OCR per PDF scansionati</h3><p>Riconoscere il testo anche nei documenti composti esclusivamente da immagini.</p><div class="future-tags"><span>Rilevamento automatico</span><span>Fallback OCR</span></div></div></article>
+            <article class="future-card reveal d2"><div class="future-num">02</div><div><h3>Login e gestione utenti</h3><p>Proteggere l’accesso e separare i dati dei diversi studi professionali.</p><div class="future-tags"><span>Ruoli e permessi</span><span>Dati separati per studio</span></div></div></article>
+            <article class="future-card reveal d3"><div class="future-num">03</div><div><h3>Compressione dei file</h3><p>Ridurre automaticamente il peso dei PDF durante caricamento e conservazione.</p><div class="future-tags"><span>Upload più leggero</span><span>Storage ottimizzato</span></div></div></article>
+            <article class="future-card reveal d3"><div class="future-num">04</div><div><h3>Estrazione più veloce</h3><p>Ottimizzare chunking, elaborazione parallela e chiamate al modello AI.</p><div class="future-tags"><span>Job asincroni</span><span>Più parallelismo</span></div></div></article>
+          </div>
+          <div class="future-closing reveal d4"><strong>Obiettivo: mantenere il controllo professionale, migliorando esperienza e prestazioni.</strong><span>Ora passiamo alla demo →</span></div>
+        </div>
+        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>AI Projects Development · ITS ICT Academy Roma</span><span class="footer-number">09 / 09</span></footer>
+        <div class="speaker-notes">
+          <p class="say">“Le prossime evoluzioni renderebbero il progetto più accessibile, sicuro e veloce, mantenendo la verifica professionale.”</p>
+          <ul>
+            <li>L’OCR permetterebbe di leggere anche PDF costituiti soltanto da immagini.</li>
+            <li>Login e gestione utenti proteggerebbero l’accesso e separerebbero i dati dei diversi studi.</li>
+            <li>La compressione automatica ridurrebbe il peso dei documenti caricati e conservati.</li>
+            <li>La velocità può migliorare ottimizzando chunking, parallelismo e chiamate al provider AI.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav id="controls" aria-label="Controlli presentazione">
+    <button id="prev" type="button" aria-label="Slide precedente" title="Precedente (←)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button>
+    <span id="counter" aria-live="polite">1 / 9</span>
+    <button id="next" type="button" aria-label="Slide successiva" title="Successiva (→)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+    <button id="fullscreen" type="button" aria-label="Schermo intero" title="Schermo intero (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg></button>
+    <button id="presenter-open" type="button" aria-label="Modalità relatore" title="Modalità relatore (P)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4M8 9h8M8 13h5"/></svg></button>
+  </nav>
+  <div id="progress-track" aria-hidden="true"><div id="progress"></div></div>
+  <div id="keyboard-hint">← → naviga · F fullscreen · P relatore</div>
+
+  <aside id="presenter" aria-label="Modalità relatore" aria-hidden="true">
+    <div class="presenter-preview"><iframe id="preview-frame" title="Anteprima slide corrente"></iframe></div>
+    <div class="presenter-panel">
+      <div class="presenter-top"><span class="slide-meta" id="presenter-meta">SLIDE 1 / 9</span><div class="presenter-actions"><button id="reset-timer" type="button">Azzera timer</button><button id="presenter-close" type="button">Chiudi · Esc</button></div></div>
+      <h3 id="presenter-title">Concept</h3>
+      <div class="timers"><div class="timer"><span>Totale</span><strong id="total-time">00:00</strong></div><div class="timer"><span>Slide</span><strong id="slide-time">00:00</strong></div></div>
+      <div id="presenter-notes"></div>
+      <div class="next-up">Prossima slide<strong id="next-title">Problema</strong></div>
+    </div>
+  </aside>
+
+  <script>
+    (() => {
+      const slides = [...document.querySelectorAll('.slide')];
+      const titles = ['Concept', 'Problema', 'Target', 'Funzionamento', 'Ruolo dell’AI', 'Stack e costruzione', 'Aspetti normativi', 'Problemi e risoluzioni', 'Evoluzione futura'];
+      const params = new URLSearchParams(location.search);
+      const overview = params.get('overview') === '1';
+      const audit = params.get('audit') === '1';
+      if (audit) {
+        const deck = document.getElementById('deck');
+        const results = [];
+        slides.forEach((slide, index) => {
+          slides.forEach(item => { item.style.display = 'none'; item.classList.remove('active'); });
+          slide.style.display = 'flex';
+          slide.style.opacity = '1';
+          const bounds = slide.getBoundingClientRect();
+          const overflow = [...slide.querySelectorAll('*')]
+            .filter(el => getComputedStyle(el).display !== 'none')
+            .map(el => ({ el, rect: el.getBoundingClientRect() }))
+            .filter(({ rect }) => rect.width > 0 && rect.height > 0 && (
+              rect.left < bounds.left - 1 || rect.top < bounds.top - 1 ||
+              rect.right > bounds.right + 1 || rect.bottom > bounds.bottom + 1
+            ))
+            .map(({ el, rect }) => ({
+              tag: el.tagName.toLowerCase(),
+              className: String(el.className || '').slice(0, 100),
+              left: Math.round(rect.left - bounds.left),
+              top: Math.round(rect.top - bounds.top),
+              right: Math.round(rect.right - bounds.right),
+              bottom: Math.round(rect.bottom - bounds.bottom)
+            }));
+          results.push({ slide: index + 1, overflow });
+        });
+        document.body.innerHTML = `<pre id="audit-report">${JSON.stringify(results, null, 2).replace(/</g, '&lt;')}</pre>`;
+        document.body.style.overflow = 'auto';
+        document.body.style.background = 'white';
+        document.body.style.color = 'black';
+        return;
+      }
+      if (overview) {
+        document.body.classList.add('overview');
+        slides.forEach(slide => { slide.classList.add('active'); slide.setAttribute('aria-hidden', 'false'); });
+        return;
+      }
+
+      let current = Math.max(0, Math.min(slides.length - 1, Number(params.get('slide') || 1) - 1));
+      let totalStarted = performance.now();
+      let slideStarted = performance.now();
+      let timer = null;
+      let presenterOpen = false;
+      const counter = document.getElementById('counter');
+      const progress = document.getElementById('progress');
+      const presenter = document.getElementById('presenter');
+      const preview = document.getElementById('preview-frame');
+
+      function formatTime(ms) {
+        const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const seconds = String(totalSeconds % 60).padStart(2, '0');
+        return `${minutes}:${seconds}`;
+      }
+
+      function restartReveals(slide) {
+        slide.querySelectorAll('.reveal').forEach(el => {
+          el.style.animation = 'none';
+          void el.offsetWidth;
+          el.style.animation = '';
+        });
+      }
+
+      function updatePresenter() {
+        document.getElementById('presenter-meta').textContent = `SLIDE ${current + 1} / ${slides.length}`;
+        document.getElementById('presenter-title').textContent = titles[current];
+        document.getElementById('presenter-notes').innerHTML = slides[current].querySelector('.speaker-notes')?.innerHTML || '<p>Nessuna nota.</p>';
+        document.getElementById('next-title').textContent = current < slides.length - 1 ? titles[current + 1] : 'Fine · passa alla demo';
+        if (presenterOpen) preview.src = `${location.pathname}?slide=${current + 1}&preview=1`;
+      }
+
+      function show(index, updateHash = true) {
+        const nextIndex = Math.max(0, Math.min(slides.length - 1, index));
+        slides.forEach((slide, i) => {
+          const active = i === nextIndex;
+          slide.classList.toggle('active', active);
+          slide.setAttribute('aria-hidden', String(!active));
+        });
+        current = nextIndex;
+        slideStarted = performance.now();
+        counter.textContent = `${current + 1} / ${slides.length}`;
+        progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+        restartReveals(slides[current]);
+        updatePresenter();
+        if (updateHash && history.replaceState) history.replaceState(null, '', `${location.pathname}?slide=${current + 1}${params.get('preview') === '1' ? '&preview=1' : ''}`);
+      }
+
+      function next() { show(current + 1); }
+      function prev() { show(current - 1); }
+      function toggleFullscreen() {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else document.documentElement.requestFullscreen().catch(() => {});
+      }
+      function openPresenter() {
+        presenterOpen = true;
+        presenter.classList.add('open');
+        presenter.setAttribute('aria-hidden', 'false');
+        totalStarted = performance.now();
+        slideStarted = performance.now();
+        updatePresenter();
+        timer = setInterval(() => {
+          document.getElementById('total-time').textContent = formatTime(performance.now() - totalStarted);
+          document.getElementById('slide-time').textContent = formatTime(performance.now() - slideStarted);
+        }, 250);
+      }
+      function closePresenter() {
+        presenterOpen = false;
+        presenter.classList.remove('open');
+        presenter.setAttribute('aria-hidden', 'true');
+        clearInterval(timer);
+      }
+
+      document.getElementById('next').addEventListener('click', next);
+      document.getElementById('prev').addEventListener('click', prev);
+      document.getElementById('fullscreen').addEventListener('click', toggleFullscreen);
+      document.getElementById('presenter-open').addEventListener('click', openPresenter);
+      document.getElementById('presenter-close').addEventListener('click', closePresenter);
+      document.getElementById('reset-timer').addEventListener('click', () => { totalStarted = performance.now(); slideStarted = performance.now(); });
+
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && presenterOpen) { event.preventDefault(); closePresenter(); return; }
+        if (['ArrowRight', 'PageDown', ' '].includes(event.key)) { event.preventDefault(); next(); }
+        else if (['ArrowLeft', 'PageUp'].includes(event.key)) { event.preventDefault(); prev(); }
+        else if (event.key === 'Home') { event.preventDefault(); show(0); }
+        else if (event.key === 'End') { event.preventDefault(); show(slides.length - 1); }
+        else if (event.key.toLowerCase() === 'f') toggleFullscreen();
+        else if (event.key.toLowerCase() === 'p') presenterOpen ? closePresenter() : openPresenter();
+      });
+
+      let touchX = 0;
+      let touchY = 0;
+      addEventListener('touchstart', e => { touchX = e.changedTouches[0].clientX; touchY = e.changedTouches[0].clientY; }, { passive: true });
+      addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchX;
+        const dy = e.changedTouches[0].clientY - touchY;
+        if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy)) dx < 0 ? next() : prev();
+      }, { passive: true });
+
+      if (params.get('preview') === '1') {
+        document.getElementById('controls').style.display = 'none';
+        document.getElementById('progress-track').style.display = 'none';
+        document.getElementById('keyboard-hint').style.display = 'none';
+      } else {
+        setTimeout(() => { document.getElementById('keyboard-hint').style.opacity = '0'; }, 6000);
+      }
+      show(current, false);
+
+      if (params.get('selftest') === '1') {
+        const checks = {};
+        document.getElementById('next').click();
+        checks.nextButton = counter.textContent === '2 / 9';
+        document.getElementById('prev').click();
+        checks.prevButton = counter.textContent === '1 / 9';
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        checks.keyboardNext = counter.textContent === '2 / 9';
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+        checks.keyboardHome = counter.textContent === '1 / 9';
+        document.getElementById('presenter-open').click();
+        checks.presenterMode = presenter.classList.contains('open') && document.getElementById('presenter-notes').textContent.trim().length > 0;
+        document.getElementById('presenter-close').click();
+        checks.presenterClose = !presenter.classList.contains('open');
+        checks.fullscreenAvailable = typeof document.documentElement.requestFullscreen === 'function';
+        checks.relativeLogoAsset = document.querySelector('.official-logo-crop img')?.getAttribute('src') === 'assets/bandomatch-logo-transparent.png';
+        checks.progressBar = parseFloat(progress.style.width) > 11 && parseFloat(progress.style.width) < 12;
+        clearInterval(timer);
+        document.body.innerHTML = `<pre id="selftest-report">${JSON.stringify(checks, null, 2)}</pre>`;
+        document.body.style.overflow = 'auto';
+        document.body.style.background = 'white';
+        document.body.style.color = 'black';
+      }
+    })();
+  </script>
+</body>
+</html>

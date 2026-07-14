@@ -17,6 +17,14 @@ const STALE_TIME = 60_000 // 1 minuto: i dati restano "freschi" per la navigazio
 export const useDashboard = <T = any>() =>
   useQuery<T>({ queryKey: ['dashboard'], queryFn: () => fetchJson<T>('/api/dashboard'), staleTime: STALE_TIME })
 
+export const useDashboardBandoDetail = <T = any>(bandoId: number | null) =>
+  useQuery<T>({
+    queryKey: ['dashboard', 'bando', bandoId],
+    queryFn: () => fetchJson<T>(`/api/dashboard/bandi/${bandoId}`),
+    enabled: bandoId !== null,
+    staleTime: STALE_TIME,
+  })
+
 export const useBandi = <T = any>() =>
   useQuery<T>({ queryKey: ['bandi'], queryFn: () => fetchJson<T>('/api/bandi'), staleTime: STALE_TIME })
 

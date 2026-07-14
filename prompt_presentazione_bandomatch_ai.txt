@@ -1,0 +1,942 @@
+Devi realizzare una presentazione HTML completa per l’esame finale del progetto BandoMatch AI.
+
+Lavora direttamente sui file del repository e genera il risultato finale funzionante. Non limitarti a proporre una struttura, a descrivere il codice o a produrre soltanto una bozza testuale.
+
+OBIETTIVO
+
+Creare una presentazione web professionale, interattiva e utilizzabile offline che introduca BandoMatch AI prima della dimostrazione dal vivo dell’MVP.
+
+La presentazione deve essere:
+
+- chiara e sintetica;
+- coerente con l’interfaccia reale di BandoMatch AI;
+- leggibile durante un’esposizione orale;
+- utile come supporto mnemonico per il relatore;
+- meno dettagliata dello speech inserito alla fine di questo prompt;
+- composta da massimo 10 slide;
+- pronta per essere aperta direttamente nel browser;
+- progettata per una presentazione di circa 7–9 minuti, prima della demo.
+
+Non creare una presentazione che sostituisca lo speech. Le slide devono aiutare a ricordare cosa dire senza riportare interi paragrafi.
+
+IDENTITÀ DEL PROGETTO
+
+Nome da usare sempre:
+
+BandoMatch AI
+
+Sottotitolo del prodotto:
+
+per Commercialisti
+
+Autore:
+
+Matteo Pizziconi
+
+Corso:
+
+AI Projects Development — ITS ICT Academy Roma
+
+Posizionamento corretto:
+
+Strumento di pre-screening e supporto alla decisione per studi professionali. Non certifica in modo definitivo l’ammissibilità legale a un bando.
+
+Frase guida consigliata:
+
+L’AI comprende i bandi. Le regole locali li confrontano con i clienti.
+
+Oppure, per la copertina:
+
+Dai bandi ai clienti compatibili.
+
+FONTI VINCOLANTI
+
+Prima di creare la presentazione, leggi almeno questi file del repository:
+
+- AUDIT_PRESENTAZIONE_BANDI_SCANNER_2026-07-14.md
+- README.md
+- frontend/src/styles.css
+- frontend/src/App.tsx
+- main.py
+- modules/extractor.py
+- modules/schema.py
+- modules/evidence.py
+- modules/validator.py
+- modules/matcher.py
+- modules/database.py
+- prompts/system_extraction.md
+- prompts/system_consolidation.md
+- tests/
+
+Usa come fonte principale e aggiornata:
+
+AUDIT_PRESENTAZIONE_BANDI_SCANNER_2026-07-14.md
+
+Lo speech inserito alla fine di questo prompt è la fonte narrativa vincolante per i contenuti visibili.
+
+Regole:
+
+- non aggiungere funzionalità non presenti nel progetto o nello speech;
+- non inventare dati, metriche, clienti, risultati o tecnologie;
+- non modificare il significato delle informazioni;
+- puoi sintetizzare, accorpare e riorganizzare i contenuti;
+- puoi scegliere autonomamente titoli, sottotitoli e microtesti;
+- in caso di conflitto fra documentazione storica e codice corrente, usa l’audit e il codice corrente;
+- usa sempre il nome BandoMatch AI con questa esatta capitalizzazione;
+- non usare il precedente nome “BandiScanner”;
+- non descrivere il progetto come scanner fotografico o sistema OCR;
+- non usare “SME”: in italiano usa “PMI” o “imprese”;
+- usa termini professionali come “PDF complessi” o “documenti di grandi dimensioni”, non espressioni colloquiali;
+- per gli importi usa euro, per esempio “25.000 €” oppure “€ 25.000”, mantenendo lo stesso stile in tutte le slide.
+
+PRECISIONE DELLE AFFERMAZIONI
+
+La presentazione deve distinguere chiaramente:
+
+- estrazione AI;
+- normalizzazione e validazione deterministica;
+- score di compatibilità;
+- controlli di ammissibilità;
+- verifica professionale finale.
+
+Non dichiarare mai che:
+
+- l’estrazione AI è sempre corretta;
+- tutti i dati vengono riconosciuti senza possibilità di errore;
+- lo score rappresenta la probabilità di ottenere il finanziamento;
+- il sistema certifica legalmente l’ammissibilità;
+- il matching controlla già composizione societaria, DURC, aiuti de minimis ricevuti o tutti i requisiti documentali;
+- BandoMatch AI è automaticamente conforme al GDPR o all’AI Act;
+- nessun documento viene conservato;
+- i PDF scansionati come immagini sono supportati;
+- i dati dei clienti vengono inviati al modello AI;
+- esistono accuratezza del 100% o benchmark non presenti nel progetto.
+
+Formulazioni corrette:
+
+- “pre-screening sui dati disponibili”;
+- “ammissibile rispetto ai criteri strutturati disponibili”;
+- “lo score ordina le opportunità”;
+- “la decisione finale resta al professionista”;
+- “il testo pubblico del bando viene inviato al provider AI”;
+- “i dati cliente restano nel sistema e il matching è locale”;
+- “il PDF originale viene conservato per consentire consultazione e download”;
+- “i documenti lunghi vengono analizzati a blocchi e consolidati”;
+- “tutto il testo estratto dai PDF accettati viene coperto dal processo, ma l’interpretazione AI può comunque richiedere revisione”.
+
+STRUTTURA NARRATIVA — MASSIMO 10 SLIDE
+
+Segui l’ordine dello speech e usa questa struttura.
+
+SLIDE 1 — COPERTINA
+
+Contenuto:
+
+- logo ufficiale BandoMatch AI presente negli asset del progetto;
+- nome BandoMatch AI;
+- sottotitolo “per Commercialisti”;
+- frase principale breve: “Dai bandi ai clienti compatibili”;
+- Matteo Pizziconi;
+- AI Projects Development — ITS ICT Academy Roma;
+- eventuale dicitura discreta “Progetto finale”.
+
+La slide deve essere pulita e avere forte impatto visivo.
+
+Non usare immagini stock di robot, cervelli digitali o documenti generici.
+
+Usa il logo ufficiale senza ridisegnarlo, rigenerarlo o modificarne forme, colori e proporzioni. L’immagine contiene spazio bianco esterno: puoi ritagliare soltanto quello spazio tramite un contenitore CSS con overflow nascosto, mantenendo invariati i pixel del logo.
+
+Puoi aggiungere un mockup stilizzato della dashboard usando gli stessi colori e componenti del frontend.
+
+SLIDE 2 — PROBLEMA, TARGET E VALORE
+
+Accorpa:
+
+- bandi lunghi e scritti in modi diversi;
+- requisiti distribuiti tra sezioni e allegati;
+- confronto ripetitivo per ogni cliente;
+- rischio di perdere opportunità o interpretare male un’esclusione;
+- target: commercialisti, consulenti d’impresa e studi di finanza agevolata.
+
+Messaggio principale:
+
+Il problema non è soltanto leggere il PDF, ma trasformarlo in criteri confrontabili per molti clienti.
+
+Mostra al massimo tre problemi visivi e una frase conclusiva.
+
+Non inventare statistiche sul tempo risparmiato o sul numero medio di pagine.
+
+SLIDE 3 — LA SOLUZIONE END-TO-END
+
+Rappresenta il flusso:
+
+PDF o URL HTTPS → estrazione AI → validazione e normalizzazione → matching locale → dashboard e scheda.
+
+Ruoli da mostrare:
+
+- caricamento di un PDF oppure acquisizione da URL;
+- estrazione di una struttura comune;
+- controllo dei dati e warning;
+- confronto con i clienti;
+- accesso alla scheda, alla fonte e al PDF originale.
+
+Messaggio principale:
+
+BandoMatch AI non è soltanto una chiamata a un modello: collega acquisizione, controllo, archivio e matching.
+
+Usa quattro o cinque passaggi grandi e leggibili. Non inserire codice.
+
+SLIDE 4 — ARCHITETTURA E CONFINE DEI DATI
+
+Rappresenta graficamente il flusso:
+
+Browser / React + TypeScript
+→ FastAPI
+→ moduli di estrazione, validazione e matching
+→ PostgreSQL Neon
+
+Collega inoltre:
+
+FastAPI / extractor → OpenRouter → DeepSeek primario / Claude fallback
+
+Ruoli da mostrare:
+
+- React 19 + TypeScript + Vite: interfaccia;
+- FastAPI + Pydantic: API e orchestrazione;
+- PyMuPDF: lettura del testo e riferimenti di pagina;
+- OpenRouter: accesso ai modelli AI;
+- moduli Python: schema, evidenze, validazione e matching;
+- PostgreSQL Neon: bandi, PDF, clienti e risultati;
+- Docker + Render: build e deploy.
+
+Evidenzia con due percorsi distinti:
+
+- testo pubblico del bando → provider AI esterno;
+- dati cliente → database e matching locale, senza invio al provider AI.
+
+Il diagramma deve restare semplice. Non mostrare tutte le 20 rotte API.
+
+SLIDE 5 — COME GESTISCE I PDF COMPLESSI
+
+Contenuto:
+
+- controllo del formato PDF;
+- limite di 10 MB e massimo 300 pagine;
+- estrazione del testo con marcatori di pagina;
+- divisione in blocchi di circa 60.000 caratteri;
+- sovrapposizione di circa 2.000 caratteri;
+- elaborazione parallela fino a 3 worker;
+- consolidamento delle estrazioni parziali;
+- modello primario e fallback.
+
+Flusso visivo consigliato:
+
+PDF → testo con pagine → blocchi sovrapposti → estrazioni → consolidamento → JSON unico
+
+Messaggio principale:
+
+Il precedente taglio rigido è stato sostituito da chunking e consolidamento, così le sezioni finali non vengono automaticamente scartate.
+
+Deve essere presente una nota breve:
+
+Copertura completa del testo non significa interpretazione infallibile.
+
+Puoi usare Complesso.pdf come nome di esempio, senza mostrare dati inventati.
+
+SLIDE 6 — DALL’AI A DATI CONTROLLABILI
+
+Dividi visivamente la slide in due aree.
+
+Area AI:
+
+- comprende formulazioni differenti;
+- estrae lo schema JSON;
+- interpreta elenchi, condizioni ed eccezioni;
+- consolida le parti del documento.
+
+Area regole deterministiche:
+
+- normalizzano tipi, date, importi e percentuali;
+- convertono trimestre, semestre e anno in mesi;
+- deduplicano le liste;
+- distinguono contributo, finanziamento e investimento;
+- verificano coerenza, fonti ed evidenze;
+- attivano warning e revisione manuale.
+
+Mostra come esempio economico:
+
+- investimento massimo: 800.000 €;
+- finanziamento massimo: 400.000 €;
+- contributo massimo: non applicabile se non esiste una quota a fondo perduto.
+
+Mostra RF-007 in modo sintetico:
+
+Da revisionare manualmente quando oltre il 50% dei campi risulta nullo.
+
+Non presentare la percentuale di completezza come percentuale di correttezza.
+
+SLIDE 7 — MATCHING SPIEGABILE
+
+Mostra i pesi esatti:
+
+- ATECO / attività: 40 punti;
+- regione: 30 punti;
+- dimensione impresa: 20 punti;
+- fatturato: 10 punti.
+
+Mostra visivamente che lo score è separato dai controlli rigidi di ammissibilità.
+
+Controlli rigidi disponibili, quando i dati sono presenti:
+
+- anzianità minima e massima;
+- sezione ATECO esclusa;
+- forma giuridica;
+- dimensione impresa;
+- fatturato massimo;
+- dipendenti minimi e massimi;
+- regione;
+- investimento minimo come requisito da verificare sul progetto.
+
+Mostra i tre stati:
+
+- ammissibile sui dati disponibili;
+- non ammissibile, con motivo;
+- da verificare.
+
+Messaggio principale:
+
+Lo score ordina le opportunità; l’ammissibilità è un controllo separato; la verifica legale finale resta al professionista.
+
+Non mostrare un gauge con percentuali spacciate per probabilità di successo.
+
+SLIDE 8 — ESPERIENZA UTENTE, PRIVACY E SICUREZZA
+
+Mostra sinteticamente tre aree dell’interfaccia:
+
+- dashboard con sezioni operative;
+- scheda bando sintetica e PDF originale;
+- dettaglio cliente con breakdown e motivazioni di esclusione.
+
+Funzioni da citare:
+
+- archivio bandi con ricerca, filtri e ordinamento;
+- caricamento da PDF o URL;
+- schede Markdown e PDF scaricabile;
+- clienti con conteggio reale dei bandi ammissibili;
+- casi non ammissibili e da verificare separati.
+
+Privacy:
+
+- il testo del bando, documento pubblico, viene inviato al provider AI;
+- il PDF originale viene salvato in PostgreSQL per il download;
+- i file temporanei di upload vengono eliminati al termine;
+- i dati cliente non vengono inviati al provider AI;
+- il matching avviene nel backend con regole locali.
+
+Sicurezza già presente:
+
+- limite delle richieste per IP;
+- controlli su PDF e URL HTTPS;
+- blocco degli indirizzi privati durante l’acquisizione URL;
+- query SQL parametrizzate;
+- chiavi configurate tramite variabili d’ambiente;
+- istruzioni contro la prompt injection.
+
+Non dichiarare conformità normativa certificata.
+
+Mantieni la slide leggibile: privilegia il flusso dei dati e massimo quattro micro-elementi. I dettagli ulteriori possono stare nelle note relatore.
+
+SLIDE 9 — QUALITÀ MISURABILE, LIMITI E ROADMAP
+
+Evidenzia i dati verificati il 14 luglio 2026:
+
+- 366 test backend raccolti;
+- 349 test superati;
+- 17 test saltati;
+- copertura totale 83,32%;
+- build React / TypeScript / Vite completata senza errori;
+- lint senza errori bloccanti.
+
+Non trasformare questa slide in una semplice parete di numeri.
+
+Dividi la slide in due aree:
+
+Oggi:
+
+- prototipo end-to-end;
+- suite backend ampia;
+- build frontend pulita;
+- deploy Docker e PostgreSQL gestito.
+
+Prossimi passi:
+
+- OCR per PDF costituiti da immagini;
+- benchmark annotato per misurare la precisione AI per campo;
+- profilo cliente più ricco: de minimis, DURC, compagine e dati del progetto;
+- autenticazione, ruoli e separazione multi-studio;
+- elaborazione asincrona, object storage e osservabilità;
+- test frontend unitari ed end-to-end.
+
+Inserisci una nota chiara:
+
+La copertura del codice non equivale all’accuratezza semantica dell’AI.
+
+Non usare come metrica “70 abbinamenti”: nel database rappresenta l’intera matrice bando-cliente, non 70 opportunità ammissibili.
+
+SLIDE 10 — PASSAGGIO ALLA DEMO
+
+Testo principale:
+
+Grazie per l’attenzione.
+
+Testo secondario:
+
+Ora passiamo dalla scheda al cliente.
+
+Oppure:
+
+Dal PDF alla motivazione, in quattro passaggi.
+
+Mostra il percorso della demo:
+
+1. dashboard;
+2. scheda di un bando reale;
+3. cliente ammissibile o non ammissibile;
+4. motivazione e PDF originale.
+
+Usa nuovamente il marchio BandoMatch AI in dimensione inferiore rispetto alla copertina.
+
+Questa slide deve restare visibile durante il passaggio all’applicazione.
+
+Non inserire contatti, QR code o link non verificati.
+
+DESIGN SYSTEM BANDISCANNER
+
+La presentazione deve sembrare un’estensione dell’applicazione, non un template generico per startup AI.
+
+Ricava il design reale da:
+
+- frontend/src/styles.css
+- frontend/src/App.tsx
+
+Usa questi colori:
+
+--color-bg: #EFEDE6;
+--color-surface: #FFFFFF;
+--color-surface-2: #F7F5EF;
+--color-border: #E3DFD4;
+--color-border-strong: #CFC9BB;
+--color-text: #101C1B;
+--color-text-muted: #515956;
+--color-text-faint: #8A928D;
+--color-accent: #0A5450;
+--color-accent-hover: #06403C;
+--color-accent-bright: #17827A;
+--color-accent-soft: #D6E9E6;
+--color-accent-text: #063C39;
+--color-gold: #D9A441;
+--color-gold-soft: #F5E8CC;
+--color-gold-text: #7A5713;
+--color-success: #2C8B57;
+--color-success-bg: #E0F0E5;
+--color-warning: #C08423;
+--color-warning-bg: #F7EBD3;
+--color-danger: #CB5138;
+--color-danger-bg: #F8E1DA;
+
+Uso dei colori:
+
+- avorio come fondo principale;
+- bianco per card e superfici;
+- verde petrolio per identità, azioni e diagrammi;
+- oro soltanto per evidenze o attenzione;
+- verde, giallo e rosso esclusivamente per stati semantici;
+- non usare più colori senza una funzione precisa.
+
+Evita:
+
+- viola e blu elettrico;
+- gradienti tipici delle startup AI;
+- immagini stock di robot o cervelli;
+- estetica cyberpunk o gaming;
+- glow eccessivi;
+- grandi pareti di testo;
+- troppe card identiche;
+- visualizzazioni puramente decorative;
+- l’uso del favicon viola come identità principale.
+
+Lo stile deve essere:
+
+- professionale;
+- rassicurante;
+- ordinato;
+- orientato a studi e consulenti;
+- coerente con card, badge, bordi e sidebar dell’app;
+- sufficientemente contrastato per un proiettore.
+
+Usa superfici arrotondate con raggi simili a 10–20 px, bordi sottili e ombre leggere.
+
+VARIETÀ VISIVA
+
+Non usare la stessa griglia di card in tutte le slide.
+
+Alterna:
+
+- copertina con mockup della dashboard;
+- tre problemi grandi;
+- flusso orizzontale;
+- diagramma architetturale;
+- documento che si divide in blocchi;
+- confronto AI / regole;
+- gauge e barre per lo score;
+- mockup dell’interfaccia;
+- metriche e roadmap;
+- slide finale scura.
+
+Ogni visualizzazione deve aiutare a spiegare una relazione reale.
+
+TIPOGRAFIA
+
+Usa la stessa famiglia del progetto:
+
+- titoli: Space Grotesk;
+- corpo: Inter.
+
+La presentazione deve funzionare offline, quindi:
+
+- non usare Google Fonts;
+- non usare CDN;
+- non effettuare richieste di rete;
+- usa font locali soltanto se già presenti nel repository;
+- altrimenti usa fallback di sistema.
+
+Fallback consigliati:
+
+font-family: "Space Grotesk", "Inter", "Segoe UI", Arial, sans-serif;
+
+Regole:
+
+- titoli grandi e brevi;
+- corpo leggibile da lontano;
+- non usare tutto maiuscolo;
+- usa il maiuscolo soltanto per piccole etichette;
+- non usare corsivo per blocchi lunghi;
+- non scendere sotto una dimensione realmente leggibile a 1280×720;
+- non affidare informazioni importanti a testi minuscoli nei diagrammi.
+
+ANIMAZIONI E MICRO-INTERAZIONI
+
+Ricrea localmente in HTML, CSS e JavaScript gli effetti necessari.
+
+Non importare componenti da siti esterni.
+
+Animazioni possibili:
+
+- ingresso progressivo di titolo e contenuto;
+- linee del flusso che si compongono;
+- blocchi del PDF che entrano in sequenza;
+- barre dello score che raggiungono il valore;
+- contatori numerici;
+- indicatori di stato;
+- comparsa progressiva di nodi e collegamenti;
+- leggero sollevamento delle card al passaggio del mouse.
+
+Vincoli:
+
+- niente animazioni continue invadenti;
+- niente particelle;
+- niente sfondi 3D pesanti;
+- niente caroselli automatici;
+- niente movimenti rapidi;
+- un solo concetto animato dominante per slide;
+- durata generalmente fra 250 e 700 ms;
+- le animazioni partono quando la slide diventa attiva;
+- tornando su una slide possono ripartire;
+- supporta prefers-reduced-motion;
+- con movimento ridotto tutti i contenuti devono apparire immediatamente.
+
+FORMATO TECNICO
+
+Crea una cartella dedicata senza modificare BandoMatch AI.
+
+Nome consigliato:
+
+bandomatch-ai-presentation/
+
+Struttura:
+
+bandomatch-ai-presentation/
+├── index.html
+├── styles.css
+├── script.js
+├── README.md
+└── assets/
+    └── eventuali asset locali necessari
+
+La soluzione preferita è HTML, CSS e JavaScript vanilla perché:
+
+- deve essere portabile;
+- deve aprirsi direttamente;
+- non deve richiedere installazioni;
+- deve funzionare offline;
+- deve essere semplice da usare il giorno dell’esame.
+
+Non usare React, Vite o un sistema di build, salvo necessità reale e motivata.
+
+Non modificare:
+
+- frontend/;
+- backend o main.py;
+- modules/;
+- database o dati Neon;
+- frontend/dist/;
+- prompt di estrazione;
+- file di produzione esistenti.
+
+Non creare commit Git e non eseguire scritture sul database.
+
+LAYOUT
+
+La presentazione deve usare proporzioni 16:9.
+
+Ogni slide deve:
+
+- occupare l’intero viewport;
+- essere progettata per 1920×1080;
+- adattarsi anche a risoluzioni inferiori;
+- non richiedere scrolling verticale;
+- contenere al massimo 3–5 elementi testuali principali;
+- mantenere margini di sicurezza;
+- evitare testo vicino ai bordi;
+- essere leggibile da un proiettore;
+- avere un numero di slide discreto;
+- mostrare BandoMatch AI in modo coerente, senza ripetere un logo enorme ovunque.
+
+Non simulare una finestra PowerPoint. La presentazione deve sembrare una vera esperienza web a schermo intero.
+
+NAVIGAZIONE
+
+Implementa:
+
+- freccia destra: slide successiva;
+- freccia sinistra: slide precedente;
+- spazio: slide successiva;
+- PageDown: slide successiva;
+- PageUp: slide precedente;
+- Home: prima slide;
+- End: ultima slide;
+- swipe orizzontale su trackpad o touchscreen;
+- pulsanti precedente e successiva;
+- indicatore slide corrente / totale;
+- barra di avanzamento;
+- pulsante fullscreen;
+- tasto F per fullscreen;
+- tasto Esc per uscire dalla modalità relatore o dal fullscreen secondo il contesto.
+
+La navigazione deve essere fluida e impedire che un singolo input salti più slide.
+
+Non cambiare automaticamente slide.
+
+MODALITÀ RELATORE
+
+Implementa una modalità relatore locale, attivabile con il tasto P e con un pulsante discreto.
+
+Deve mostrare:
+
+- numero e titolo della slide;
+- note associate alla slide;
+- passaggio sintetico dello speech;
+- suggerimento su cosa evidenziare oralmente;
+- timer totale della presentazione;
+- tempo trascorso sulla slide;
+- anteprima o titolo della slide successiva, se realizzabile senza rendere fragile il codice.
+
+Le note non devono essere visibili nella modalità standard.
+
+Le note devono derivare dallo speech e aiutare il relatore a parlare con parole proprie. Non copiare automaticamente l’intero speech nel pannello.
+
+ACCESSIBILITÀ
+
+Implementa:
+
+- HTML semantico;
+- contrasti leggibili;
+- focus visibile;
+- pulsanti con aria-label;
+- navigazione completa da tastiera;
+- prefers-reduced-motion;
+- testo alternativo per eventuali immagini;
+- nessuna informazione trasmessa soltanto tramite colore;
+- supporto a viewport ridotti senza sovrapposizioni;
+- ordine logico degli elementi;
+- icone accompagnate da testo quando il significato non è ovvio.
+
+ASSET E MOCKUP
+
+Usa soltanto asset locali.
+
+Il logo ufficiale è disponibile in:
+
+- frontend/public/bandomatch-ai-logo.jpeg
+
+Il file originale è un JPEG 1536×1024 con sfondo quasi bianco. Il contenuto effettivo del marchio occupa la parte centrale e comprende:
+
+- un documento stilizzato verde petrolio;
+- due cerchi sovrapposti;
+- un segno di verifica;
+- il wordmark “BandoMatch AI”, con “AI” in verde petrolio.
+
+Usa esattamente questo file. Copialo nella cartella assets della presentazione per garantire il funzionamento offline. Puoi eliminare visivamente lo spazio esterno soltanto tramite ritaglio CSS o clipping, senza ricampionare, ridisegnare o cambiare il logo.
+
+Non usare come logo:
+
+- frontend/public/favicon.svg, perché usa la vecchia palette viola;
+- frontend/src/assets/hero.png, perché appartiene a uno stile precedente;
+- loghi inventati o generati da AI.
+
+Per le schermate:
+
+- puoi creare mockup HTML/CSS fedeli alla dashboard;
+- puoi usare screenshot locali soltanto se aggiornati e senza dati personali;
+- non mostrare nomi cliente reali se non sono esplicitamente dati dimostrativi;
+- non inventare funzionalità nell’interfaccia;
+- mantieni i mockup sintetici e leggibili.
+
+CONTENUTI TESTUALI
+
+Non usare frasi lunghe nelle slide.
+
+Preferisci:
+
+- una frase principale;
+- da 2 a 4 concetti secondari;
+- micro-etichette;
+- parole chiave;
+- brevi spiegazioni;
+- numeri soltanto quando verificati e utili.
+
+Termini importanti da includere nella presentazione:
+
+- pre-screening;
+- PDF o URL;
+- PyMuPDF;
+- OpenRouter;
+- DeepSeek;
+- Claude fallback;
+- chunking;
+- consolidamento;
+- schema strutturato;
+- evidenze;
+- RF-007;
+- matching locale;
+- ATECO 40;
+- regione 30;
+- dimensione 20;
+- fatturato 10;
+- ammissibile, non ammissibile, da verificare;
+- PostgreSQL Neon;
+- dati cliente non inviati al modello;
+- 349 test superati;
+- copertura 83,32%;
+- verifica professionale.
+
+Non è obbligatorio inserire ogni termine in una slide diversa.
+
+VERIFICHE OBBLIGATORIE
+
+Prima di concludere:
+
+- apri index.html localmente;
+- verifica che non vengano effettuate richieste di rete;
+- verifica tutte e 10 le slide;
+- verifica che nessun contenuto esca dal viewport;
+- verifica navigazione da tastiera;
+- verifica pulsanti precedente e successiva;
+- verifica fullscreen;
+- verifica modalità relatore;
+- verifica timer e note;
+- verifica barra di avanzamento;
+- verifica prefers-reduced-motion;
+- verifica che non sia necessario uno scroll verticale;
+- verifica che il progetto funzioni senza server;
+- verifica che tutti i percorsi degli asset siano relativi;
+- verifica la leggibilità a 1920×1080, 1440×900 e 1280×720;
+- verifica che non compaiano nomi, tecnologie o contenuti ereditati dal progetto usato come modello del prompt originale;
+- verifica che il nome sia sempre BandoMatch AI;
+- verifica che venga usato il logo ufficiale `bandomatch-ai-logo.jpeg` e non il favicon viola;
+- verifica tutti gli importi, le percentuali e i testi;
+- verifica che i dati dei test siano 349 superati, 17 saltati e 83,32% di copertura;
+- verifica che lo score non venga descritto come probabilità di successo;
+- verifica che il PDF sia descritto come conservato nel database;
+- verifica che i dati cliente siano descritti come locali al sistema e non inviati all’AI;
+- verifica che non venga dichiarata conformità normativa certificata.
+
+Se possibile, genera anche:
+
+- una versione PDF 16:9;
+- un’immagine di anteprima con tutte le slide;
+- un controllo automatico degli elementi fuori pagina.
+
+Non eseguire scritture sul database e non modificare l’applicazione.
+
+README
+
+Crea un README.md breve contenente:
+
+- come aprire la presentazione;
+- comandi da tastiera;
+- come attivare fullscreen;
+- come aprire la modalità relatore;
+- posizione degli asset;
+- indicazione che la presentazione funziona offline;
+- istruzioni per modificare testi e note;
+- istruzioni per esportare in PDF;
+- browser consigliato per il giorno dell’esame.
+
+REPORT FINALE
+
+Al termine indica:
+
+- file creati;
+- numero di slide;
+- font e palette usati;
+- modalità di apertura;
+- controlli disponibili;
+- verifiche eseguite;
+- eventuali limiti rimasti.
+
+Non creare commit.
+
+SPEECH APPROVATO — FONTE NARRATIVA DELLE SLIDE
+
+APERTURA — CHE COS’È BANDISCANNER
+
+Buongiorno a tutti. Sono Matteo Pizziconi e oggi vi presento BandoMatch AI, il progetto che ho sviluppato per supportare commercialisti e consulenti nella prima analisi dei bandi destinati alle imprese.
+
+I bandi possono essere lunghi, pieni di condizioni e scritti ogni volta in modo diverso. Le informazioni più importanti — chi può partecipare, quali spese sono ammesse, quali settori sono esclusi e quale agevolazione è prevista — non si trovano sempre nello stesso punto o con le stesse parole.
+
+BandoMatch AI nasce per trasformare questi documenti in schede strutturate e confrontabili, e per collegare ogni bando ai profili cliente che meritano un approfondimento.
+
+Il principio del progetto è usare l’intelligenza artificiale dove serve comprendere il linguaggio, ma affidare a regole software locali le operazioni che devono essere ripetibili e spiegabili.
+
+Il risultato non è una decisione legale automatica. È un pre-screening che riduce il lavoro iniziale e lascia al professionista la verifica finale sulla fonte ufficiale.
+
+IL PROBLEMA E IL TARGET
+
+Il problema non consiste soltanto nel leggere un PDF.
+
+Uno studio deve individuare scadenze, destinatari, importi, territori, codici ATECO, spese ed esclusioni. Poi deve ripetere lo stesso controllo per più clienti e riuscire anche a spiegare perché una determinata impresa sembra compatibile oppure no.
+
+Le sole ricerche per parola chiave non bastano, perché lo stesso concetto può essere espresso in modi differenti. Anche una regola apparentemente semplice può cambiare significato in base al tipo di agevolazione. Un investimento massimo, per esempio, non è la stessa cosa dell’importo massimo di un finanziamento, e nessuno dei due è automaticamente un contributo a fondo perduto.
+
+Il target principale di BandoMatch AI è formato da commercialisti, consulenti d’impresa e piccoli studi di finanza agevolata che gestiscono più clienti e devono decidere rapidamente quali opportunità approfondire.
+
+Il valore del progetto è quindi trasformare documenti eterogenei in criteri confrontabili, mantenendo visibili il PDF originale, le fonti e gli elementi da verificare manualmente.
+
+LA SOLUZIONE END-TO-END
+
+Il flusso parte da un PDF locale oppure da un URL HTTPS.
+
+Il sistema controlla il file, ne estrae il testo e lo invia al modello AI per produrre una prima struttura JSON. Il risultato non viene salvato direttamente: passa attraverso normalizzazioni, controlli di coerenza, recupero delle evidenze e validazione dei campi critici.
+
+La scheda viene poi salvata insieme al PDF originale. A quel punto il motore di matching confronta localmente il bando con tutti i clienti presenti nel sistema.
+
+L’utente può vedere il risultato nella dashboard, consultare la scheda sintetica, aprire il documento originale e passare al dettaglio del cliente per comprendere lo score o il motivo di esclusione.
+
+BandoMatch AI è quindi un flusso completo: acquisizione, estrazione, validazione, archivio e confronto con i clienti.
+
+ARCHITETTURA E FLUSSO DEI DATI
+
+Il frontend è una single-page application sviluppata con React 19, TypeScript e Vite.
+
+Il backend utilizza FastAPI e Pydantic. Gestisce gli upload, le richieste API, l’orchestrazione dell’estrazione, il database e il matching.
+
+PyMuPDF legge il testo dei PDF e conserva i riferimenti alle pagine. L’estrazione semantica passa attraverso OpenRouter: il modello principale è DeepSeek e, se necessario, viene utilizzato Claude come fallback.
+
+PostgreSQL su Neon conserva bandi, PDF originali, clienti e risultati dei confronti. L’applicazione viene costruita con Docker e distribuita su Render.
+
+Il confine dei dati è importante. Il provider AI riceve il testo del bando, che è un documento pubblico. I dati dei clienti non vengono inviati al modello: restano nel sistema e vengono utilizzati dal motore di matching locale.
+
+Il PDF originale viene conservato nel database per consentire la verifica e il download successivo. I file temporanei creati durante il caricamento vengono invece eliminati al termine dell’operazione.
+
+GESTIONE DEI DOCUMENTI LUNGHI
+
+Una delle difficoltà tecniche principali è stata gestire documenti che superavano il limite utile per una singola richiesta al modello.
+
+La soluzione iniziale basata sul troncamento poteva perdere informazioni presenti nelle sezioni finali. Per questo il sistema attuale divide il testo in blocchi di circa sessantamila caratteri, con una sovrapposizione di circa duemila caratteri tra un blocco e il successivo.
+
+I blocchi vengono analizzati, anche in parallelo, e i risultati parziali vengono consolidati in un unico JSON. Esiste inoltre un merge deterministico di emergenza se il consolidamento del modello non riesce.
+
+Il processo conserva i marcatori di pagina, così le informazioni possono essere collegate alle evidenze del documento.
+
+Per ragioni di sicurezza il PDF può avere al massimo dieci megabyte e trecento pagine. I PDF costituiti soltanto da immagini non sono ancora supportati perché il progetto non include un motore OCR.
+
+Il chunking permette di coprire tutto il testo estratto dai documenti accettati. Questo evita il taglio automatico delle sezioni finali, ma non significa che il modello interpreti sempre ogni informazione senza errori.
+
+AI, NORMALIZZAZIONE E VALIDAZIONE
+
+L’intelligenza artificiale viene utilizzata per comprendere formulazioni diverse e trasformarle in uno schema comune.
+
+Dopo l’AI intervengono regole deterministiche. Queste regole correggono tipi e formati, normalizzano date e percentuali, deduplicano gli elenchi e convertono le unità temporali. Un trimestre diventa tre mesi, un semestre sei mesi e un anno dodici mesi.
+
+Il sistema cerca inoltre di mantenere distinti concetti economici differenti. Nel caso di un finanziamento, l’importo massimo viene inserito nell’agevolazione strutturata. Il campo contributo massimo resta vuoto se non esiste realmente una quota non rimborsabile. L’investimento massimo descrive invece il piano di spesa ammesso.
+
+La validazione controlla struttura, formati, coerenza logica, campi critici ed evidenze collegate alle pagine. Le liste vengono deduplicate senza perdere informazioni rilevanti.
+
+Quando oltre la metà dei campi risulta nulla, il sistema genera il warning RF-007 e indica che la scheda deve essere revisionata manualmente.
+
+Questo passaggio è importante perché la percentuale di campi compilati non è una percentuale di correttezza. La revisione umana resta necessaria per importi, scadenze e requisiti determinanti.
+
+MATCHING E AMMISSIBILITÀ
+
+Il matching non viene eseguito dal modello AI. È un algoritmo locale e deterministico.
+
+Lo score massimo è cento ed è composto da quattro parti: quaranta punti per ATECO o attività, trenta per la regione, venti per la dimensione dell’impresa e dieci per il fatturato.
+
+Questo score serve a ordinare le opportunità. Non rappresenta la probabilità che il cliente ottenga il finanziamento e non sostituisce i controlli di ammissibilità.
+
+Separatamente dallo score, il sistema verifica i criteri rigidi disponibili: anzianità dell’impresa, sezioni ATECO escluse, forma giuridica, dimensione, fatturato, dipendenti e regione. L’investimento minimo viene segnalato come requisito da verificare sul progetto concreto.
+
+L’interfaccia distingue tre risultati. Un cliente può essere ammissibile rispetto ai dati disponibili, non ammissibile con una motivazione puntuale, oppure da verificare quando mancano informazioni sufficienti.
+
+Non tutti i requisiti reali sono ancora automatizzabili. Il profilo cliente non contiene, per esempio, composizione della società, DURC, aiuti de minimis già ricevuti o tutti i dettagli del progetto. Questi elementi restano controlli professionali.
+
+INTERFACCIA, PRIVACY E SICUREZZA
+
+La dashboard organizza i bandi in sezioni operative: opportunità con clienti ammissibili, bandi senza clienti ammissibili, casi tutti da verificare e bandi scaduti.
+
+L’archivio bandi permette ricerca, filtri, ordinamento, download del PDF e della scheda. La sezione clienti mostra il numero reale dei bandi ammissibili, mentre il dettaglio del cliente presenta score, breakdown e motivazioni di non ammissibilità.
+
+Nella pagina di caricamento l’utente può scegliere un PDF o un URL e seguire le fasi dell’estrazione. Gli avvisi spiegano sia i possibili limiti dell’AI sia il flusso dei dati.
+
+Il testo pubblico del bando viene inviato a un provider esterno. Il PDF viene conservato nel database per la consultazione. I dati cliente non vengono inviati al provider e il confronto avviene nel backend.
+
+Il progetto include controlli su formato, dimensione e numero di pagine, URL soltanto HTTPS verso host pubblici, limite delle richieste per IP, query SQL parametrizzate, variabili d’ambiente per le chiavi e istruzioni contro la prompt injection.
+
+Queste misure migliorano la sicurezza del prototipo, ma non rappresentano una certificazione normativa. Per un prodotto destinato a più studi servirebbero autenticazione reale, ruoli e separazione dei dati per organizzazione.
+
+QUALITÀ, LIMITI E SVILUPPI FUTURI
+
+La qualità del software è stata verificata con una suite backend ampia.
+
+Nell’ultima esecuzione sono stati raccolti trecentosessantasei test: trecentoquarantanove sono stati superati e diciassette saltati. La copertura totale è dell’ottantatré virgola trentadue per cento, rispetto a una soglia minima configurata del sessanta per cento.
+
+La build React, TypeScript e Vite è stata completata senza errori. Il lint non presenta errori bloccanti.
+
+Questi numeri misurano la qualità e la copertura del codice, non l’accuratezza semantica dell’intelligenza artificiale su tutti i bandi possibili. Per misurare quella precisione serve un dataset annotato e un benchmark per campo.
+
+I principali sviluppi futuri sono l’OCR per i PDF scansionati, un benchmark dell’estrazione, un profilo cliente più ricco, autenticazione e multi-tenancy, elaborazione asincrona, object storage, monitoraggio e test frontend end-to-end.
+
+BandoMatch AI è quindi un prototipo avanzato e dimostrabile. Per diventare un prodotto multi-studio deve rafforzare identità degli utenti, isolamento dei dati, infrastruttura e misurazione dell’accuratezza.
+
+PASSAGGIO ALLA DEMO
+
+Questi sono gli elementi principali del progetto: comprensione AI, controllo deterministico, matching spiegabile e verifica della fonte.
+
+A questo punto vorrei passare dalla descrizione al funzionamento concreto.
+
+Durante la demo partirò dalla dashboard, aprirò la scheda di un bando reale, mostrerò il confronto con un cliente e arriverò alla motivazione di ammissibilità o esclusione. Infine aprirò il PDF originale per dimostrare che il risultato resta verificabile.
+
+La demo non vuole mostrare una decisione automatica infallibile. Vuole mostrare come BandoMatch AI riduce il lavoro di pre-screening e rende espliciti i passaggi che richiedono ancora il giudizio del professionista.
+
+Grazie per l’attenzione. Ora passiamo all’MVP.
