@@ -1158,6 +1158,21 @@ if (FRONTEND_DIST / "assets").is_dir():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
 
+@app.get("/bandomatch-ai-logo.jpeg", include_in_schema=False)
+def frontend_logo():
+    """Serve il logo copiato da Vite nella radice di ``frontend/dist``.
+
+    I file sotto ``/assets`` sono gestiti dal mount statico, mentre i file di
+    ``frontend/public`` finiscono nella radice della build. Senza questa rotta
+    la richiesta del logo verrebbe intercettata dal fallback SPA e riceverebbe
+    ``index.html`` invece dell'immagine.
+    """
+    logo_path = FRONTEND_DIST / "bandomatch-ai-logo.jpeg"
+    if logo_path.is_file():
+        return FileResponse(str(logo_path), media_type="image/jpeg")
+    return JSONResponse(status_code=404, content={"detail": "Logo non trovato"})
+
+
 @app.get("/{full_path:path}")
 def spa_catch_all(full_path: str):
     if full_path.startswith("api/"):

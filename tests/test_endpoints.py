@@ -729,3 +729,32 @@ def test_post_estrazione_url_duplicato(client, mock_db):
     data = response.json()
     assert data["status"] == "duplicato"
     assert data["bando_id"] == 42
+
+
+# ---------------------------------------------------------------------------
+# Asset pubblici frontend
+# ---------------------------------------------------------------------------
+
+def test_frontend_logo_restituisce_immagine_jpeg(client, monkeypatch, tmp_path):
+    import main
+
+    logo_bytes = b"\xff\xd8logo-test\xff\xd9"
+    (tmp_path / "bandomatch-ai-logo.jpeg").write_bytes(logo_bytes)
+    monkeypatch.setattr(main, "FRONTEND_DIST", tmp_path)
+
+    response = client.get("/bandomatch-ai-logo.jpeg")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/jpeg"
+    assert response.content == logo_bytes
+
+
+def test_frontend_logo_assente_restituisce_404(client, monkeypatch, tmp_path):
+    import main
+
+    monkeypatch.setattr(main, "FRONTEND_DIST", tmp_path)
+
+    response = client.get("/bandomatch-ai-logo.jpeg")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Logo non trovato"}
