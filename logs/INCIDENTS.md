@@ -204,3 +204,5 @@ Registro incidenti tecnici: problema, impatto, causa, fix applicato.
 | 2026-07-14 | Entrambi i modelli LLM non disponibili | Estrazione bando fallita | L'LLM non ha restituito JSON valido | Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL |
 | 2026-07-14 | Entrambi i modelli LLM non disponibili | Estrazione bando fallita | giu | Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL |
 | 2026-07-14 | Entrambi i modelli LLM non disponibili | Estrazione bando fallita | L'LLM non ha restituito JSON valido | Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL |
+| 2026-07-15 | Entrambi i modelli LLM non disponibili | Estrazione bando fallita | giu | Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL |
+| 2026-07-15 | Entrambi i modelli LLM non disponibili | Estrazione bando fallita | L'LLM non ha restituito JSON valido | Verificare stato OpenRouter e variabili LLM_MODEL / LLM_FALLBACK_MODEL |

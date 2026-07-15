@@ -175,6 +175,9 @@ def _validate_cliente_form(form_values: dict) -> list[str]:
     elif not ATECO_RE.fullmatch(codice_ateco):
         errori.append("Il Codice ATECO non è valido. Usa il formato corretto, es: 62.01 o 62.01.12")
 
+    if not form_values.get("forma_giuridica", "").strip():
+        errori.append("La forma giuridica è obbligatoria.")
+
     try:
         fatturato = float(form_values["fatturato"]) if form_values.get("fatturato") not in (None, "") else None
     except (TypeError, ValueError):
@@ -1151,7 +1154,7 @@ class ClienteIn(BaseModel):
     dimensione_impresa: str
     data_costituzione: str | None = None
     numero_dipendenti: int | None = None
-    forma_giuridica: str | None = None
+    forma_giuridica: str
 
 
 @app.get("/api/clienti", dependencies=[Depends(verify_api_key)])

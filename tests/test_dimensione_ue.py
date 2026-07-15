@@ -8,6 +8,7 @@ VALID_CLIENTE = {
     "fatturato": 100000,
     "dimensione_impresa": "piccola",
     "descrizione_attivita": "sviluppo software",
+    "forma_giuridica": "srl",
 }
 
 

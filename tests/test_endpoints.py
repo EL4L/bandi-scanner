@@ -16,6 +16,7 @@ VALID_CLIENTE = {
     "fatturato": 100000,
     "dimensione_impresa": "piccola",
     "descrizione_attivita": "sviluppo software",
+    "forma_giuridica": "srl",
 }
 
 
@@ -90,6 +91,19 @@ def test_post_cliente_codice_ateco_non_valido(client):
     assert "errors" in response.json()
 
 
+def test_post_cliente_forma_giuridica_mancante(client):
+    payload = {k: v for k, v in VALID_CLIENTE.items() if k != "forma_giuridica"}
+    response = client.post("/api/clienti", json=payload)
+    assert response.status_code == 422
+
+
+def test_post_cliente_forma_giuridica_vuota(client):
+    payload = {**VALID_CLIENTE, "forma_giuridica": "   "}
+    response = client.post("/api/clienti", json=payload)
+    assert response.status_code == 400
+    assert "La forma giuridica è obbligatoria." in response.json()["errors"]
+
+
 # ---------------------------------------------------------------------------
 # POST /api/clienti — successo
 # ---------------------------------------------------------------------------
@@ -109,6 +123,13 @@ def test_put_cliente_ok(client, mock_db):
     response = client.put("/api/clienti/1", json=VALID_CLIENTE)
     assert response.status_code == 200
     assert response.json()["id"] == 1
+
+
+def test_put_cliente_forma_giuridica_vuota(client):
+    payload = {**VALID_CLIENTE, "forma_giuridica": ""}
+    response = client.put("/api/clienti/1", json=payload)
+    assert response.status_code == 400
+    assert "La forma giuridica è obbligatoria." in response.json()["errors"]
 
 
 # ---------------------------------------------------------------------------

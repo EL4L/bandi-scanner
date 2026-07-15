@@ -212,10 +212,10 @@ export function ClienteDetailPage({
                 <p className="help">Esattamente 11 cifre numeriche</p>
               </div>
               <div className="field">
-                <label htmlFor="an-forma">Forma giuridica</label>
-                <select id="an-forma" value={anagraficaForm.forma_giuridica}
+                <label htmlFor="an-forma">Forma giuridica *</label>
+                <select id="an-forma" required value={anagraficaForm.forma_giuridica}
                   onChange={e => onAnagraficaFieldChange('forma_giuridica', e.target.value)}>
-                  <option value="">— Non specificata —</option>
+                  <option value="">— Seleziona —</option>
                   <option value="srl">S.r.l.</option>
                   <option value="spa">S.p.A.</option>
                   <option value="snc">S.n.c.</option>

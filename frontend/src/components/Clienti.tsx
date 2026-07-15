@@ -137,6 +137,9 @@ export default function Clienti() {
     if (!/^\d{2}\.\d{2}(\.\d{2})?$/.test(anagraficaForm.codice_ateco.trim())) {
       clientErrors.push('Codice ATECO non valido: usa il formato XX.XX o XX.XX.XX (es. 62.01).')
     }
+    if (!anagraficaForm.forma_giuridica.trim()) {
+      clientErrors.push('La forma giuridica è obbligatoria.')
+    }
     const dipendenti = anagraficaForm.numero_dipendenti.trim() ? parseInt(anagraficaForm.numero_dipendenti, 10) : null
     const fatturatoNum = anagraficaForm.fatturato.trim() ? parseFloat(anagraficaForm.fatturato) : null
     clientErrors.push(...validaDimensione(anagraficaForm.dimensione_impresa, dipendenti, fatturatoNum))
@@ -156,7 +159,7 @@ export default function Clienti() {
       descrizione_attivita: anagraficaForm.descrizione_attivita.trim(),
       data_costituzione: anagraficaForm.data_costituzione.trim() || null,
       numero_dipendenti: anagraficaForm.numero_dipendenti.trim() ? parseInt(anagraficaForm.numero_dipendenti) : null,
-      forma_giuridica: anagraficaForm.forma_giuridica.trim() || null,
+      forma_giuridica: anagraficaForm.forma_giuridica.trim(),
     }
     try {
       const updated = await saveMutation.mutateAsync({ url: `/api/clienti/${detailCliente.id}`, method: 'PUT', body: payload })
@@ -182,6 +185,9 @@ export default function Clienti() {
     if (!/^\d{2}\.\d{2}(\.\d{2})?$/.test(form.codice_ateco.trim())) {
       clientErrors.push('Codice ATECO non valido: usa il formato XX.XX o XX.XX.XX (es. 62.01).')
     }
+    if (!form.forma_giuridica.trim()) {
+      clientErrors.push('La forma giuridica è obbligatoria.')
+    }
     if (clientErrors.length > 0) {
       setFormErrors(clientErrors)
       return
@@ -199,7 +205,7 @@ export default function Clienti() {
       descrizione_attivita: form.descrizione_attivita.trim(),
       data_costituzione: form.data_costituzione.trim() || null,
       numero_dipendenti: form.numero_dipendenti.trim() ? parseInt(form.numero_dipendenti) : null,
-      forma_giuridica: form.forma_giuridica.trim() || null,
+      forma_giuridica: form.forma_giuridica.trim(),
     }
 
     try {

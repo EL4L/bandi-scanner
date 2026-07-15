@@ -351,15 +351,6 @@
     .opportunity p { margin-top: calc(var(--u) * .18); color: var(--faint); font-size: calc(var(--u) * .4); }
     .opportunity .match { padding: calc(var(--u) * .28) calc(var(--u) * .42); border-radius: 999px; background: var(--ok-soft); color: #1a6238; font-size: calc(var(--u) * .42); font-weight: 800; }
     .opportunity.warning .match { background: var(--warn-soft); color: var(--gold-text); }
-    .cover-side-note {
-      position: absolute;
-      z-index: 3;
-      left: calc(var(--u) * 5.2);
-      bottom: calc(var(--u) * 2.3);
-      color: rgba(255,255,255,.72);
-      font-size: calc(var(--u) * .62);
-      letter-spacing: .02em;
-    }
 
     /* Slide 2 — problem */
     .problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * 1.25); }
@@ -835,7 +826,6 @@
             <div class="app-window reveal d3">
               <img src="assets/dashboard-current.png" alt="Dashboard aggiornata di BandoMatch AI con i bandi organizzati per stato">
             </div>
-            <div class="cover-side-note reveal d5">L’AI comprende i bandi. Le regole locali li confrontano con i clienti.</div>
           </div>
         </div>
         <div class="speaker-notes">
@@ -876,7 +866,7 @@
             <p>La sola ricerca per parole chiave non gestisce sinonimi, eccezioni e relazioni fra requisiti.</p>
           </div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problema</span><span class="footer-number">02 / 09</span></footer>
+        <footer class="slide-footer"><span>Problema</span><span class="footer-number">02 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Monitorare molti bandi e interpretarne a mano i requisiti per ogni cliente richiede tempo e attenzione.”</p>
           <ul>
@@ -915,7 +905,7 @@
             </div>
           </aside>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Target</span><span class="footer-number">03 / 09</span></footer>
+        <footer class="slide-footer"><span>Target</span><span class="footer-number">03 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Il target principale è formato da commercialisti, consulenti d’impresa e piccoli studi di finanza agevolata che seguono più clienti.”</p>
           <ul>
@@ -944,7 +934,7 @@
             <div class="workflow-message reveal d5">La fonte ufficiale resta sempre il punto di arrivo della verifica professionale.</div>
           </div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Funzionamento</span><span class="footer-number">04 / 09</span></footer>
+        <footer class="slide-footer"><span>Funzionamento</span><span class="footer-number">04 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Dal caricamento all’output, BandoMatch AI trasforma il bando e lo confronta con i profili cliente in quattro passaggi.”</p>
           <ul>
@@ -977,7 +967,7 @@
             </div>
           </section>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Ruolo dell’AI</span><span class="footer-number">05 / 09</span></footer>
+        <footer class="slide-footer"><span>Ruolo dell’AI</span><span class="footer-number">05 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“L’intelligenza artificiale viene usata dove serve comprendere il linguaggio; non esegue il matching e non decide l’ammissibilità legale.”</p>
           <ul>
@@ -1001,7 +991,7 @@
             <article class="stack-overview-card deploy-stack reveal d4"><span class="stack-overview-label">Deploy</span><h3>Render</h3><p>Docker multi-stage. Auto-deploy da GitHub.</p><div class="stack-tags"><span>Docker</span><span>Servizio web unico</span></div></article>
           </div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Stack e costruzione</span><span class="footer-number">06 / 09</span></footer>
+        <footer class="slide-footer"><span>Stack e costruzione</span><span class="footer-number">06 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Il frontend è una SPA React e TypeScript; FastAPI orchestra estrazione, database e matching.”</p>
           <ul>
@@ -1036,7 +1026,7 @@
             </article>
           </div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Aspetti normativi</span><span class="footer-number">07 / 09</span></footer>
+        <footer class="slide-footer"><span>Aspetti normativi</span><span class="footer-number">07 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Il punto centrale è il confine dei dati: il provider AI riceve il testo pubblico del bando, non i dati dei clienti.”</p>
           <ul>
@@ -1070,7 +1060,7 @@
             </article>
           </div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problemi e risoluzioni</span><span class="footer-number">08 / 09</span></footer>
+        <footer class="slide-footer"><span>Problemi e risoluzioni</span><span class="footer-number">08 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Le difficoltà principali non sono state nascoste: sono diventate regole, warning e limiti dichiarati.”</p>
           <ul>
@@ -1095,7 +1085,7 @@
           </div>
           <div class="future-closing reveal d4"><strong>Obiettivo: mantenere il controllo professionale, migliorando esperienza e prestazioni.</strong><span>Ora passiamo alla demo →</span></div>
         </div>
-        <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>AI Projects Development · ITS ICT Academy Roma</span><span class="footer-number">09 / 09</span></footer>
+        <footer class="slide-footer"><span>AI Projects Development · ITS ICT Academy Roma</span><span class="footer-number">09 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“Le prossime evoluzioni renderebbero il progetto più accessibile, sicuro e veloce, mantenendo la verifica professionale.”</p>
           <ul>

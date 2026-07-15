@@ -24,10 +24,6 @@ function IconDownload() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
 }
 
-function IconDedup() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h8a2 2 0 0 1 2 2v1M15 18H7a2 2 0 0 1-2-2v-1"/><line x1="3" y1="21" x2="9" y2="15"/><line x1="15" y1="9" x2="21" y2="3"/></svg>
-}
-
 function IconSearch() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 }
@@ -112,13 +108,8 @@ export default function Dashboard() {
   const [page, setPage] = useState(1)
 
   const recalcMutation = useApiMutation(() => fetch('/api/bandi/recalc', withApiKey({ method: 'POST' })))
-  const deduplicaMutation = useApiMutation(async () => {
-    const response = await fetch('/api/bandi/deduplica', withApiKey({ method: 'POST' }))
-    return response.json()
-  })
 
   const cards = data?.cards ?? EMPTY_CARDS
-  const duplicatesCount = data?.duplicates_count ?? 0
 
   const counts = useMemo(() => {
     const result: Record<DashboardCategory, number> = {
@@ -175,16 +166,6 @@ export default function Dashboard() {
     }
   }
 
-  const handleDeduplica = async () => {
-    try {
-      const result = await deduplicaMutation.mutateAsync()
-      if (result.eliminati > 0) toast.success(`${result.eliminati} duplicati eliminati.`)
-      else toast.info('Nessun duplicato trovato.')
-    } catch {
-      toast.error('Deduplica non riuscita. Riprova.')
-    }
-  }
-
   if (loading) return <div className="loading-center"><div className="spinner" /> Caricamento dashboard…</div>
 
   if (queryError) {
@@ -208,10 +189,6 @@ export default function Dashboard() {
         </div>
         <div className="topbar-actions">
           {data?.has_export_data && <a href={apiHref('/api/export/matching.csv')} download className="btn"><IconDownload /> Esporta CSV</a>}
-          <button className="btn" onClick={handleDeduplica} disabled={deduplicaMutation.isPending}>
-            {deduplicaMutation.isPending ? <div className="spinner spinner--small" /> : <IconDedup />}
-            Deduplica{duplicatesCount > 0 && <span className="dashboard-action-count">{duplicatesCount}</span>}
-          </button>
           <button className="btn btn-primary" onClick={handleRecalc} disabled={recalcMutation.isPending}>
             {recalcMutation.isPending ? <div className="spinner spinner--small" /> : <IconRefresh />} Ricalcola match
           </button>

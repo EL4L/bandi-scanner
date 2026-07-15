@@ -234,13 +234,14 @@ export function ClienteFormModal({
               </div>
 
               <div className="field">
-                <label htmlFor="forma_giuridica">Forma giuridica</label>
+                <label htmlFor="forma_giuridica">Forma giuridica *</label>
                 <select
                   id="forma_giuridica"
                   value={form.forma_giuridica}
                   onChange={e => onFieldChange('forma_giuridica', e.target.value)}
+                  required
                 >
-                  <option value="">— Non specificata —</option>
+                  <option value="">— Seleziona —</option>
                   <option value="srl">S.r.l.</option>
                   <option value="spa">S.p.A.</option>
                   <option value="snc">S.n.c.</option>
