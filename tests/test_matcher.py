@@ -2,6 +2,7 @@
 Nessun mock DB necessario — tutte le funzioni testate sono pure.
 """
 import pytest
+from unittest.mock import MagicMock
 from modules.matcher import (
     _score_regione,
     _score_ateco,
@@ -17,7 +18,26 @@ from modules.matcher import (
     WEIGHT_ATECO,
     WEIGHT_DIMENSIONE,
     WEIGHT_FATTURATO,
+    run_matching_for_bando,
 )
+
+
+def test_run_matching_bando_in_revisione_elimina_match_e_si_ferma():
+    conn = MagicMock()
+    select_cursor = MagicMock()
+    select_cursor.fetchone.return_value = {
+        "json_completo": '{"bando": {}}',
+        "review_status": "da_revisionare",
+    }
+    delete_cursor = MagicMock()
+    conn.execute.side_effect = [select_cursor, delete_cursor]
+
+    run_matching_for_bando(42, conn)
+
+    assert conn.execute.call_count == 2
+    assert "DELETE FROM match_results" in conn.execute.call_args_list[1].args[0]
+    assert conn.execute.call_args_list[1].args[1] == (42,)
+    conn.commit.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

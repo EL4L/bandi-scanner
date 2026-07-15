@@ -212,6 +212,7 @@
     }
     .icon-box svg { width: calc(var(--u) * 1.25); height: calc(var(--u) * 1.25); }
     .icon-box.gold { background: var(--gold-soft); color: var(--gold-text); }
+    .icon-box.danger { background: var(--danger-soft); color: var(--danger); }
     .icon-box.white { background: rgba(255,255,255,.11); color: white; border: 1px solid rgba(255,255,255,.16); }
 
     /* Cover */
@@ -439,61 +440,79 @@
     .fit-item strong { display: block; margin-top: calc(var(--u) * .26); font-family: var(--display); font-size: calc(var(--u) * .96); line-height: 1.25; }
     .value-line { display: flex; gap: calc(var(--u) * .55); align-items: flex-start; margin-top: auto; padding-top: calc(var(--u) * .95); border-top: 1px solid var(--line); color: var(--muted); font-size: calc(var(--u) * .83); line-height: 1.42; }
     .value-line strong { color: var(--ink); }
+    .client-showcase { display: flex; flex-direction: column; gap: calc(var(--u) * 2.2); min-width: 0; }
+    .client-table-shell { overflow: hidden; border: 1px solid var(--line); border-radius: calc(var(--u) * .9); background: white; box-shadow: var(--shadow); }
+    .client-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .client-table th {
+      padding: calc(var(--u) * .82) calc(var(--u) * .62);
+      background: var(--surface-2);
+      color: #8a9694;
+      font-size: calc(var(--u) * .52);
+      font-weight: 800;
+      letter-spacing: .07em;
+      text-align: left;
+      text-transform: uppercase;
+    }
+    .client-table th:nth-child(1) { width: 32%; }
+    .client-table th:nth-child(2) { width: 18%; }
+    .client-table th:nth-child(3) { width: 18%; }
+    .client-table th:nth-child(4) { width: 17%; }
+    .client-table th:nth-child(5) { width: 15%; text-align: center; }
+    .client-table td { padding: calc(var(--u) * .95) calc(var(--u) * .62); border-top: 1px solid var(--line); color: var(--muted); font-size: calc(var(--u) * .69); vertical-align: middle; }
+    .client-table td:last-child { text-align: center; }
+    .client-name { display: block; overflow: hidden; color: var(--ink); font-family: var(--display); font-size: calc(var(--u) * .78); font-weight: 750; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+    .client-revenue { display: block; margin-top: calc(var(--u) * .1); color: var(--faint); font-size: calc(var(--u) * .56); }
+    .ateco-code, .company-size { display: inline-flex; align-items: center; min-height: calc(var(--u) * 1.45); padding: 0 calc(var(--u) * .45); border: 1px solid var(--line-strong); border-radius: calc(var(--u) * .42); color: var(--ink); background: #fbfaf7; white-space: nowrap; }
+    .company-size { border-radius: 999px; color: var(--muted); background: var(--surface-2); font-weight: 700; }
+    .tender-count { display: inline-grid; width: calc(var(--u) * 1.8); height: calc(var(--u) * 1.8); place-items: center; border-radius: 50%; color: white; background: var(--teal-800); font-family: var(--display); font-size: calc(var(--u) * .78); font-weight: 800; }
+    .beneficiary-box { display: flex; min-height: calc(var(--u) * 5.1); flex-direction: column; justify-content: center; padding: calc(var(--u) * .9) calc(var(--u) * 1.05); border: 1px solid var(--teal-600); border-radius: calc(var(--u) * .78); background: var(--teal-100); }
+    .beneficiary-box .beneficiary-label { display: block; color: var(--teal-900); font-size: calc(var(--u) * .58); font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+    .beneficiary-box p { margin-top: calc(var(--u) * .32); color: var(--teal-900); font-size: calc(var(--u) * .9); line-height: 1.32; }
+    .beneficiary-box strong { color: var(--ink); }
 
     /* Slide 4 — workflow */
-    .workflow { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(var(--u) * .7); margin-top: calc(var(--u) * .25); }
-    .workflow::before { content: ""; position: absolute; top: calc(var(--u) * 2.18); left: 8%; right: 8%; height: calc(var(--u) * .12); background: linear-gradient(90deg, var(--teal-600), var(--teal-600) 72%, var(--gold)); opacity: .45; }
+    #slide-4 .slide-body { display: flex; flex-direction: column; justify-content: space-between; padding: calc(var(--u) * 6) 0 calc(var(--u) * 3); }
+    .workflow { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: calc(var(--u) * 1.15); width: 100%; }
+    .workflow::before { content: ""; position: absolute; top: calc(var(--u) * 2.75); left: 12.5%; right: 12.5%; height: calc(var(--u) * .14); background: linear-gradient(90deg, var(--teal-600), var(--teal-600) 72%, var(--gold)); opacity: .45; }
     .flow-step { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .flow-node { width: calc(var(--u) * 4.35); height: calc(var(--u) * 4.35); display: grid; place-items: center; border: calc(var(--u) * .15) solid var(--teal-600); border-radius: calc(var(--u) * 1.1); background: white; color: var(--teal-800); box-shadow: var(--shadow); }
+    .flow-node { width: calc(var(--u) * 5.5); height: calc(var(--u) * 5.5); display: grid; place-items: center; border: calc(var(--u) * .15) solid var(--teal-600); border-radius: calc(var(--u) * 1.3); background: white; color: var(--teal-800); box-shadow: var(--shadow); }
     .flow-step:last-child .flow-node { color: var(--gold-text); background: var(--gold-soft); border-color: var(--gold); }
-    .flow-node svg { width: calc(var(--u) * 2); height: calc(var(--u) * 2); }
-    .flow-index { display: inline-flex; margin-top: calc(var(--u) * .7); padding: calc(var(--u) * .22) calc(var(--u) * .45); border-radius: 999px; color: var(--teal-800); background: var(--teal-100); font-family: var(--mono); font-size: calc(var(--u) * .52); font-weight: 800; }
-    .flow-step h3 { margin-top: calc(var(--u) * .48); font-family: var(--display); font-size: calc(var(--u) * 1.02); line-height: 1.18; }
-    .flow-step p { margin-top: calc(var(--u) * .35); max-width: 18ch; color: var(--muted); font-size: calc(var(--u) * .84); line-height: 1.32; }
-    .workflow-output { display: grid; grid-template-columns: 1fr 1.15fr .9fr; gap: calc(var(--u) * .8); margin-top: calc(var(--u) * 1.35); }
-    .output-card { display: flex; gap: calc(var(--u) * .7); align-items: center; min-height: calc(var(--u) * 5.2); padding: calc(var(--u) * .9); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: rgba(255,255,255,.88); }
-    .output-card h4 { font-family: var(--display); font-size: calc(var(--u) * .92); }
-    .output-card p { margin-top: calc(var(--u) * .25); color: var(--muted); font-size: calc(var(--u) * .72); line-height: 1.32; }
-    .workflow-message { display: flex; align-items: center; justify-content: center; padding: calc(var(--u) * .75); border-radius: calc(var(--u) * .72); background: var(--teal-800); color: white; font-family: var(--display); font-size: calc(var(--u) * .86); line-height: 1.32; text-align: center; }
+    .flow-node svg { width: calc(var(--u) * 2.45); height: calc(var(--u) * 2.45); }
+    .flow-index { display: inline-flex; margin-top: calc(var(--u) * .78); padding: calc(var(--u) * .25) calc(var(--u) * .5); border-radius: 999px; color: var(--teal-800); background: var(--teal-100); font-family: var(--mono); font-size: calc(var(--u) * .58); font-weight: 800; }
+    .flow-step h3 { margin-top: calc(var(--u) * .52); font-family: var(--display); font-size: calc(var(--u) * 1.15); line-height: 1.18; }
+    .flow-step p { margin-top: calc(var(--u) * .4); max-width: 26ch; color: var(--muted); font-size: calc(var(--u) * .9); line-height: 1.34; }
+    .workflow-output { display: grid; grid-template-columns: 1fr 1.15fr .9fr; gap: calc(var(--u) * 1); width: 100%; margin-top: 0; }
+    .output-card { display: flex; gap: calc(var(--u) * .82); align-items: center; min-height: calc(var(--u) * 6.6); padding: calc(var(--u) * 1.05); border: 1px solid var(--line); border-radius: calc(var(--u) * .82); background: rgba(255,255,255,.88); }
+    .output-card h4 { font-family: var(--display); font-size: calc(var(--u) * 1.04); }
+    .output-card p { margin-top: calc(var(--u) * .3); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.34; }
+    .workflow-message { display: flex; align-items: center; justify-content: center; padding: calc(var(--u) * .95); border-radius: calc(var(--u) * .82); background: var(--teal-800); color: white; font-family: var(--display); font-size: calc(var(--u) * .95); line-height: 1.32; text-align: center; }
 
     /* Slide 5 — role of AI */
-    .responsibility-grid { display: grid; grid-template-columns: 1fr calc(var(--u) * 31); gap: calc(var(--u) * 1.4); height: 100%; }
-    .responsibility-stack { position: relative; display: flex; flex-direction: column; gap: calc(var(--u) * .55); }
-    .responsibility-stack::before { content: ""; position: absolute; left: calc(var(--u) * 2.15); top: calc(var(--u) * 2.2); bottom: calc(var(--u) * 2.2); width: calc(var(--u) * .12); background: var(--line-strong); }
-    .responsibility {
-      position: relative;
-      z-index: 2;
-      display: grid;
-      grid-template-columns: calc(var(--u) * 4.3) 1fr auto;
-      gap: calc(var(--u) * .9);
-      align-items: center;
-      min-height: calc(var(--u) * 5.1);
-      padding: calc(var(--u) * .72) calc(var(--u) * .88) calc(var(--u) * .72) 0;
-      border: 1px solid var(--line);
-      border-radius: calc(var(--u) * .78);
-      background: rgba(255,255,255,.92);
-    }
-    .responsibility.ai-layer { color: white; border-color: var(--teal-800); background: var(--teal-800); box-shadow: var(--shadow); }
-    .layer-number { width: calc(var(--u) * 4.3); text-align: center; font-family: var(--mono); font-size: calc(var(--u) * .72); font-weight: 800; color: var(--teal-700); }
-    .ai-layer .layer-number { color: #c9e9e5; }
-    .responsibility h3 { font-family: var(--display); font-size: calc(var(--u) * 1.05); line-height: 1.18; }
-    .responsibility p { margin-top: calc(var(--u) * .25); color: var(--muted); font-size: calc(var(--u) * .81); line-height: 1.3; }
-    .ai-layer p { color: rgba(255,255,255,.72); }
-    .layer-owner { padding: calc(var(--u) * .3) calc(var(--u) * .55); border-radius: 999px; color: var(--teal-900); background: var(--teal-100); font-size: calc(var(--u) * .54); font-weight: 800; white-space: nowrap; }
-    .ai-layer .layer-owner { color: white; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); }
-    .ai-facts { display: grid; grid-template-rows: auto auto 1fr; gap: calc(var(--u) * .72); }
-    .fact-card { padding: calc(var(--u) * .95); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: white; }
-    .fact-card h4 { display: flex; align-items: center; gap: calc(var(--u) * .5); font-family: var(--display); font-size: calc(var(--u) * .78); }
-    .fact-card p { margin-top: calc(var(--u) * .45); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.34; }
-    .fact-card.warning { border-color: rgba(192,132,35,.35); background: var(--warn-soft); }
-    .fact-card.warning p { color: var(--gold-text); }
-    .economic-case { display: flex; flex-direction: column; padding: calc(var(--u) * .95); border: 1px solid var(--line); border-radius: calc(var(--u) * .72); background: var(--surface-2); }
-    .economic-case > h4 { font-family: var(--display); font-size: calc(var(--u) * .8); }
-    .economic-row { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * .7); padding: calc(var(--u) * .62) 0; border-bottom: 1px solid var(--line); font-size: calc(var(--u) * .64); }
-    .economic-row:last-of-type { border-bottom: 0; }
-    .economic-row span { color: var(--muted); }
-    .economic-row strong { font-family: var(--display); color: var(--ink); font-size: calc(var(--u) * .7); text-align: right; }
-    .economic-note { margin-top: auto !important; padding-top: calc(var(--u) * .55); color: var(--teal-800) !important; font-size: calc(var(--u) * .58) !important; font-weight: 700; }
+    .ai-role-layout { display: grid; grid-template-columns: 1.06fr .94fr; gap: calc(var(--u) * 1.25); height: 100%; }
+    .role-zone { display: flex; min-width: 0; flex-direction: column; padding: calc(var(--u) * 1.15); border: 1px solid var(--line); border-radius: calc(var(--u) * .95); }
+    .ai-zone { color: white; border-color: var(--teal-800); background: var(--teal-800); box-shadow: var(--shadow); }
+    .local-zone { background: var(--surface-2); }
+    .zone-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: calc(var(--u) * 1); }
+    .zone-kicker { display: block; color: var(--teal-700); font-family: var(--mono); font-size: calc(var(--u) * .56); font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .ai-zone .zone-kicker { color: #c9e9e5; }
+    .zone-heading h3 { margin-top: calc(var(--u) * .25); font-family: var(--display); font-size: calc(var(--u) * 1.25); line-height: 1.15; }
+    .zone-badge { padding: calc(var(--u) * .32) calc(var(--u) * .58); border-radius: 999px; color: var(--teal-900); background: var(--teal-100); font-size: calc(var(--u) * .55); font-weight: 800; white-space: nowrap; }
+    .ai-zone .zone-badge { color: white; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.1); }
+    .ai-capabilities { display: grid; grid-template-rows: repeat(3, 1fr); gap: calc(var(--u) * .58); flex: 1; margin-top: calc(var(--u) * .8); }
+    .ai-capability { display: grid; grid-template-columns: calc(var(--u) * 3.05) 1fr; gap: calc(var(--u) * .75); align-items: center; padding: calc(var(--u) * .7); border: 1px solid rgba(255,255,255,.14); border-radius: calc(var(--u) * .62); background: rgba(255,255,255,.07); }
+    .role-icon { display: grid; width: calc(var(--u) * 3.05); height: calc(var(--u) * 3.05); place-items: center; border-radius: calc(var(--u) * .72); color: white; background: rgba(255,255,255,.1); }
+    .role-icon svg { width: calc(var(--u) * 1.55); height: calc(var(--u) * 1.55); }
+    .ai-capability h4 { font-family: var(--display); font-size: calc(var(--u) * .94); line-height: 1.15; }
+    .ai-capability p { margin-top: calc(var(--u) * .22); color: rgba(255,255,255,.72); font-size: calc(var(--u) * .72); line-height: 1.35; }
+    .local-layers { display: grid; grid-template-rows: 1fr 1fr auto; gap: calc(var(--u) * .68); flex: 1; margin-top: calc(var(--u) * .8); }
+    .local-layer { display: flex; flex-direction: column; justify-content: center; padding: calc(var(--u) * .85); border: 1px solid var(--line); border-radius: calc(var(--u) * .65); background: white; }
+    .local-layer-head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u) * .7); }
+    .local-layer h4 { font-family: var(--display); font-size: calc(var(--u) * 1.02); }
+    .local-layer p { margin-top: calc(var(--u) * .3); color: var(--muted); font-size: calc(var(--u) * .78); line-height: 1.38; }
+    .local-owner { padding: calc(var(--u) * .27) calc(var(--u) * .5); border-radius: 999px; color: var(--teal-900); background: var(--teal-100); font-size: calc(var(--u) * .52); font-weight: 800; white-space: nowrap; }
+    .human-check { display: flex; align-items: center; gap: calc(var(--u) * .7); padding: calc(var(--u) * .72) calc(var(--u) * .85); border: 1px solid rgba(217,164,65,.34); border-radius: calc(var(--u) * .65); color: var(--gold-text); background: var(--gold-soft); }
+    .human-check strong { font-family: var(--display); font-size: calc(var(--u) * .82); }
+    .human-check span { margin-left: auto; font-size: calc(var(--u) * .65); line-height: 1.3; text-align: right; }
 
     /* Slide 6 — stack */
     .architecture { display: grid; grid-template-columns: 1fr auto 1fr auto 1.16fr auto 1fr; gap: calc(var(--u) * .62); align-items: stretch; }
@@ -547,6 +566,16 @@
     .deploy-item { display: flex; align-items: center; gap: calc(var(--u) * .65); padding: calc(var(--u) * .76); border: 1px solid var(--line); border-radius: calc(var(--u) * .62); background: var(--surface-2); }
     .deploy-item strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .82); }
     .deploy-item span { display: block; margin-top: calc(var(--u) * .15); color: var(--muted); font-size: calc(var(--u) * .67); }
+    .stack-overview { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(var(--u) * 1.25); height: 100%; }
+    .stack-overview-card { position: relative; display: flex; min-height: 0; flex-direction: column; overflow: hidden; padding: calc(var(--u) * 1.4); border: 1px solid var(--line); border-radius: calc(var(--u) * 1); background: rgba(255,255,255,.94); box-shadow: var(--shadow); }
+    .stack-overview-card::before { content: ""; position: absolute; inset: 0 0 auto; height: calc(var(--u) * .25); background: var(--teal-700); }
+    .stack-overview-card.ai-stack::before { background: var(--teal-700); }
+    .stack-overview-card.deploy-stack::before { background: var(--teal-900); }
+    .stack-overview-label { color: var(--teal-800); font-family: var(--mono); font-size: calc(var(--u) * .68); font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+    .stack-overview-card h3 { margin-top: calc(var(--u) * .62); font-family: var(--display); font-size: calc(var(--u) * 1.55); line-height: 1.12; letter-spacing: -.025em; }
+    .stack-overview-card > p { margin-top: calc(var(--u) * .45); color: var(--muted); font-size: calc(var(--u) * .94); line-height: 1.38; }
+    .stack-tags { display: flex; flex-wrap: wrap; gap: calc(var(--u) * .38); margin-top: auto; padding-top: calc(var(--u) * .75); }
+    .stack-tags span { padding: calc(var(--u) * .28) calc(var(--u) * .5); border: 1px solid rgba(23,130,122,.2); border-radius: 999px; color: var(--teal-900); background: var(--teal-050); font-size: calc(var(--u) * .61); font-weight: 750; }
 
     /* Slide 7 — regulatory */
     .data-boundary { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: calc(var(--u) * .72); align-items: center; }
@@ -571,8 +600,9 @@
     .compliance-gap strong { color: #67291f; }
 
     /* Messaggi privacy ripresi dall'interfaccia */
+    #slide-7 .slide-body { display: flex; align-items: center; }
     .privacy-messages { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.15); }
-    .privacy-message { min-height: calc(var(--u) * 16.2); padding: calc(var(--u) * 1.35); border: 1px solid var(--line); border-radius: calc(var(--u) * .88); background: white; box-shadow: var(--shadow); }
+    .privacy-message { min-height: calc(var(--u) * 20.5); padding: calc(var(--u) * 1.35); border: 1px solid var(--line); border-radius: calc(var(--u) * .88); background: white; box-shadow: var(--shadow); }
     .privacy-message.teal-message { color: white; border-color: var(--teal-800); background: var(--teal-800); }
     .message-head { display: flex; align-items: center; gap: calc(var(--u) * .75); }
     .message-head h3 { font-family: var(--display); font-size: calc(var(--u) * 1.25); }
@@ -580,6 +610,25 @@
     .privacy-message.teal-message > p { color: rgba(255,255,255,.78); }
     .message-result { margin-top: calc(var(--u) * 1); padding-top: calc(var(--u) * .78); border-top: 1px solid var(--line); color: var(--teal-800); font-size: calc(var(--u) * .76); line-height: 1.35; font-weight: 800; }
     .teal-message .message-result { border-color: rgba(255,255,255,.18); color: #d6e9e6; }
+    .data-note-list { display: grid; gap: calc(var(--u) * .85); margin-top: calc(var(--u) * .9); }
+    .data-note { display: grid; grid-template-columns: auto 1fr; gap: calc(var(--u) * .65); align-items: start; }
+    .data-note + .data-note { padding-top: calc(var(--u) * .8); border-top: 1px solid rgba(255,255,255,.18); }
+    .data-note-icon { display: grid; width: calc(var(--u) * 1.65); height: calc(var(--u) * 1.65); place-items: center; border: 1px solid rgba(255,255,255,.28); border-radius: 50%; color: white; background: rgba(255,255,255,.1); font-family: var(--display); font-size: calc(var(--u) * .76); font-weight: 800; line-height: 1; }
+    .data-note p { color: rgba(255,255,255,.78); font-size: calc(var(--u) * .84); line-height: 1.42; }
+    .data-note strong { color: white; font-weight: 800; }
+    .ai-limit-list { display: grid; gap: calc(var(--u) * .9); margin-top: calc(var(--u) * 1); }
+    .ai-limit-item + .ai-limit-item { padding-top: calc(var(--u) * .9); border-top: 1px solid var(--line); }
+    .ai-limit-item strong { display: block; color: var(--teal-800); font-family: var(--display); font-size: calc(var(--u) * .94); }
+    .ai-limit-item p { margin-top: calc(var(--u) * .3); color: var(--muted); font-size: calc(var(--u) * .84); line-height: 1.42; }
+    #slide-7 .privacy-messages { width: 100%; }
+    #slide-7 .privacy-message { min-height: calc(var(--u) * 27); padding: calc(var(--u) * 1.7); }
+    #slide-7 .message-head { gap: calc(var(--u) * .9); }
+    #slide-7 .message-head h3 { font-size: calc(var(--u) * 1.45); }
+    #slide-7 .data-note-list, #slide-7 .ai-limit-list { gap: calc(var(--u) * 1.15); margin-top: calc(var(--u) * 1.25); }
+    #slide-7 .data-note + .data-note, #slide-7 .ai-limit-item + .ai-limit-item { padding-top: calc(var(--u) * 1.15); }
+    #slide-7 .data-note-icon { width: calc(var(--u) * 1.9); height: calc(var(--u) * 1.9); font-size: calc(var(--u) * .86); }
+    #slide-7 .data-note p, #slide-7 .ai-limit-item p { font-size: calc(var(--u) * .98); line-height: 1.45; }
+    #slide-7 .ai-limit-item strong { font-size: calc(var(--u) * 1.08); }
     .regulatory-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--u) * .72); margin-top: calc(var(--u) * 1); }
     .regulatory-item { padding: calc(var(--u) * .82); border: 1px solid var(--line); border-radius: calc(var(--u) * .62); background: var(--surface-2); }
     .regulatory-item strong { display: block; font-family: var(--display); font-size: calc(var(--u) * .9); }
@@ -604,10 +653,21 @@
     .proof.note span { color: var(--gold-text); }
 
     /* Problema → soluzione */
-    .resolution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.15); }
-    .resolution-card { min-height: calc(var(--u) * 23.4); padding: calc(var(--u) * 1.25); border: 1px solid var(--line); border-radius: calc(var(--u) * .88); background: white; box-shadow: var(--shadow); }
-    .resolution-card h3 { margin-top: calc(var(--u) * .72); font-family: var(--display); font-size: calc(var(--u) * 1.35); line-height: 1.15; }
-    .resolution-card > p { margin-top: calc(var(--u) * .55); color: var(--muted); font-size: calc(var(--u) * .84); line-height: 1.42; }
+    #slide-8 .slide-body { display: flex; }
+    .resolution-grid { display: grid; grid-template-columns: 1fr 1fr; gap: calc(var(--u) * 1.35); width: 100%; height: 100%; }
+    .resolution-card { display: flex; min-height: 0; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: calc(var(--u) * 1.1); background: white; box-shadow: var(--shadow); }
+    .resolution-head { display: flex; align-items: center; gap: calc(var(--u) * .7); padding: calc(var(--u) * .8) calc(var(--u) * 1.05); border-bottom: 1px solid var(--line); }
+    .resolution-number { display: grid; width: calc(var(--u) * 2.15); height: calc(var(--u) * 2.15); flex: none; place-items: center; border-radius: 50%; color: white; background: var(--ink); font-family: var(--mono); font-size: calc(var(--u) * .75); font-weight: 800; }
+    .resolution-head h3 { font-family: var(--display); font-size: calc(var(--u) * 1.05); line-height: 1.2; }
+    .resolution-content { display: grid; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: calc(var(--u) * 1.5); flex: 1; padding: calc(var(--u) * 1.35); }
+    .resolution-block { display: flex; min-height: 0; flex-direction: column; justify-content: center; padding: calc(var(--u) * 1.25); border-radius: calc(var(--u) * .9); }
+    .resolution-block.problem { background: var(--danger-soft); }
+    .resolution-block.solution { background: var(--ok-soft); }
+    .resolution-block .resolution-label { display: flex; align-items: center; gap: calc(var(--u) * .4); font-size: calc(var(--u) * .74); font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+    .resolution-block .resolution-label::before { content: ""; width: calc(var(--u) * .55); height: calc(var(--u) * .55); flex: none; border-radius: 50%; background: currentColor; }
+    .resolution-block.problem .resolution-label { color: var(--danger); }
+    .resolution-block.solution .resolution-label { color: var(--ok); }
+    .resolution-block p { margin-top: calc(var(--u) * .55); color: var(--ink); font-size: calc(var(--u) * 1.02); line-height: 1.42; }
     .solution-box { margin-top: calc(var(--u) * 1); padding: calc(var(--u) * .9); border-radius: calc(var(--u) * .66); background: var(--teal-050); }
     .solution-box .solution-label { color: var(--teal-700); font-size: calc(var(--u) * .65); font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
     .solution-box strong { display: block; margin-top: calc(var(--u) * .34); font-family: var(--display); font-size: calc(var(--u) * .96); line-height: 1.3; }
@@ -775,7 +835,7 @@
             </div>
             <div class="cover-label reveal d2">Progetto finale · per Commercialisti</div>
             <h1 id="title-1" class="reveal d2">Dai bandi ai clienti <span>compatibili.</span></h1>
-            <p class="cover-intro reveal d3">Un sistema di pre-screening che trasforma documenti complessi in criteri strutturati, confrontabili e verificabili.</p>
+            <p class="cover-intro reveal d3">Un sistema di valutazione preliminare che trasforma documenti complessi in criteri strutturati, confrontabili e verificabili.</p>
             <div class="cover-meta reveal d4">
               <div><strong>Matteo Pizziconi</strong><br>Autore del progetto</div>
               <div class="meta-line"></div>
@@ -793,7 +853,7 @@
                 <div class="nav-mini">Carica bando</div>
               </aside>
               <div class="app-main">
-                <div class="app-top"><h3>Dashboard</h3><span>Pre-screening operativo</span></div>
+                <div class="app-top"><h3>Dashboard</h3><span>Valutazione preliminare</span></div>
                 <div class="kpi-row">
                   <div class="kpi"><span>Bandi</span><strong>14</strong></div>
                   <div class="kpi"><span>Clienti</span><strong>5</strong></div>
@@ -810,7 +870,7 @@
         <div class="speaker-notes">
           <p class="say">“Buongiorno, sono Matteo Pizziconi e vi presento BandoMatch AI, il progetto che ho sviluppato per supportare commercialisti e consulenti nella prima analisi dei bandi.”</p>
           <ul>
-            <li>Definire subito il posizionamento: pre-screening e supporto alla decisione.</li>
+            <li>Definire subito il posizionamento: valutazione preliminare e supporto alla decisione.</li>
             <li>Il risultato non è una decisione legale automatica: la verifica finale resta al professionista.</li>
             <li>Frase guida: l’AI comprende il linguaggio; le regole locali rendono il confronto ripetibile e spiegabile.</li>
           </ul>
@@ -819,27 +879,24 @@
 
       <section class="slide" id="slide-2" aria-labelledby="title-2">
         <header class="slide-header reveal d1">
-          <div><div class="section-mark">02 · Problema</div><h2 id="title-2">Il bando non è il problema.<br>Il confronto ripetuto sì.</h2><p class="slide-subtitle">Leggere è solo il primo passo: bisogna trasformare informazioni disperse in criteri coerenti e riutilizzabili su molti clienti.</p></div>
+          <div><div class="section-mark">02 · Problema</div><h2 id="title-2">Centinaia di bandi pubblici<br>da monitorare e leggere a mano</h2><p class="slide-subtitle">Interpretare i requisiti di ammissibilità e capire quali clienti possono accedervi è un lavoro lento e ripetitivo.</p></div>
         </header>
         <div class="slide-body">
           <div class="problem-grid">
             <article class="problem-card reveal d2">
               <div class="card-top"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></div><span class="card-num">01</span></div>
-              <h3>Informazioni distribuite</h3>
-              <p>Scadenze, destinatari, ATECO, importi, spese ed esclusioni possono trovarsi in sezioni e allegati diversi.</p>
-              <div class="problem-detail">PDF lunghi, strutture eterogenee, terminologie non uniformi.</div>
+              <h3>Volume ingestibile</h3>
+              <p>Troppe fonti da seguire, ognuna con formati e scadenze diverse.</p>
             </article>
             <article class="problem-card reveal d3">
-              <div class="card-top"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M17 7.5c0-1.4-1.8-2.5-4-2.5S9 6.1 9 7.5s1.8 2.5 4 2.5 4 1.1 4 2.5-1.8 2.5-4 2.5-4-1.1-4-2.5"/></svg></div><span class="card-num">02</span></div>
-              <h3>Significati da distinguere</h3>
-              <p>Investimento massimo, finanziamento massimo e contributo a fondo perduto non sono lo stesso dato.</p>
-              <div class="problem-detail">Una semplificazione sbagliata può alterare l’intero pre-screening.</div>
+              <div class="card-top"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div><span class="card-num">02</span></div>
+              <h3>Lettura manuale</h3>
+              <p>Requisiti densi da interpretare bando per bando, cliente per cliente.</p>
             </article>
             <article class="problem-card reveal d4">
-              <div class="card-top"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div><span class="card-num">03</span></div>
-              <h3>Controllo moltiplicato</h3>
-              <p>Lo stesso lavoro viene ripetuto per ogni cliente, mantenendo anche una motivazione chiara di compatibilità o esclusione.</p>
-              <div class="problem-detail">Il rischio: perdere opportunità o approfondire casi poco pertinenti.</div>
+              <div class="card-top"><div class="icon-box danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.6 2.4 17.2A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.8L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 8v5M12 17h.01"/></svg></div><span class="card-num">03</span></div>
+              <h3>Opportunità perse</h3>
+              <p>Errori e ritardi si traducono in finanziamenti mancati per il cliente.</p>
             </article>
           </div>
           <div class="problem-conclusion reveal d5">
@@ -850,11 +907,11 @@
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problema</span><span class="footer-number">02 / 09</span></footer>
         <div class="speaker-notes">
-          <p class="say">“Il problema non consiste soltanto nel leggere un PDF, ma nel trasformarlo in criteri confrontabili per molti clienti.”</p>
+          <p class="say">“Monitorare molti bandi e interpretarne a mano i requisiti per ogni cliente richiede tempo e attenzione.”</p>
           <ul>
-            <li>I bandi usano formulazioni e strutture differenti; le informazioni importanti non stanno sempre nello stesso punto.</li>
-            <li>Le ricerche per parola chiave non bastano quando cambiano sinonimi, condizioni o eccezioni.</li>
-            <li>L’esempio economico è utile: investimento, finanziamento e contributo devono restare concetti distinti.</li>
+            <li>Le fonti hanno formati, strutture e scadenze differenti.</li>
+            <li>I requisiti devono essere interpretati bando per bando e poi confrontati cliente per cliente.</li>
+            <li>Errori o ritardi nella valutazione preliminare possono far perdere opportunità rilevanti.</li>
           </ul>
         </div>
       </section>
@@ -869,16 +926,22 @@
             <article class="audience reveal d3"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h3>Consulenti d’impresa</h3><p>Riducono il tempo del primo controllo e mantengono una traccia delle motivazioni.</p></div><span class="priority">Uso operativo</span></article>
             <article class="audience reveal d4"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-8M22 19H2"/></svg></div><div><h3>Studi di finanza agevolata</h3><p>Organizzano bandi, fonti e confronti in un flusso unico e consultabile.</p></div><span class="priority">Specialisti</span></article>
           </div>
-          <aside class="target-fit reveal d3">
-            <h3>Quando il sistema crea più valore</h3>
-            <p>Non sostituisce l’analisi specialistica: porta in cima i casi che meritano attenzione e rende visibili quelli incompleti.</p>
-            <div class="fit-grid">
-              <div class="fit-item"><span class="fit-label">Molti clienti</span><strong>Profili ricorrenti da confrontare</strong></div>
-              <div class="fit-item"><span class="fit-label">Molti bandi</span><strong>Opportunità da ordinare e seguire</strong></div>
-              <div class="fit-item"><span class="fit-label">Poco tempo</span><strong>Priorità prima dell’analisi completa</strong></div>
-              <div class="fit-item"><span class="fit-label">Responsabilità</span><strong>Motivi e fonte sempre consultabili</strong></div>
+          <aside class="client-showcase reveal d3" aria-label="Esempio dell’elenco clienti di BandoMatch AI">
+            <div class="client-table-shell">
+              <table class="client-table">
+                <thead><tr><th>Ragione sociale</th><th>ATECO</th><th>Regione</th><th>Dimensione</th><th>Bandi</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="client-name">Alfa Industria S.p.A.</span><span class="client-revenue">850.000.000 €</span></td><td><span class="ateco-code">25.62.00</span></td><td>Lombardia</td><td><span class="company-size">grande</span></td><td><span class="tender-count">2</span></td></tr>
+                  <tr><td><span class="client-name">Domus Real Estate Srl</span><span class="client-revenue">450.000 €</span></td><td><span class="ateco-code">68.20.00</span></td><td>Abruzzo</td><td><span class="company-size">piccola</span></td><td><span class="tender-count">6</span></td></tr>
+                  <tr><td><span class="client-name">Innova Tech Femminile Snc</span><span class="client-revenue">120.000 €</span></td><td><span class="ateco-code">62.01.00</span></td><td>Basilicata</td><td><span class="company-size">micro</span></td><td><span class="tender-count">5</span></td></tr>
+                  <tr><td><span class="client-name">Innovatech S.r.l.</span><span class="client-revenue">80.000 €</span></td><td><span class="ateco-code">72.19</span></td><td>Lazio</td><td><span class="company-size">piccola</span></td><td><span class="tender-count">6</span></td></tr>
+                </tbody>
+              </table>
             </div>
-            <div class="value-line"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 12 5 5L20 6"/></svg></div><div><strong>Valore atteso:</strong> meno lavoro iniziale ripetitivo, più tracciabilità e una selezione più ordinata delle opportunità da verificare.</div></div>
+            <div class="beneficiary-box">
+              <span class="beneficiary-label">Beneficiari finali</span>
+              <p>Le <strong>PMI</strong>, che possono ricevere segnalazioni tempestive sui finanziamenti a cui possono accedere.</p>
+            </div>
           </aside>
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Target</span><span class="footer-number">03 / 09</span></footer>
@@ -886,6 +949,7 @@
           <p class="say">“Il target principale è formato da commercialisti, consulenti d’impresa e piccoli studi di finanza agevolata che seguono più clienti.”</p>
           <ul>
             <li>Il prodotto è B2B professionale: il vantaggio aumenta con la ripetizione del confronto.</li>
+            <li>I beneficiari finali sono le PMI, che possono ricevere segnalazioni tempestive sulle opportunità da approfondire.</li>
             <li>Non promettere sostituzione del professionista o tempi risparmiati non misurati.</li>
             <li>Il valore dimostrabile è la priorità operativa, la tracciabilità e la capacità di tornare sempre alla fonte.</li>
           </ul>
@@ -894,15 +958,14 @@
 
       <section class="slide" id="slide-4" aria-labelledby="title-4">
         <header class="slide-header reveal d1">
-          <div><div class="section-mark">04 · Funzionamento</div><h2 id="title-4">Dal PDF alla motivazione,<br>in un flusso completo.</h2><p class="slide-subtitle">Il sistema collega acquisizione, comprensione, controllo, archivio e confronto con i clienti: non è una semplice chiamata a un modello.</p></div>
+          <div><div class="section-mark">04 · Funzionamento</div><h2 id="title-4">Dal PDF al match<br>in quattro passaggi</h2><p class="slide-subtitle">L’AI estrae i dati rilevanti, il sistema li struttura e il matching locale li confronta con i profili dei clienti.</p></div>
         </header>
         <div class="slide-body">
           <div class="workflow">
-            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3-3 3 3"/></svg></div><span class="flow-index">01</span><h3>Acquisisce</h3><p>PDF locale oppure URL HTTPS pubblico.</p></article>
-            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 1.8 5.2H19l-4.2 3.1 1.6 5.2-4.4-3.1-4.4 3.1 1.6-5.2L5 8.2h5.2z"/></svg></div><span class="flow-index">02</span><h3>Comprende</h3><p>Estrazione AI in uno schema comune.</p></article>
-            <article class="flow-step reveal d3"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="m8 12 2.5 2.5L16 9"/></svg></div><span class="flow-index">03</span><h3>Controlla</h3><p>Normalizzazione, evidenze, coerenza e warning.</p></article>
-            <article class="flow-step reveal d3"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="7" r="2"/><path d="M2 20v-2a6 6 0 0 1 12 0v2M14 18a4 4 0 0 1 8 0v2"/></svg></div><span class="flow-index">04</span><h3>Confronta</h3><p>Matching locale con tutti i profili cliente.</p></article>
-            <article class="flow-step reveal d4"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h18v16H3z"/><path d="M7 8h10M7 12h6M7 16h8"/></svg></div><span class="flow-index">05</span><h3>Spiega</h3><p>Dashboard, scheda, motivo e PDF originale.</p></article>
+            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></div><span class="flow-index">01</span><h3>Caricamento</h3><p>Il bando viene inserito come PDF o URL.</p></article>
+            <article class="flow-step reveal d2"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m10 3 1.35 3.65L15 8l-3.65 1.35L10 13 8.65 9.35 5 8l3.65-1.35L10 3Z"/><path d="m18 12 .9 2.1L21 15l-2.1.9L18 18l-.9-2.1L15 15l2.1-.9L18 12ZM18 3v4M16 5h4"/></svg></div><span class="flow-index">02</span><h3>Estrazione AI</h3><p>Importi, requisiti, scadenze, ATECO, forme giuridiche.</p></article>
+            <article class="flow-step reveal d3"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg></div><span class="flow-index">03</span><h3>Matching</h3><p>Confronto automatico col profilo dei clienti.</p></article>
+            <article class="flow-step reveal d4"><div class="flow-node"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 4.5 4.5L19 7"/></svg></div><span class="flow-index">04</span><h3>Output</h3><p>Punteggio di compatibilità + scheda di briefing.</p></article>
           </div>
           <div class="workflow-output">
             <article class="output-card reveal d4"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 3h16v18H4z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg></div><div><h4>Scheda strutturata</h4><p>29 campi principali, fonti, evidenze e dati economici distinti.</p></div></article>
@@ -912,40 +975,45 @@
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Funzionamento</span><span class="footer-number">04 / 09</span></footer>
         <div class="speaker-notes">
-          <p class="say">“Il flusso parte da un PDF o da un URL HTTPS e arriva a una scheda confrontata localmente con i clienti.”</p>
+          <p class="say">“Dal caricamento all’output, BandoMatch AI trasforma il bando e lo confronta con i profili cliente in quattro passaggi.”</p>
           <ul>
-            <li>Il file viene controllato, il testo viene estratto e l’AI produce una prima struttura.</li>
-            <li>Il JSON non viene salvato alla cieca: passa da normalizzazioni, evidenze, validazione e warning.</li>
-            <li>Dopo il salvataggio della scheda e del PDF, il matching locale aggiorna i risultati visibili in dashboard e nel dettaglio cliente.</li>
+            <li>Il punto di partenza è un PDF oppure un URL.</li>
+            <li>L’AI estrae i dati del bando; normalizzazione e validazione restano passaggi deterministici del sistema.</li>
+            <li>Il matching è locale e produce uno score di compatibilità con una scheda consultabile.</li>
           </ul>
         </div>
       </section>
 
       <section class="slide" id="slide-5" aria-labelledby="title-5">
         <header class="slide-header reveal d1">
-          <div><div class="section-mark">05 · Ruolo dell’AI</div><h2 id="title-5">L’AI propone una lettura.<br>La responsabilità resta distribuita.</h2><p class="slide-subtitle">Ogni livello ha un compito preciso: interpretare, rendere i dati controllabili, confrontare e infine verificare sulla fonte.</p></div>
+          <div><div class="section-mark">05 · Ruolo dell’AI</div><h2 id="title-5">L’AI comprende il bando.<br>Le regole controllano e confrontano.</h2><p class="slide-subtitle">Il modello interpreta il linguaggio; software locale e professionista rendono il risultato ripetibile, spiegabile e verificabile.</p></div>
         </header>
-        <div class="slide-body responsibility-grid">
-          <div class="responsibility-stack">
-            <article class="responsibility ai-layer reveal d2"><div class="layer-number">01</div><div><h3>Interpretazione semantica</h3><p>DeepSeek via OpenRouter comprende formulazioni diverse, estrae lo schema e consolida le parti del documento; Claude è il fallback.</p></div><span class="layer-owner">AI esterna</span></article>
-            <article class="responsibility reveal d3"><div class="layer-number">02</div><div><h3>Dati controllabili</h3><p>Schema, normalizzazione, fonti, evidenze e validazione distinguono date, percentuali, contributi, finanziamenti e investimenti.</p></div><span class="layer-owner">Regole locali</span></article>
-            <article class="responsibility reveal d3"><div class="layer-number">03</div><div><h3>Pre-screening spiegabile</h3><p>Il matching locale calcola lo score — ATECO 40, regione 30, dimensione 20, fatturato 10 — e applica controlli rigidi separati.</p></div><span class="layer-owner">Algoritmo locale</span></article>
-            <article class="responsibility reveal d4"><div class="layer-number">04</div><div><h3>Decisione e responsabilità</h3><p>Il professionista controlla scadenze, requisiti determinanti e aspetti non presenti nel profilo cliente prima di procedere.</p></div><span class="layer-owner">Revisione umana</span></article>
-          </div>
-          <aside class="ai-facts">
-            <article class="fact-card reveal d3"><h4><span class="pill teal">Confine</span> Cosa vede il modello</h4><p>Solo il testo pubblico del bando. I dati cliente non vengono inviati al provider AI.</p></article>
-            <article class="fact-card warning reveal d4"><h4><span class="pill warn">RF-007</span> Incertezza esplicita</h4><p>Oltre il 50% di campi nulli: “da revisionare manualmente”. Completezza non significa correttezza.</p></article>
-            <article class="economic-case reveal d4"><h4>Un esempio che evita errori semantici</h4><div class="economic-row"><span>Investimento massimo</span><strong>800.000 €</strong></div><div class="economic-row"><span>Finanziamento massimo</span><strong>400.000 €</strong></div><div class="economic-row"><span>Contributo a fondo perduto</span><strong>Non applicabile</strong></div><p class="economic-note">L’AI interpreta; le regole mantengono separati i significati economici.</p></article>
-          </aside>
+        <div class="slide-body ai-role-layout">
+          <section class="role-zone ai-zone reveal d2">
+            <div class="zone-heading"><div><span class="zone-kicker">Dove interviene l’AI</span><h3>Comprende e struttura</h3></div><span class="zone-badge">AI esterna</span></div>
+            <div class="ai-capabilities">
+              <article class="ai-capability"><div class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg></div><div><h4>Estrazione strutturata</h4><p>Converte il testo libero dei bandi in uno schema JSON comune.</p></div></article>
+              <article class="ai-capability"><div class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m10 3 1.35 3.65L15 8l-3.65 1.35L10 13 8.65 9.35 5 8l3.65-1.35L10 3Z"/><path d="m18 12 .9 2.1L21 15l-2.1.9L18 18l-.9-2.1L15 15l2.1-.9L18 12ZM18 3v4M16 5h4"/></svg></div><div><h4>Interpretazione semantica</h4><p>Comprende requisiti espressi in modi diversi, non soltanto parole chiave.</p></div></article>
+              <article class="ai-capability"><div class="role-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><h4>Automazione dell’estrazione</h4><p>Riduce il lavoro manuale ripetitivo e produce una prima scheda da controllare.</p></div></article>
+            </div>
+          </section>
+          <section class="role-zone local-zone reveal d3">
+            <div class="zone-heading"><div><span class="zone-kicker">Cosa resta nel sistema</span><h3>Controlla e confronta</h3></div><span class="zone-badge">Software locale</span></div>
+            <div class="local-layers">
+              <article class="local-layer"><div class="local-layer-head"><h4>Dati controllabili</h4><span class="local-owner">Regole locali</span></div><p>Schema, normalizzazione, fonti, evidenze e validazione distinguono date, percentuali, contributi, finanziamenti e investimenti.</p></article>
+              <article class="local-layer"><div class="local-layer-head"><h4>Valutazione preliminare spiegabile</h4><span class="local-owner">Algoritmo locale</span></div><p>Il matching calcola lo score — ATECO 40, regione 30, dimensione 20, fatturato 10 — e applica controlli rigidi separati.</p></article>
+              <div class="human-check"><strong>Verifica professionale</strong><span>Lo score ordina le opportunità; il professionista valida sulla fonte.</span></div>
+            </div>
+          </section>
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Ruolo dell’AI</span><span class="footer-number">05 / 09</span></footer>
         <div class="speaker-notes">
           <p class="say">“L’intelligenza artificiale viene usata dove serve comprendere il linguaggio; non esegue il matching e non decide l’ammissibilità legale.”</p>
           <ul>
-            <li>Dopo l’AI intervengono regole deterministiche: tipi, date, importi, percentuali, unità temporali, deduplicazione ed evidenze.</li>
-            <li>Lo score ordina le opportunità; i controlli rigidi di ammissibilità sono un passaggio separato.</li>
-            <li>RF-007 rende visibile l’incertezza. Oltre metà campi nulli significa revisione manuale, non “bassa probabilità”.</li>
-            <li>L’esempio 800.000 / 400.000 / non applicabile mostra perché i campi economici non possono essere confusi.</li>
+            <li>L’AI trasforma il testo libero in uno schema e comprende formulazioni diverse, ma produce una prima lettura da controllare.</li>
+            <li>Dopo l’AI intervengono regole deterministiche per normalizzare, validare e collegare le evidenze.</li>
+            <li>Il matching è un algoritmo locale: calcola lo score e applica separatamente i controlli rigidi disponibili.</li>
+            <li>Lo score ordina le opportunità; la decisione finale resta al professionista.</li>
           </ul>
         </div>
       </section>
@@ -955,15 +1023,11 @@
           <div><div class="section-mark">06 · Stack e costruzione</div><h2 id="title-6">Tecnologie diverse,<br>un solo flusso applicativo.</h2><p class="slide-subtitle">Un’architettura ibrida: componenti web, AI esterna e regole Python lavorano insieme, con un confine dei dati esplicito.</p></div>
         </header>
         <div class="slide-body">
-          <div class="stack-board">
-            <article class="stack-panel reveal d2"><div class="stack-label">Interfaccia</div><h3>React + TypeScript</h3><p>La parte visibile: dashboard, archivio bandi, clienti e caricamento dei documenti.</p><div class="stack-techs"><div class="stack-tech"><strong>React 19</strong><span>Single-page application</span></div><div class="stack-tech"><strong>Vite</strong><span>Build e ambiente di sviluppo</span></div><div class="stack-tech"><strong>Router + React Query</strong><span>Navigazione e gestione dei dati</span></div></div></article>
-            <article class="stack-panel dark-panel reveal d3"><div class="stack-label">Backend e regole</div><h3>Python + FastAPI</h3><p>Orchestra upload, controlli, validazione, database e matching deterministico.</p><div class="stack-techs"><div class="stack-tech"><strong>Pydantic</strong><span>Schema e validazione</span></div><div class="stack-tech"><strong>PyMuPDF</strong><span>Testo e riferimenti di pagina</span></div><div class="stack-tech"><strong>Moduli locali</strong><span>Evidenze, normalizzazione e score</span></div></div></article>
-            <article class="stack-panel gold-edge reveal d4"><div class="stack-label">AI e dati</div><h3>OpenRouter + Neon</h3><p>L’AI interpreta il testo pubblico; database e regole conservano e confrontano i dati.</p><div class="stack-techs"><div class="stack-tech"><strong>DeepSeek</strong><span>Modello principale</span></div><div class="stack-tech"><strong>Claude</strong><span>Fallback dell’estrazione</span></div><div class="stack-tech"><strong>PostgreSQL Neon</strong><span>Bandi, PDF, clienti e risultati</span></div></div></article>
-          </div>
-          <div class="deploy-strip">
-            <article class="deploy-item reveal d4"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4zM8 8h8v8H8z"/></svg></div><div><strong>Docker</strong><span>Build riproducibile</span></div></article>
-            <article class="deploy-item reveal d5"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg></div><div><strong>Render</strong><span>Deploy del servizio web</span></div></article>
-            <article class="deploy-item reveal d5"><div class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M12 5v14"/><circle cx="12" cy="12" r="9"/></svg></div><div><strong>Principio costruttivo</strong><span>AI per comprendere; software locale per controllare e confrontare.</span></div></article>
+          <div class="stack-overview">
+            <article class="stack-overview-card reveal d2"><span class="stack-overview-label">Backend</span><h3>FastAPI + PostgreSQL</h3><p>Database serverless su Neon.</p><div class="stack-tags"><span>Pydantic</span><span>PyMuPDF</span></div></article>
+            <article class="stack-overview-card reveal d3"><span class="stack-overview-label">Frontend</span><h3>React 19 + TypeScript</h3><p>Build con Vite.</p><div class="stack-tags"><span>React Router</span><span>React Query</span></div></article>
+            <article class="stack-overview-card ai-stack reveal d3"><span class="stack-overview-label">AI / LLM</span><h3>DeepSeek via OpenRouter</h3><p>Claude Haiku 4.5 come fallback.</p><div class="stack-tags"><span>Chunking</span><span>Consolidamento</span></div></article>
+            <article class="stack-overview-card deploy-stack reveal d4"><span class="stack-overview-label">Deploy</span><h3>Render</h3><p>Docker multi-stage. Auto-deploy da GitHub.</p><div class="stack-tags"><span>Docker</span><span>Servizio web unico</span></div></article>
           </div>
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Stack e costruzione</span><span class="footer-number">06 / 09</span></footer>
@@ -972,7 +1036,8 @@
           <ul>
             <li>PyMuPDF legge il testo e mantiene i marcatori di pagina.</li>
             <li>OpenRouter usa DeepSeek come modello principale e Claude come fallback.</li>
-            <li>PostgreSQL Neon conserva bandi, PDF originali, clienti e risultati; Docker e Render rendono il deploy riproducibile.</li>
+            <li>PostgreSQL Neon conserva bandi, PDF originali, clienti e risultati.</li>
+            <li>Docker e Render rendono il deploy riproducibile, con auto-deploy dal repository GitHub.</li>
             <li>In produzione FastAPI serve API e build frontend nello stesso servizio.</li>
           </ul>
         </div>
@@ -984,13 +1049,20 @@
         </header>
         <div class="slide-body">
           <div class="privacy-messages">
-            <article class="privacy-message teal-message reveal d2"><div class="message-head"><div class="icon-box white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Come vengono trattati i dati</h3></div><p>Il testo pubblico del bando viene inviato al provider AI. Il PDF originale viene conservato per consultazione e download. I dati dei clienti restano nel sistema e il matching viene calcolato localmente.</p><div class="message-result">I profili cliente non vengono inviati al modello AI.</div></article>
-            <article class="privacy-message reveal d3"><div class="message-head"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Trasparenza sui limiti dell’AI</h3></div><p>I dati vengono estratti automaticamente e possono contenere imprecisioni. Scadenze, importi e requisiti devono essere sempre verificati sulla fonte ufficiale prima di essere utilizzati con i clienti.</p><div class="message-result">L’applicazione supporta la decisione: non sostituisce la verifica professionale.</div></article>
-          </div>
-          <div class="regulatory-strip">
-            <article class="regulatory-item reveal d4"><strong>GDPR · minimizzazione</strong><span>Al provider esterno viene inviato solo il testo necessario all’estrazione.</span></article>
-            <article class="regulatory-item reveal d4"><strong>AI Act · trasparenza</strong><span>L’utente sa dove viene usata l’AI e quali risultati richiedono controllo.</span></article>
-            <article class="regulatory-item reveal d5"><strong>Nessuna certificazione dichiarata</strong><span>Per la produzione servono login, ruoli, separazione dei dati e valutazione legale dedicata.</span></article>
+            <article class="privacy-message teal-message reveal d2">
+              <div class="message-head"><div class="icon-box white"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Come vengono trattati i dati</h3></div>
+              <div class="data-note-list">
+                <div class="data-note"><span class="data-note-icon" aria-hidden="true">i</span><p>I PDF vengono elaborati e inviati a un modello AI esterno per l’estrazione. Il documento originale viene salvato per il download. <strong>I dati dei clienti non vengono inviati al modello AI</strong>: restano nel sistema e il confronto è calcolato localmente.</p></div>
+                <div class="data-note"><span class="data-note-icon" aria-hidden="true">i</span><p>I dati dei clienti sono salvati per gestire l’anagrafica e calcolare il matching localmente. <strong>Non vengono condivisi con provider AI.</strong></p></div>
+              </div>
+            </article>
+            <article class="privacy-message reveal d3">
+              <div class="message-head"><div class="icon-box gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Trasparenza sui limiti dell’AI</h3></div>
+              <div class="ai-limit-list">
+                <div class="ai-limit-item"><strong>Supervisione umana</strong><p>Il commercialista valida sempre. L’AI suggerisce, non decide.</p></div>
+                <div class="ai-limit-item"><strong>Trasparenza</strong><p>Ogni scheda dichiara che i dati sono estratti da AI e possono contenere imprecisioni.</p></div>
+              </div>
+            </article>
           </div>
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Aspetti normativi</span><span class="footer-number">07 / 09</span></footer>
@@ -1011,10 +1083,21 @@
         </header>
         <div class="slide-body">
           <div class="resolution-grid">
-            <article class="resolution-card reveal d2"><span class="pill danger">Problema 01</span><h3>I PDF lunghi venivano troncati</h3><p>La prima soluzione poteva perdere le informazioni presenti nelle sezioni finali del documento.</p><div class="solution-box"><span class="solution-label">Soluzione implementata</span><strong>Chunking e consolidamento senza taglio rigido</strong><div class="solution-points"><span>Blocchi ~60.000 caratteri</span><span>Overlap ~2.000</span><span>Fino a 3 worker</span><span>Merge di emergenza</span></div></div><div class="resolution-result">✓ Tutto il testo estratto viene coperto dal processo.</div></article>
-            <article class="resolution-card reveal d3"><span class="pill danger">Problema 02</span><h3>Falsi positivi sulle esclusioni ATECO</h3><p>Senza una tabella ATECO, l’AI poteva ignorare divieti discorsivi come tabacco o attività finanziarie.</p><div class="solution-box"><span class="solution-label">Soluzione implementata</span><strong>Quattro controlli sulle restrizioni settoriali</strong><div class="solution-points"><span>Prompt più esplicito</span><span>Esclusioni separate</span><span>Normalizzazione locale</span><span>“Aperto a tutti” = false</span></div></div><div class="resolution-result">✓ Una sola esclusione esplicita impedisce la classificazione “aperto a tutti”.</div></article>
+            <article class="resolution-card reveal d2">
+              <div class="resolution-head"><span class="resolution-number">1</span><h3>Troncamento silenzioso dei PDF</h3></div>
+              <div class="resolution-content">
+                <section class="resolution-block problem"><span class="resolution-label">Problema</span><p>Il testo dei bandi lunghi veniva tagliato oltre un limite, senza segnalarlo: una scadenza o un requisito potevano sparire, in modo invisibile.</p></section>
+                <section class="resolution-block solution"><span class="resolution-label">Soluzione</span><p>Chunking in blocchi (~60.000 caratteri, sovrapposizione ~2.000), elaborati anche in parallelo e consolidati in un unico JSON. Troncamento esplicito e tracciato — copertura completa del testo.</p></section>
+              </div>
+            </article>
+            <article class="resolution-card reveal d3">
+              <div class="resolution-head"><span class="resolution-number">2</span><h3>Falsi positivi sulle esclusioni ATECO</h3></div>
+              <div class="resolution-content">
+                <section class="resolution-block problem"><span class="resolution-label">Problema</span><p>Senza una tabella ATECO, l’AI poteva ignorare divieti discorsivi come tabacco o attività finanziarie.</p></section>
+                <section class="resolution-block solution"><span class="resolution-label">Soluzione</span><p>Prompt più esplicito, esclusioni separate e normalizzazione locale: una sola esclusione esplicita impedisce la classificazione “aperto a tutti”.</p></section>
+              </div>
+            </article>
           </div>
-          <div class="quality-line reveal d4"><div class="quality-chip"><strong>349</strong><span>test superati</span></div><div class="quality-chip"><strong>83,32%</strong><span>copertura</span></div><div class="quality-chip"><strong>RF-007</strong><span>revisione manuale</span></div><div class="quality-chip note">I controlli riducono gli errori, ma la fonte ufficiale resta sempre necessaria.</div></div>
         </div>
         <footer class="slide-footer"><span class="footer-brand">Matteo Pizziconi · Progetto finale</span><span>Problemi e risoluzioni</span><span class="footer-number">08 / 09</span></footer>
         <div class="speaker-notes">

@@ -372,6 +372,12 @@ def validate_bando(
             "warnings": warnings,
             "null_percentage": 100.0,
             "needs_manual_review": True,
+            "critical_gaps": [
+                "titolo",
+                "data_scadenza",
+                "contributo_max/percentuale_fondo_perduto",
+                "codici_ateco_ammessi/ateco_aperto_a_tutti/attivita_ammesse",
+            ],
         }
 
     bando = normalize_bando_dates(bando)
@@ -429,6 +435,7 @@ def validate_bando(
         "warnings": warnings,
         "null_percentage": null_pct,
         "needs_manual_review": needs_review,
+        "critical_gaps": gaps,
     }
 
 

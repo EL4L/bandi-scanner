@@ -40,6 +40,8 @@ REGIONI_ITALIANE: tuple[str, ...] = (
 )
 
 DIMENSIONI_IMPRESA: tuple[str, ...] = ("micro", "piccola", "media", "grande")
+REVIEW_STATUS_PENDING = "da_revisionare"
+REVIEW_STATUS_VALIDATED = "validato"
 
 
 class _PGConnection:
@@ -358,6 +360,9 @@ def find_duplicate_bando(
 def save_bando_from_json(
     data: dict[str, Any],
     scheda: str | None = None,
+    review_status: str = REVIEW_STATUS_VALIDATED,
+    null_percentage: float = 0.0,
+    review_reasons: list[str] | None = None,
     document_hash: str | None = None,
     pdf_bytes: bytes | None = None,
     pdf_filename: str | None = None,
@@ -377,8 +382,9 @@ def save_bando_from_json(
             INSERT INTO bandi (
                 titolo, ente, data_scadenza, codici_ateco, regioni,
                 dimensione, contributo_max, json_completo, scheda_cached,
+                review_status, null_percentage, review_reasons,
                 document_hash, pdf_original, pdf_filename
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             (
@@ -391,6 +397,9 @@ def save_bando_from_json(
                 bando.get("contributo_max"),
                 json.dumps(data, ensure_ascii=False),
                 scheda,
+                review_status,
+                float(null_percentage),
+                json.dumps(review_reasons or [], ensure_ascii=False),
                 document_hash,
                 pdf_bytes,
                 pdf_filename,

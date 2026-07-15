@@ -107,6 +107,9 @@ def test_save_bando_from_json_dimensione_dict_convertita(mock_db):
     call_args = mock_db.execute.call_args
     params = call_args[0][1]  # secondo argomento posizionale = tuple parametri SQL
     assert "micro" in params
+    assert params[9] == "validato"
+    assert params[10] == 0.0
+    assert params[11] == "[]"
     assert params[-3] == "a" * 64
     assert params[-2] == pdf_bytes
     assert params[-1] == "bando.pdf"

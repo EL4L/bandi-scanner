@@ -26,6 +26,8 @@ from pydantic import BaseModel
 from modules.database import (
     DIMENSIONI_IMPRESA,
     REGIONI_ITALIANE,
+    REVIEW_STATUS_PENDING,
+    REVIEW_STATUS_VALIDATED,
     attach_pdf_to_bando,
     create_cliente,
     deduplica_bandi,
@@ -41,6 +43,7 @@ from modules.database import (
     save_bando_from_json,
     update_cliente,
 )
+from modules.document_relevance import classify_non_compatible_document
 from modules.matcher import (
     bando_has_constraints,
     check_ammissibilita,
@@ -219,6 +222,54 @@ def _build_export_rows(rows: list[dict]) -> list[dict]:
     return export_rows
 
 
+def _parse_review_reasons(value: object) -> list[str]:
+    """Normalizza i motivi di revisione salvati come JSON testuale."""
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str) and value.strip():
+        try:
+            parsed = json.loads(value)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return [value.strip()]
+        if isinstance(parsed, list):
+            return [str(item).strip() for item in parsed if str(item).strip()]
+    return []
+
+
+def _review_reasons_from_validation(validation: dict) -> list[str]:
+    warnings = validation.get("warnings") or []
+    reasons = [
+        str(warning).strip()
+        for warning in warnings
+        if isinstance(warning, str)
+        and (
+            "revisionare manualmente" in warning.lower()
+            or warning.startswith("RF-007:")
+        )
+    ]
+    if reasons:
+        return list(dict.fromkeys(reasons))
+    gaps = validation.get("critical_gaps") or []
+    return [f"Campo critico mancante: {gap}" for gap in gaps]
+
+
+def _with_review_disclaimer(
+    scheda: str,
+    review_status: str,
+    null_percentage: float | int | None,
+) -> str:
+    if review_status != REVIEW_STATUS_PENDING:
+        return scheda
+    percentage = float(null_percentage or 0)
+    return (
+        "# ⚠️ Scheda in revisione\n\n"
+        f"**Estrazione incompleta ({percentage:.0f}% di campi nulli). "
+        "Il matching è sospeso e questa scheda non va condivisa senza una verifica manuale.**\n\n"
+        "---\n\n"
+        + scheda
+    )
+
+
 def _scheda_or_cached(payload: dict, scheda_cached: str | None) -> str:
     """Rigenera la scheda on-read (giorni/urgenza non devono fossilizzarsi in cache).
     Usa scheda_cached solo come fallback se la generazione fallisce."""
@@ -275,6 +326,13 @@ def _dedupe_cards(cards: list[dict]) -> tuple[list[dict], int]:
                 for m in merged_matches
             )
             primary["color_class"] = get_color_class(primary["max_score"])
+        if primary.get("review_status") == REVIEW_STATUS_PENDING:
+            primary = dict(primary)
+            primary["matches"] = []
+            primary["max_score"] = 0
+            primary["raw_max_score"] = 0
+            primary["nessun_cliente_ammissibile"] = False
+            primary["color_class"] = get_color_class(0)
         merged_cards.append(primary)
 
     merged_cards.sort(key=lambda c: c["max_score"], reverse=True)
@@ -288,6 +346,7 @@ def _dashboard_payload() -> dict:
         all_bandi_rows = conn.execute(
             """
             SELECT id, titolo, ente, data_scadenza, json_completo, scheda_cached,
+                   review_status, null_percentage, review_reasons,
                    (pdf_original IS NOT NULL) AS has_pdf
             FROM bandi
             ORDER BY id DESC
@@ -305,6 +364,9 @@ def _dashboard_payload() -> dict:
             "json_completo": row["json_completo"],
             "scheda_cached": row.get("scheda_cached"),
             "has_pdf": bool(row.get("has_pdf")),
+            "review_status": row.get("review_status") or REVIEW_STATUS_VALIDATED,
+            "null_percentage": float(row.get("null_percentage") or 0),
+            "review_reasons": _parse_review_reasons(row.get("review_reasons")),
             "matches": [],
             "max_score": 0,
         }
@@ -321,6 +383,9 @@ def _dashboard_payload() -> dict:
                 "json_completo": row["json_completo"],
                 "scheda_cached": row.get("scheda_cached"),
                 "has_pdf": bool(row.get("has_pdf")),
+                "review_status": row.get("review_status") or REVIEW_STATUS_VALIDATED,
+                "null_percentage": float(row.get("null_percentage") or 0),
+                "review_reasons": _parse_review_reasons(row.get("review_reasons")),
                 "matches": [],
                 "max_score": row["score"],
             }
@@ -336,6 +401,7 @@ def _dashboard_payload() -> dict:
         except Exception:
             payload = {}
         bando_payload = payload.get("bando", {}) if isinstance(payload, dict) else {}
+        review_status = info.get("review_status") or REVIEW_STATUS_VALIDATED
 
         valore_contributo = bando_payload.get("contributo_max")
         contributo_max = f"€ {valore_contributo:,.0f}" if isinstance(valore_contributo, (int, float)) else "N/D"
@@ -423,10 +489,13 @@ def _dashboard_payload() -> dict:
             "nessun_cliente_ammissibile": nessun_cliente_ammissibile,
             "color_class": get_color_class(display_max_score),
             "has_constraints": bando_has_constraints(payload),
-            "matches": matches,
+            "matches": matches if review_status == REVIEW_STATUS_VALIDATED else [],
             "scheda": _scheda_or_cached(payload, info.get("scheda_cached")),
             "fonte_url": get_fonte_url(payload),
             "has_pdf": info["has_pdf"],
+            "review_status": review_status,
+            "null_percentage": float(info.get("null_percentage") or 0),
+            "review_reasons": info.get("review_reasons") or [],
         })
 
     cards, duplicates_count = _dedupe_cards(cards)
@@ -454,6 +523,7 @@ def api_dashboard_bando_detail(bando_id: int):
         row = conn.execute(
             """
             SELECT id, titolo, ente, data_scadenza, json_completo, scheda_cached,
+                   review_status, null_percentage, review_reasons,
                    (pdf_original IS NOT NULL) AS has_pdf
             FROM bandi
             WHERE id = %s
@@ -474,8 +544,10 @@ def api_dashboard_bando_detail(bando_id: int):
     if not isinstance(bando_data, dict):
         bando_data = {}
 
+    review_status = record.get("review_status") or REVIEW_STATUS_VALIDATED
     clienti_match = []
-    for cliente in list_clienti():
+    clienti_da_analizzare = list_clienti() if review_status == REVIEW_STATUS_VALIDATED else []
+    for cliente in clienti_da_analizzare:
         try:
             breakdown = get_score_breakdown(payload, cliente)
             breakdown_error = None
@@ -537,6 +609,9 @@ def api_dashboard_bando_detail(bando_id: int):
             "has_pdf": bool(record.get("has_pdf")),
             "scheda": _scheda_or_cached(payload, record.get("scheda_cached")),
             "dati": bando_data,
+            "review_status": review_status,
+            "null_percentage": float(record.get("null_percentage") or 0),
+            "review_reasons": _parse_review_reasons(record.get("review_reasons")),
         },
         "clienti": clienti_match,
     }
@@ -576,6 +651,7 @@ def api_bandi_list():
         rows = conn.execute(
             """
             SELECT id, titolo, ente, data_scadenza, contributo_max, regioni,
+                   review_status, null_percentage, review_reasons,
                    (pdf_original IS NOT NULL) AS has_pdf
             FROM bandi
             ORDER BY id DESC
@@ -586,8 +662,47 @@ def api_bandi_list():
         d = dict(row)
         d["urgenza"] = calcola_urgenza(d.get("data_scadenza"))
         d["giorni_alla_scadenza"] = giorni_alla_scadenza(d.get("data_scadenza"))
+        d["review_status"] = d.get("review_status") or REVIEW_STATUS_VALIDATED
+        d["null_percentage"] = float(d.get("null_percentage") or 0)
+        d["review_reasons"] = _parse_review_reasons(d.get("review_reasons"))
         result.append(d)
     return {"bandi": result}
+
+
+@app.post("/api/bandi/{bando_id}/valida", dependencies=[Depends(verify_api_key)])
+def api_bando_valida(bando_id: int):
+    """Conferma la revisione manuale e pubblica il bando nel matching."""
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT id, review_status FROM bandi WHERE id = %s",
+                (bando_id,),
+            ).fetchone()
+            if not row:
+                return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
+
+            conn.execute(
+                """UPDATE bandi
+                   SET review_status = %s, reviewed_at = NOW()
+                   WHERE id = %s""",
+                (REVIEW_STATUS_VALIDATED, bando_id),
+            )
+            # Elimina ogni eventuale risultato precedente prima del nuovo
+            # calcolo, così l'attivazione pubblica solo dati aggiornati.
+            conn.execute("DELETE FROM match_results WHERE bando_id = %s", (bando_id,))
+            conn.commit()
+            run_matching_for_bando(bando_id, conn)
+        return {
+            "status": REVIEW_STATUS_VALIDATED,
+            "bando_id": bando_id,
+            "matching_suspended": False,
+        }
+    except Exception as exc:
+        log_error(f"api_bando_valida({bando_id}): {exc}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Validazione del bando non riuscita. Riprova."},
+        )
 
 
 class MatchRunRequest(BaseModel):
@@ -672,14 +787,25 @@ def api_download_pdf_originale(bando_id: int):
 @app.get("/api/bandi/{bando_id}/scheda", dependencies=[Depends(verify_api_key)])
 def api_bando_scheda_json(bando_id: int):
     with get_connection() as conn:
-        row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
+        row = conn.execute(
+            """SELECT json_completo, scheda_cached, review_status,
+                      null_percentage, review_reasons
+               FROM bandi WHERE id = %s""",
+            (bando_id,),
+        ).fetchone()
     if not row:
         return JSONResponse(status_code=404, content={"detail": "Bando non trovato"})
     try:
         scheda = _scheda_or_cached(json.loads(row["json_completo"]), row["scheda_cached"])
     except Exception:
         return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
-    return {"bando_id": bando_id, "scheda": scheda}
+    return {
+        "bando_id": bando_id,
+        "scheda": scheda,
+        "review_status": row.get("review_status") or REVIEW_STATUS_VALIDATED,
+        "null_percentage": float(row.get("null_percentage") or 0),
+        "review_reasons": _parse_review_reasons(row.get("review_reasons")),
+    }
 
 
 @app.post("/api/bandi/{bando_id}/rigenera-scheda", dependencies=[Depends(verify_api_key)])
@@ -701,10 +827,19 @@ def api_rigenera_scheda(bando_id: int):
 @app.get("/api/bandi/{bando_id}/scheda.md", dependencies=[Depends(verify_api_key)])
 def api_download_scheda(bando_id: int):
     with get_connection() as conn:
-        row = conn.execute("SELECT json_completo, scheda_cached FROM bandi WHERE id = %s", (bando_id,)).fetchone()
+        row = conn.execute(
+            """SELECT json_completo, scheda_cached, review_status, null_percentage
+               FROM bandi WHERE id = %s""",
+            (bando_id,),
+        ).fetchone()
     if row:
         try:
             scheda = _scheda_or_cached(json.loads(row["json_completo"]), row["scheda_cached"])
+            scheda = _with_review_disclaimer(
+                scheda,
+                row.get("review_status") or REVIEW_STATUS_VALIDATED,
+                row.get("null_percentage"),
+            )
         except Exception:
             return JSONResponse(status_code=500, content={"detail": "JSON bando non valido"})
     else:
@@ -741,6 +876,17 @@ def _process_and_save_bando(
     frontend, che legge solo i campi che già conosce.
     """
     result: dict = {"raw_text_preview": text[:1000]}
+    early_classification = classify_non_compatible_document(raw_text=text)
+    if early_classification:
+        result.update({
+            "status": "non_compatibile",
+            "messaggio": "Documento non compatibile con BandoMatch",
+            "motivo_non_compatibile": early_classification["motivo"],
+            "tipo_documento": early_classification["tipo"],
+            "matching_suspended": True,
+        })
+        return result
+
     document_hash = compute_document_hash(text)
     try:
         existing_hash_id = find_duplicate_bando_by_hash(document_hash)
@@ -764,6 +910,19 @@ def _process_and_save_bando(
         data = validation["data"]
         bando_info = data.get("bando", {})
 
+        classification = classify_non_compatible_document(data, text)
+        if classification:
+            result.update({
+                "data": data,
+                "bando_info": bando_info,
+                "status": "non_compatibile",
+                "messaggio": "Documento non compatibile con BandoMatch",
+                "motivo_non_compatibile": classification["motivo"],
+                "tipo_documento": classification["tipo"],
+                "matching_suspended": True,
+            })
+            return result
+
         # La provenienza non va inferita dal contenuto del PDF: un URL scritto
         # nel documento può essere una home page generica o persino inventato.
         # Conserviamo invece l'indirizzo effettivamente usato dall'utente per
@@ -778,6 +937,16 @@ def _process_and_save_bando(
         result["errors"] = validation.get("errors", [])
         result["null_percentage"] = validation.get("null_percentage", 0)
         result["needs_manual_review"] = validation.get("needs_manual_review", False)
+        result["critical_gaps"] = validation.get("critical_gaps", [])
+        review_status = (
+            REVIEW_STATUS_PENDING
+            if result["needs_manual_review"]
+            else REVIEW_STATUS_VALIDATED
+        )
+        review_reasons = _review_reasons_from_validation(validation)
+        result["review_status"] = review_status
+        result["review_reasons"] = review_reasons
+        result["matching_suspended"] = review_status == REVIEW_STATUS_PENDING
 
         if bando_info.get("ateco_aperto_a_tutti") is False:
             escl = bando_info.get("note_esclusioni", {})
@@ -802,17 +971,31 @@ def _process_and_save_bando(
                 bando_id = save_bando_from_json(
                     data,
                     scheda=scheda,
+                    review_status=review_status,
+                    null_percentage=result["null_percentage"],
+                    review_reasons=review_reasons,
                     document_hash=document_hash,
                     pdf_bytes=pdf_bytes,
                     pdf_filename=pdf_filename,
                 )
-                with get_connection() as conn:
-                    run_matching_for_bando(bando_id, conn)
+                if review_status == REVIEW_STATUS_VALIDATED:
+                    with get_connection() as conn:
+                        run_matching_for_bando(bando_id, conn)
 
                 result["bando_id"] = bando_id
                 result["scadenza_estratta"] = bando_info.get("data_scadenza")
                 ok_fields, null_fields = fields_status(data)
-                log_prompt_run(filename=source_label, fields_ok=ok_fields, fields_null=null_fields, notes="Validazione OK")
+                log_note = (
+                    "Da revisionare: matching sospeso"
+                    if review_status == REVIEW_STATUS_PENDING
+                    else "Validazione OK: matching completato"
+                )
+                log_prompt_run(
+                    filename=source_label,
+                    fields_ok=ok_fields,
+                    fields_null=null_fields,
+                    notes=log_note,
+                )
 
                 result["scheda"] = scheda
             except Exception as exc:
@@ -982,7 +1165,7 @@ def api_clienti_list():
                 SELECT mr.cliente_id, mr.bando_id, b.json_completo
                 FROM match_results mr
                 JOIN bandi b ON b.id = mr.bando_id
-                WHERE mr.score > 0
+                WHERE mr.score > 0 AND b.review_status = 'validato'
                 """
             ).fetchall()
 
@@ -1037,7 +1220,9 @@ def api_cliente_bandi(cliente_id: int):
                    b.json_completo, (b.pdf_original IS NOT NULL) AS has_pdf
             FROM match_results mr
             JOIN bandi b ON b.id = mr.bando_id
-            WHERE mr.cliente_id = %s AND mr.score > 0
+            WHERE mr.cliente_id = %s
+              AND mr.score > 0
+              AND b.review_status = 'validato'
             ORDER BY mr.score DESC
             """,
             (cliente_id,),

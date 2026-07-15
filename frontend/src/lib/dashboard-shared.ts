@@ -43,6 +43,9 @@ export interface DashboardBandoCard {
   scheda: string
   fonte_url: string | null
   has_pdf: boolean
+  review_status: 'validato' | 'da_revisionare'
+  null_percentage: number
+  review_reasons: string[]
 }
 
 export interface DashboardData {
@@ -60,6 +63,7 @@ export function isExpiredCard(card: DashboardBandoCard): boolean {
 }
 
 export function hasEligibleClient(card: DashboardBandoCard): boolean {
+  if (card.review_status === 'da_revisionare') return false
   return card.matches.some(match =>
     match.ammissibilita?.ammissibile === true
     && match.breakdown.status !== 'da_verificare'
@@ -67,6 +71,7 @@ export function hasEligibleClient(card: DashboardBandoCard): boolean {
 }
 
 export function needsReview(card: DashboardBandoCard): boolean {
+  if (card.review_status === 'da_revisionare') return true
   if (hasEligibleClient(card)) return false
   return card.matches.some(match =>
     match.ammissibilita?.errore === true
@@ -76,6 +81,7 @@ export function needsReview(card: DashboardBandoCard): boolean {
 }
 
 export function dashboardCategory(card: DashboardBandoCard): DashboardCategory {
+  if (card.review_status === 'da_revisionare') return 'da_verificare'
   if (isExpiredCard(card)) return 'scaduti'
   if (hasEligibleClient(card)) return 'ammissibili'
   if (needsReview(card)) return 'da_verificare'
@@ -83,6 +89,7 @@ export function dashboardCategory(card: DashboardBandoCard): DashboardCategory {
 }
 
 export function bestMatch(card: DashboardBandoCard): DashboardMatch | null {
+  if (card.review_status === 'da_revisionare') return null
   const eligible = card.matches
     .filter(match => match.ammissibilita?.ammissibile === true && match.breakdown.status !== 'da_verificare')
     .sort((a, b) => b.score - a.score)

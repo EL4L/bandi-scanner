@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { apiHref } from '../apiKey'
-import { useDashboardBandoDetail } from '../lib/queries'
+import { apiHref, withApiKey } from '../apiKey'
+import { toast } from '../toast'
+import { useApiMutation, useDashboardBandoDetail } from '../lib/queries'
 import { BreakdownBar, IconArrowLeft, IconDownload, IconExternal, scoreCircleClass } from '../lib/clienti-shared'
 import type { Ammissibilita, ScoreBreakdown } from '../lib/dashboard-shared'
 
@@ -31,6 +32,9 @@ interface BandoDetailResponse {
     has_pdf: boolean
     scheda: string
     dati: Record<string, unknown>
+    review_status: 'validato' | 'da_revisionare'
+    null_percentage: number
+    review_reasons: string[]
   }
   clienti: AnalisiCliente[]
 }
@@ -137,6 +141,11 @@ export default function DashboardBandoDetail() {
   const bandoId = params.bandoId && /^\d+$/.test(params.bandoId) ? Number(params.bandoId) : null
   const { data, isLoading, error } = useDashboardBandoDetail<BandoDetailResponse>(bandoId)
   const [selectedClienteId, setSelectedClienteId] = useState<number | null>(null)
+  const validateMutation = useApiMutation(async (id: number) => {
+    const response = await fetch(`/api/bandi/${id}/valida`, withApiKey({ method: 'POST' }))
+    if (!response.ok) throw new Error()
+    return response.json()
+  })
 
   useEffect(() => {
     if (data?.clienti.length && selectedClienteId === null) setSelectedClienteId(data.clienti[0].id)
@@ -165,6 +174,23 @@ export default function DashboardBandoDetail() {
   const strumenti = agevolazioneLines(d.agevolazioni)
   const fonti = Array.isArray(d.fonti) ? d.fonti.filter(item => item && typeof item === 'object') as Array<Record<string, unknown>> : []
   const anzianita = d.anzianita_impresa && typeof d.anzianita_impresa === 'object' ? d.anzianita_impresa as Record<string, unknown> : {}
+  const inRevisione = bando.review_status === 'da_revisionare'
+  const nullPercentageLabel = bando.null_percentage.toFixed(0)
+  const nullPercentageWithArticle = nullPercentageLabel.startsWith('8')
+    ? `L'${nullPercentageLabel}%`
+    : `Il ${nullPercentageLabel}%`
+  const visibleReviewReasons = bando.review_reasons.filter(reason => !reason.startsWith('RF-007:'))
+
+  const handleValidate = async () => {
+    if (!window.confirm('Confermi di aver verificato il documento originale? Il matching verrà attivato per tutti i clienti.')) return
+    try {
+      await validateMutation.mutateAsync(bando.id)
+      setSelectedClienteId(null)
+      toast.success('Bando validato. Matching attivato.')
+    } catch {
+      toast.error('Validazione non riuscita. Riprova.')
+    }
+  }
 
   const requisitiExtra = [
     typeof d.fatturato_max === 'number' ? `Fatturato massimo: ${formatMoney(d.fatturato_max)}` : null,
@@ -191,14 +217,32 @@ export default function DashboardBandoDetail() {
         </div>
       </header>
 
-      <section className="analysis-client-picker">
+      {inRevisione && (
+        <section className="review-gate" role="status">
+          <div>
+            <span className="badge badge-warning">Da revisionare</span>
+            <h2>Matching sospeso</h2>
+            <p>
+              {nullPercentageWithArticle} dei campi è nullo o sono presenti dati critici mancanti.
+              Verifica il PDF prima di pubblicare la compatibilità ai clienti.
+            </p>
+            {visibleReviewReasons.length > 0 && <InfoList items={visibleReviewReasons} />}
+          </div>
+          <button className="btn btn-primary" onClick={handleValidate} disabled={validateMutation.isPending}>
+            {validateMutation.isPending ? <div className="spinner spinner--small" /> : null}
+            Conferma e attiva matching
+          </button>
+        </section>
+      )}
+
+      {!inRevisione && <section className="analysis-client-picker">
         <div><label htmlFor="analysis-cliente">Cliente da analizzare</label><p>Seleziona un profilo per aggiornare score, requisiti ed esclusioni.</p></div>
         {data.clienti.length > 0 ? (
           <select id="analysis-cliente" value={selectedClienteId ?? ''} onChange={event => setSelectedClienteId(Number(event.target.value))}>
             {data.clienti.map(cliente => <option key={cliente.id} value={cliente.id}>{cliente.ragione_sociale} · ATECO {cliente.codice_ateco || 'N/D'}</option>)}
           </select>
         ) : <span className="analysis-empty-value">Nessun cliente presente in anagrafica.</span>}
-      </section>
+      </section>}
 
       {selectedCliente && status && (
         <section className="analysis-score-grid">
@@ -230,7 +274,7 @@ export default function DashboardBandoDetail() {
           <InfoValue label="Ente" value={bando.ente || null} />
           <InfoValue label="Data di pubblicazione" value={typeof d.data_pubblicazione === 'string' ? d.data_pubblicazione : null} />
           <InfoValue label="Modalità" value={typeof d.modalita_presentazione === 'string' ? humanize(d.modalita_presentazione) : null} />
-          <InfoValue label="Territorio" value={regioni.length > 0 ? regioni.join(', ') : 'Tutto il territorio nazionale'} />
+          <InfoValue label="Territorio" value={regioni.length > 0 ? regioni.join(', ') : 'Dato non rilevato'} />
           {attivita.length > 0 && <><h3>Interventi finanziabili</h3><InfoList items={attivita} /></>}
         </InfoCard>
 
@@ -244,7 +288,7 @@ export default function DashboardBandoDetail() {
         </InfoCard>
 
         <InfoCard title="Requisiti di accesso" subtitle="Profilo delle imprese destinatarie">
-          <InfoValue label="Regioni ammesse" value={regioni.length > 0 ? regioni.join(', ') : 'Tutte le regioni'} />
+          <InfoValue label="Regioni ammesse" value={regioni.length > 0 ? regioni.join(', ') : 'Dato non rilevato'} />
           <InfoValue label="Dimensioni" value={dimensioni.length > 0 ? dimensioni.join(', ') : null} />
           <InfoValue label="Forme giuridiche" value={forme.length > 0 ? forme.join(', ') : null} />
           <InfoValue label="ATECO" value={d.ateco_aperto_a_tutti === true ? 'Aperto a tutti i settori' : ateco.join(', ') || null} />

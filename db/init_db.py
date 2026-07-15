@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS bandi (
     document_hash TEXT,
     pdf_original BYTEA,
     pdf_filename TEXT,
+    review_status TEXT NOT NULL DEFAULT 'validato',
+    null_percentage REAL NOT NULL DEFAULT 0,
+    review_reasons TEXT NOT NULL DEFAULT '[]',
+    reviewed_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -83,6 +87,16 @@ def _migrate_schema(conn) -> None:
         cur.execute("ALTER TABLE bandi ADD COLUMN pdf_original BYTEA")
     if "pdf_filename" not in bandi_cols:
         cur.execute("ALTER TABLE bandi ADD COLUMN pdf_filename TEXT")
+    if "review_status" not in bandi_cols:
+        # I bandi preesistenti erano giÃ  pubblicati nel matching: mantenerli
+        # validati evita di nasconderli retroattivamente al primo deploy.
+        cur.execute("ALTER TABLE bandi ADD COLUMN review_status TEXT NOT NULL DEFAULT 'validato'")
+    if "null_percentage" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN null_percentage REAL NOT NULL DEFAULT 0")
+    if "review_reasons" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN review_reasons TEXT NOT NULL DEFAULT '[]'")
+    if "reviewed_at" not in bandi_cols:
+        cur.execute("ALTER TABLE bandi ADD COLUMN reviewed_at TIMESTAMP")
     # PostgreSQL consente più valori NULL in un indice UNIQUE: i vecchi bandi
     # possono quindi restare senza hash, mentre ogni nuovo documento è unico.
     cur.execute(

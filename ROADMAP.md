@@ -56,6 +56,12 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
   Score 0 comunica "incompatibile", non "dati insufficienti". Fix anche per `bando_has_constraints` che ignora le `attivita_ammesse` testuali, generando falsi ambigui. Restituire uno stato terzo esplicito con badge dedicato in UI.
   - Affinamento UX: badge Da verificare sostituisce lo score (non affianca)
 
+- [x] **#23 — Quarantena dei bandi incompleti e matching sospeso** `M` `Estrazione/Scoring/UX`
+  Un bando con più del 50% di campi nulli o gap critici veniva segnalato dal validator ma comunque salvato come normale, abbinato ai clienti ed esportato. Ora viene persistito come `da_revisionare`: resta consultabile con PDF e scheda, ma non genera score, conteggi o righe CSV. Dashboard, archivio e stepper mostrano lo stato; la pagina di revisione elenca i motivi e richiede una conferma manuale prima di attivare e ricalcolare il matching. Migrazione retrocompatibile: i bandi esistenti restano `validato`. Suite completa: 357 test verdi, 17 golden test saltati; frontend build pulita.
+
+- [x] **#24 — Esclusione preventiva di concorsi e selezioni del personale** `S` `Estrazione/Scoring/UX`
+  I concorsi pubblici potevano essere interpretati come bandi aziendali poveri di vincoli e finire nello stato “Da verificare”. Il nuovo classificatore prudente riconosce concorsi, procedure selettive e graduatorie del personale dall'intestazione o dal titolo estratto. La risposta diventa `non_compatibile`, il frontend mostra “Documento non compatibile con BandoMatch” e il flusso termina senza salvataggio, AI o matching quando il segnale è già presente nel testo. Il concorso INPS #19 è stato eliminato insieme ai 5 match associati. Suite completa: 363 test verdi, 17 golden test saltati; build frontend pulita.
+
 ---
 
 ## Fase 3 — P2 · Qualità e robustezza
@@ -146,3 +152,5 @@ Analisi completa: vedi `AUDIT_BANDI_SCANNER.md`.
 | 20 | Refactoring `lib/icons`, `lib/format`, cartelle | Frontend | M | P3 |
 | 21 | Colonna match/score e regioni in tabella Bandi | UX/Design | M | P3 |
 | 22 | Vista cliente come route + stepper onesto | UX/Design | M | P3 |
+| 23 | Quarantena bandi incompleti + matching sospeso | Estrazione/Scoring/UX | M | P1 |
+| 24 | Esclusione concorsi e selezioni del personale | Estrazione/Scoring/UX | S | P1 |

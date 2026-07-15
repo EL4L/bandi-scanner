@@ -2,6 +2,7 @@
 Usa le fixture client e mock_db da conftest.py.
 """
 from collections import defaultdict, deque
+from copy import deepcopy
 from unittest.mock import patch
 
 import pytest
@@ -128,6 +129,24 @@ def test_get_bandi_200(client):
     response = client.get("/api/bandi")
     assert response.status_code == 200
     assert "bandi" in response.json()
+
+
+def test_post_valida_bando_attiva_matching(client, mock_db):
+    mock_db.execute.return_value.fetchone.return_value = {
+        "id": 7,
+        "review_status": "da_revisionare",
+    }
+
+    with patch("main.run_matching_for_bando") as mock_match:
+        response = client.post("/api/bandi/7/valida")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "validato"
+    assert response.json()["matching_suspended"] is False
+    mock_match.assert_called_once_with(7, mock_db)
+    executed_queries = [call.args[0] for call in mock_db.execute.call_args_list]
+    assert any("UPDATE bandi" in query for query in executed_queries)
+    assert any("DELETE FROM match_results" in query for query in executed_queries)
 
 
 def test_download_pdf_originale(client, mock_db):
@@ -270,6 +289,34 @@ def test_get_dashboard_include_bando_senza_clienti(client, mock_db):
     assert len(cards) == 1
     assert cards[0]["id"] == 7
     assert cards[0]["matches"] == []
+
+
+def test_get_dashboard_bando_in_revisione_non_pubblica_score(client, mock_db):
+    import json as jsonlib
+
+    mock_db.execute.return_value.fetchall.return_value = [{
+        "id": 8,
+        "titolo": "Bando incompleto",
+        "ente": "Ente Test",
+        "data_scadenza": None,
+        "json_completo": jsonlib.dumps({"bando": {"titolo": "Bando incompleto"}}),
+        "scheda_cached": None,
+        "has_pdf": True,
+        "review_status": "da_revisionare",
+        "null_percentage": 65.0,
+        "review_reasons": jsonlib.dumps(["Campi critici mancanti"]),
+    }]
+
+    with patch("main.count_bandi", return_value=1), patch("main.load_dashboard_rows", return_value=[]):
+        response = client.get("/api/dashboard")
+
+    assert response.status_code == 200
+    card = response.json()["cards"][0]
+    assert card["review_status"] == "da_revisionare"
+    assert card["null_percentage"] == 65.0
+    assert card["review_reasons"] == ["Campi critici mancanti"]
+    assert card["matches"] == []
+    assert card["max_score"] == 0
 
 
 def test_get_dashboard_check_ammissibilita_errore_non_fail_open(client):
@@ -553,13 +600,40 @@ def test_post_estrazione_pdf_vuoto(client):
     assert response.json()["empty_pdf"] is True
 
 
-def test_post_estrazione_successo(client, mock_db):
-    """Flusso completo: estrazione ok, nessun duplicato, salvataggio riuscito."""
+def test_post_estrazione_concorso_inps_non_salva_e_non_esegue_matching(client):
+    testo = (
+        "Concorso pubblico, per esami, per l'assunzione a tempo indeterminato "
+        "di 499 unità di personale nei ruoli dell'INPS. "
+    ) * 3
+    with patch("main.extract_text_from_pdf", return_value=testo), \
+         patch("main.find_duplicate_bando_by_hash") as mock_hash, \
+         patch("main.extract_bando_data") as mock_extract, \
+         patch("main.save_bando_from_json") as mock_save, \
+         patch("main.run_matching_for_bando") as mock_match:
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("concorso-inps.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "non_compatibile"
+    assert data["messaggio"] == "Documento non compatibile con BandoMatch"
+    assert data["matching_suspended"] is True
+    assert "bando_id" not in data
+    mock_hash.assert_not_called()
+    mock_extract.assert_not_called()
+    mock_save.assert_not_called()
+    mock_match.assert_not_called()
+
+
+def test_post_estrazione_incompleta_salva_bozza_e_sospende_matching(client, mock_db):
+    """Oltre il 50% di null: salva il documento ma non pubblica match."""
     with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
          patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
          patch("main.find_duplicate_bando", return_value=None), \
          patch("main.save_bando_from_json", return_value=123) as mock_save, \
-         patch("main.run_matching_for_bando"):
+         patch("main.run_matching_for_bando") as mock_match:
         response = client.post(
             "/api/estrazione",
             files={"file": ("bando.pdf", VALID_PDF_BYTES, "application/pdf")},
@@ -569,11 +643,45 @@ def test_post_estrazione_successo(client, mock_db):
     assert data["bando_id"] == 123
     assert "scheda" in data
     assert data["errors"] == []
+    assert data["needs_manual_review"] is True
+    assert data["review_status"] == "da_revisionare"
+    assert data["matching_suspended"] is True
+    mock_match.assert_not_called()
     saved = mock_save.call_args.args[0]
     assert saved["bando"]["link_fonte_ufficiale"] is None
     assert saved["bando"]["url_documento_origine"] is None
     assert mock_save.call_args.kwargs["pdf_bytes"] == VALID_PDF_BYTES
     assert mock_save.call_args.kwargs["pdf_filename"] == "bando.pdf"
+    assert mock_save.call_args.kwargs["review_status"] == "da_revisionare"
+    assert mock_save.call_args.kwargs["null_percentage"] > 50
+
+
+def test_post_estrazione_validata_avvia_matching(client, mock_db):
+    validation = {
+        "data": deepcopy(BANDO_ESTRATTO),
+        "errors": [],
+        "warnings": [],
+        "null_percentage": 20.0,
+        "needs_manual_review": False,
+        "critical_gaps": [],
+    }
+    with patch("main.extract_text_from_pdf", return_value="testo del bando " * 10), \
+         patch("main.extract_bando_data", return_value=BANDO_ESTRATTO), \
+         patch("main.validate_bando", return_value=validation), \
+         patch("main.find_duplicate_bando", return_value=None), \
+         patch("main.save_bando_from_json", return_value=124) as mock_save, \
+         patch("main.run_matching_for_bando") as mock_match:
+        response = client.post(
+            "/api/estrazione",
+            files={"file": ("bando-validato.pdf", VALID_PDF_BYTES, "application/pdf")},
+        )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["review_status"] == "validato"
+    assert data["matching_suspended"] is False
+    assert mock_save.call_args.kwargs["review_status"] == "validato"
+    mock_match.assert_called_once()
 
 
 def test_post_estrazione_duplicato(client, mock_db):

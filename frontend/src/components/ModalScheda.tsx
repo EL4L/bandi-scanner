@@ -8,6 +8,9 @@ export interface SchedaModalData {
   scheda: string
   fonte_url?: string | null
   has_pdf?: boolean
+  review_status?: 'validato' | 'da_revisionare'
+  null_percentage?: number
+  review_reasons?: string[]
 }
 
 function IconDownload() {
@@ -58,6 +61,15 @@ export function ModalScheda({ data, onClose }: Props) {
           </div>
         </div>
         <div className="modal-body">
+          {data.review_status === 'da_revisionare' && (
+            <div className="alert alert-warning review-modal-alert" role="status">
+              <strong>Scheda in revisione · {(data.null_percentage ?? 0).toFixed(0)}% di campi nulli</strong>
+              <p>Il matching è sospeso. Non condividere questa scheda senza aver verificato il documento originale.</p>
+              {data.review_reasons && data.review_reasons.length > 0 && (
+                <ul>{data.review_reasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+              )}
+            </div>
+          )}
           <div className="scheda-content">
             {data.scheda
               ? renderMarkdown(data.scheda)

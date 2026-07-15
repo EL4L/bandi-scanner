@@ -7,14 +7,21 @@ import { useInvalidateAll } from '../lib/queries'
 interface ExtractionResult {
   filename: string
   size_kb: number
-  status?: 'duplicato'
+  status?: 'duplicato' | 'non_compatibile'
   messaggio?: string
+  motivo_non_compatibile?: string
+  tipo_documento?: string
   empty_pdf?: boolean
   save_error?: string
   extraction_error?: string
   bando_id?: number
   scadenza_estratta?: string
   null_percentage?: number
+  needs_manual_review?: boolean
+  critical_gaps?: string[]
+  review_status?: 'validato' | 'da_revisionare'
+  review_reasons?: string[]
+  matching_suspended?: boolean
   warnings?: string[]
   errors?: string[]
   scheda?: string
@@ -22,14 +29,16 @@ interface ExtractionResult {
   data?: Record<string, unknown>
 }
 
-type StepStatus = 'done' | 'active' | 'pending'
+type StepStatus = 'done' | 'active' | 'pending' | 'paused' | 'not_applicable'
 
 function uploadStepStatuses(uploading: boolean, result: ExtractionResult | null): StepStatus[] {
   if (uploading) return ['done', 'active', 'pending']
   if (!result) return ['pending', 'pending', 'pending']
+  if (result.status === 'non_compatibile') return ['done', 'done', 'not_applicable']
   const extractionOk = !result.empty_pdf && !result.extraction_error
-  const matchingDone = extractionOk && !!result.bando_id && !result.errors?.length && result.status !== 'duplicato'
-  return ['done', extractionOk ? 'done' : 'pending', matchingDone ? 'done' : 'pending']
+  const saved = extractionOk && !!result.bando_id && !result.errors?.length && result.status !== 'duplicato'
+  const matchingDone = saved && !result.matching_suspended
+  return ['done', extractionOk ? 'done' : 'pending', result.matching_suspended ? 'paused' : matchingDone ? 'done' : 'pending']
 }
 
 function IconUpload() {
@@ -126,14 +135,22 @@ function IconInfo() {
 }
 
 function UploadProgress({ statuses }: { statuses: StepStatus[] }) {
-  const labels = ['PDF caricato', 'Estrazione AI', 'Matching automatico']
+  const labels = [
+    'PDF caricato',
+    'Estrazione AI',
+    statuses[2] === 'paused'
+      ? 'Matching sospeso'
+      : statuses[2] === 'not_applicable'
+        ? 'Matching non applicabile'
+        : 'Matching automatico',
+  ]
   return (
     <div className="progress-steps">
       {labels.map((label, i) => (
         <div key={label} style={{ display: 'flex', alignItems: 'center', flex: i < labels.length - 1 ? 1 : undefined }}>
-          <div className={`progress-step${statuses[i] === 'done' ? ' done' : ''}${statuses[i] === 'active' ? ' active' : ''}`}>
+          <div className={`progress-step${statuses[i] === 'done' ? ' done' : ''}${statuses[i] === 'active' ? ' active' : ''}${statuses[i] === 'paused' ? ' paused' : ''}${statuses[i] === 'not_applicable' ? ' not-applicable' : ''}`}>
             <div className="progress-step-dot">
-              {statuses[i] === 'done' ? <IconCheck /> : i + 1}
+              {statuses[i] === 'done' ? <IconCheck /> : statuses[i] === 'paused' || statuses[i] === 'not_applicable' ? <IconWarning /> : i + 1}
             </div>
             <span className="progress-step-label">{label}</span>
           </div>
@@ -215,6 +232,11 @@ export default function CaricaBando() {
       setResult(data)
       if (data.status === 'duplicato') {
         toast.info('Bando già presente in archivio.')
+      } else if (data.status === 'non_compatibile') {
+        toast.info('Documento non compatibile con BandoMatch.')
+      } else if (data.bando_id && data.needs_manual_review) {
+        toast.info('Bando salvato come bozza. Matching sospeso.')
+        invalidateAll()
       } else if (data.bando_id && !data.errors?.length) {
         toast.success('Bando salvato con successo.')
         invalidateAll()
@@ -260,6 +282,11 @@ export default function CaricaBando() {
       setResult(data)
       if (data.status === 'duplicato') {
         toast.info('Bando già presente in archivio.')
+      } else if (data.status === 'non_compatibile') {
+        toast.info('Documento non compatibile con BandoMatch.')
+      } else if (data.bando_id && data.needs_manual_review) {
+        toast.info('Bando salvato come bozza. Matching sospeso.')
+        invalidateAll()
       } else if (data.bando_id && !data.errors?.length) {
         toast.success('Bando salvato con successo.')
         invalidateAll()
@@ -286,7 +313,11 @@ export default function CaricaBando() {
   }
 
   const isDuplicate = result?.status === 'duplicato'
-  const success = result && result.bando_id && !result.errors?.length && !isDuplicate
+  const isNonCompatible = result?.status === 'non_compatibile'
+  const saved = result && result.bando_id && !result.errors?.length && !isDuplicate
+  const pendingReview = !!saved && result.needs_manual_review === true
+  const success = !!saved && !pendingReview
+  const visibleReviewReasons = result?.review_reasons?.filter(reason => !reason.startsWith('RF-007:')) ?? []
 
   return (
     <div>
@@ -545,6 +576,31 @@ export default function CaricaBando() {
               {result.scadenza_estratta && <> Scadenza: <strong>{result.scadenza_estratta}</strong>.</>}
             </div>
           )}
+          {isNonCompatible && (
+            <div className="alert alert-warning non-compatible-alert" role="status">
+              <IconWarning />
+              <div>
+                <strong>Documento non compatibile con BandoMatch</strong>
+                <p>{result.motivo_non_compatibile || 'Il documento non è rivolto al finanziamento di imprese.'}</p>
+                <p>Il file non è stato salvato e non è stato eseguito alcun matching con i clienti.</p>
+              </div>
+            </div>
+          )}
+          {pendingReview && (
+            <div className="alert alert-warning review-upload-alert" role="status">
+              <IconWarning />
+              <div>
+                <strong>Bando salvato come bozza</strong>
+                <p>
+                  Estrazione incompleta: {(result.null_percentage ?? 0).toFixed(0)}% dei campi non rilevati.
+                  Il matching è sospeso fino alla revisione manuale.
+                </p>
+                {visibleReviewReasons.length > 0 && (
+                  <ul>{visibleReviewReasons.map((reason, index) => <li key={index}>{reason}</li>)}</ul>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* File info */}
           <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
@@ -563,7 +619,7 @@ export default function CaricaBando() {
           </div>
 
           {/* Warnings */}
-          {result.warnings && result.warnings.length > 0 && (
+          {!pendingReview && result.warnings && result.warnings.length > 0 && (
             <div className="card" style={{ marginBottom: 'var(--space-4)' }}>
               <p className="result-section-title">Avvertenze</p>
               <ul style={{ margin: 0, paddingLeft: 'var(--space-5)' }}>
@@ -589,9 +645,11 @@ export default function CaricaBando() {
             <button className="btn btn-primary" onClick={handleReset}>
               <IconUpload /> Carica un altro bando
             </button>
-            {success && (
+            {saved && (
               <>
-                <a href="/bandi" className="btn btn-primary">Vai ai Bandi →</a>
+                {pendingReview && result.bando_id
+                  ? <a href={`/dashboard/bandi/${result.bando_id}`} className="btn btn-primary">Revisiona il bando →</a>
+                  : <a href="/bandi" className="btn btn-primary">Vai ai Bandi →</a>}
                 <a href="/" className="btn">Vai alla Dashboard</a>
               </>
             )}

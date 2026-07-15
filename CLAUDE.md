@@ -116,6 +116,10 @@ ANTHROPIC_API_KEY=     # Facoltativo — non usato in produzione
 | dimensione | TEXT | Stringa CSV: "micro,piccola,media,grande" |
 | contributo_max | REAL | Euro |
 | json_completo | TEXT NOT NULL | Payload completo dell'estrazione |
+| review_status | TEXT NOT NULL | `validato` / `da_revisionare`; default `validato` per retrocompatibilità |
+| null_percentage | REAL NOT NULL | Percentuale dei campi vuoti rilevata dal validator |
+| review_reasons | TEXT NOT NULL | Array JSON serializzato con i motivi della revisione |
+| reviewed_at | TIMESTAMP | Data dell'eventuale conferma manuale |
 | created_at | TIMESTAMP | |
 
 ### Tabella `match_results`
@@ -144,6 +148,7 @@ ANTHROPIC_API_KEY=     # Facoltativo — non usato in produzione
 | GET | `/api/bandi` | Lista bandi con urgenza e giorni alla scadenza |
 | GET | `/api/bandi/{id}/scheda` | Scheda bando in JSON |
 | GET | `/api/bandi/{id}/scheda.md` | Scarica scheda come markdown |
+| POST | `/api/bandi/{id}/valida` | Conferma la revisione manuale e attiva il matching |
 | DELETE | `/api/bandi/{id}` | Elimina bando e relativi match |
 | POST | `/api/bandi/{id}/rigenera-scheda` | Rigenera la scheda markdown cached |
 
@@ -263,11 +268,14 @@ Score 0-100, calcolato da `calculate_score(bando, cliente)`:
 ### Estrazione PDF
 1. Upload PDF via `POST /api/estrazione`
 2. `extract_text_from_pdf()` — PyMuPDF, lancia `EmptyPDFException` se < 50 caratteri; l'estrazione AI usa blocchi sovrapposti da circa 60.000 caratteri e copertura integrale del documento
-3. `extract_bando_data()` — chiama DeepSeek via OpenRouter (retry 3x con 5 min tra tentativi)
-4. `validate_bando()` — struttura + formato + logica; se >50% null → `needs_manual_review`
-5. Fallback: se `data_scadenza` vuota, `date_infer.py` cerca date nel testo tramite regex + pesi keyword
-6. `save_bando_from_json()` — salva in DB; se duplicato (stesso titolo+ente) → segnalazione senza salvataggio
-7. `run_matching_for_bando()` — calcola e salva score per tutti i clienti
+3. `classify_non_compatible_document()` controlla l'intestazione: concorsi, selezioni e graduatorie del personale restituiscono `status=non_compatibile` e terminano il flusso senza salvataggio né matching
+4. `extract_bando_data()` — chiama DeepSeek via OpenRouter (retry 3x con 5 min tra tentativi)
+5. `validate_bando()` — struttura + formato + logica; se >50% null o ci sono gap critici → `needs_manual_review`
+6. Dopo la validazione, il classificatore verifica anche il titolo strutturato per intercettare formulazioni non riconoscibili dall'intestazione grezza
+7. Fallback interno alla validazione: se `data_scadenza` è vuota, `date_infer.py` cerca date nel testo tramite regex + pesi keyword
+8. `save_bando_from_json()` — salva in DB; se duplicato (stesso titolo+ente) → segnalazione senza salvataggio
+9. Se `needs_manual_review=true`, salva come `da_revisionare` e sospende matching, conteggi ed export
+10. Se validato subito o confermato via `POST /api/bandi/{id}/valida`, `run_matching_for_bando()` calcola e salva gli score
 
 ### Matching batch
 1. `POST /api/match/run` con `soglia_minima` (default 0)
@@ -343,7 +351,7 @@ python db/init_db.py
 
 ## Riferimenti esterni
 
-- **`ROADMAP.md`** — roadmap interventi attiva (22 interventi #1–#22,
+- **`ROADMAP.md`** — roadmap interventi attiva (24 interventi #1–#24,
   ordinati per priorità P0→P3). Leggerla prima di qualsiasi modifica al codice.
 - **`audit-bandi-scanner2.md`** — audit tecnico completo (estrazione, scoring,
   schede, frontend, design). Consultarlo per il dettaglio e il codice

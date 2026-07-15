@@ -622,8 +622,18 @@ def check_ammissibilita(bando_json: dict[str, Any], cliente: dict[str, Any]) -> 
 
 def run_matching_for_bando(bando_id: int, conn: Any, soglia_minima: int = 0) -> None:
     try:
-        row = conn.execute("SELECT json_completo FROM bandi WHERE id = %s", (bando_id,)).fetchone()
+        row = conn.execute(
+            "SELECT json_completo, review_status FROM bandi WHERE id = %s",
+            (bando_id,),
+        ).fetchone()
         if not row: return
+        review_status = row.get("review_status", "validato")
+        if review_status != "validato":
+            # Un bando in revisione non deve conservare match calcolati in
+            # precedenza: `null` significa dato sconosciuto, non via libera.
+            conn.execute("DELETE FROM match_results WHERE bando_id = %s", (bando_id,))
+            conn.commit()
+            return
         payload = json.loads(row["json_completo"])
         bando_data = payload if isinstance(payload, dict) else {}
         clienti = conn.execute("SELECT * FROM clienti").fetchall()
@@ -1194,11 +1204,13 @@ def load_dashboard_rows(conn: Any) -> list[dict[str, Any]]:
     rows = conn.execute(
         '''SELECT mr.bando_id, mr.cliente_id, mr.score, mr.data_match,
         b.titolo AS bando_titolo, b.ente AS bando_ente, b.data_scadenza, b.json_completo, b.scheda_cached,
+        b.review_status, b.null_percentage, b.review_reasons,
         (b.pdf_original IS NOT NULL) AS has_pdf,
         c.ragione_sociale AS cliente_nome, c.codice_ateco AS cliente_codice_ateco, c.descrizione_attivita AS cliente_descrizione_attivita,
         c.regione AS cliente_regione, c.fatturato AS cliente_fatturato, c.dimensione_impresa AS cliente_dimensione_impresa,
         c.data_costituzione AS cliente_data_costituzione, c.numero_dipendenti AS cliente_numero_dipendenti, c.forma_giuridica AS cliente_forma_giuridica
         FROM match_results mr JOIN bandi b ON b.id = mr.bando_id JOIN clienti c ON c.id = mr.cliente_id
+        WHERE b.review_status = 'validato'
         ORDER BY mr.score DESC, LOWER(b.titolo)'''
     ).fetchall()
     result = []

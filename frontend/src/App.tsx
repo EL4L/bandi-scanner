@@ -84,10 +84,6 @@ function Sidebar() {
           <IconUpload /> Carica Bando
         </NavLink>
       </nav>
-
-      <div className="sidebar-footer">
-        <p className="sidebar-version">BandoMatch AI · v1.0</p>
-      </div>
     </aside>
   )
 }

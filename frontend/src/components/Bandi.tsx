@@ -13,13 +13,17 @@ interface Bando {
   giorni_alla_scadenza: number | null
   regioni: string | null
   has_pdf: boolean
+  review_status: 'validato' | 'da_revisionare'
+  null_percentage: number
+  review_reasons: string[]
 }
 
-type QuickFilter = 'tutti' | 'attivi' | 'scaduti'
+type QuickFilter = 'tutti' | 'attivi' | 'da_revisionare' | 'scaduti'
 type SortKey = 'scadenza' | 'contributo'
 type SortDir = 'asc' | 'desc'
 
 type SchedaModal = SchedaModalData
+const EMPTY_BANDI: Bando[] = []
 
 function isExpired(b: Bando): boolean {
   return b.giorni_alla_scadenza !== null && b.giorni_alla_scadenza < 0
@@ -85,18 +89,21 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
 }) {
   const isConfirming = confirmDeleteId === b.id
   const scadenzaStr = formatDateIT(b.data_scadenza)
+  const inRevisione = b.review_status === 'da_revisionare'
   return (
     <tr style={dimmed ? { opacity: 0.52, color: 'var(--color-text-muted)' } : undefined}>
       <td className="bandi-title-cell">
-        <button
-          className="td-title-link"
-          style={dimmed ? { color: 'var(--color-text-muted)' } : undefined}
-          onClick={() => onScheda(b)}
-          disabled={schedaLoading === b.id}
-          title={b.titolo ?? `Bando #${b.id}`}
-        >
-          {b.titolo ?? `Bando #${b.id}`}
-        </button>
+        <div className="bandi-title-stack">
+          <button
+            className="td-title-link"
+            style={dimmed ? { color: 'var(--color-text-muted)' } : undefined}
+            onClick={() => onScheda(b)}
+            disabled={schedaLoading === b.id}
+            title={b.titolo ?? `Bando #${b.id}`}
+          >
+            {b.titolo ?? `Bando #${b.id}`}
+          </button>
+        </div>
       </td>
       <td className="td-muted bandi-ente-cell">{b.ente ?? '—'}</td>
       <td className="bandi-scadenza-cell">
@@ -127,15 +134,19 @@ function BandoRow({ b, dimmed, schedaLoading, onScheda, confirmDeleteId, onDelet
           </div>
         ) : (
           <div className="btn-group bandi-actions-default">
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => onScheda(b)}
-              disabled={schedaLoading === b.id}
-            >
-              {schedaLoading === b.id
-                ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                : 'Scheda'}
-            </button>
+            {inRevisione ? (
+              <a className="btn btn-sm btn-primary" href={`/dashboard/bandi/${b.id}`}>Revisiona</a>
+            ) : (
+              <button
+                className="btn btn-sm btn-primary"
+                onClick={() => onScheda(b)}
+                disabled={schedaLoading === b.id}
+              >
+                {schedaLoading === b.id
+                  ? <div className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                  : 'Scheda'}
+              </button>
+            )}
             {b.has_pdf ? (
               <a
                 href={apiHref(`/api/bandi/${b.id}/pdf`)}
@@ -220,7 +231,7 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
 // ── Main component ─────────────────────────────────────────
 export default function Bandi() {
   const { data, isLoading: loading, error: queryError } = useBandi<{ bandi: Bando[] }>()
-  const bandi = data?.bandi ?? []
+  const bandi = data?.bandi ?? EMPTY_BANDI
   const error = queryError ? 'Errore nel caricamento dei bandi.' : null
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -259,6 +270,9 @@ export default function Bandi() {
         titolo: bando.titolo ?? `Bando #${bando.id}`,
         scheda: d.scheda ?? '',
         has_pdf: bando.has_pdf,
+        review_status: d.review_status ?? bando.review_status,
+        null_percentage: d.null_percentage ?? bando.null_percentage,
+        review_reasons: d.review_reasons ?? bando.review_reasons,
       })
     } catch {
       toast.error('Impossibile caricare la scheda del bando.')
@@ -267,8 +281,9 @@ export default function Bandi() {
     }
   }
 
-  const totalAttivi = useMemo(() => bandi.filter(b => !isExpired(b)).length, [bandi])
-  const totalScaduti = useMemo(() => bandi.filter(isExpired).length, [bandi])
+  const totalDaRevisionare = useMemo(() => bandi.filter(b => b.review_status === 'da_revisionare').length, [bandi])
+  const totalAttivi = useMemo(() => bandi.filter(b => b.review_status !== 'da_revisionare' && !isExpired(b)).length, [bandi])
+  const totalScaduti = useMemo(() => bandi.filter(b => b.review_status !== 'da_revisionare' && isExpired(b)).length, [bandi])
 
   const regioni = useMemo(() => {
     const set = new Set<string>()
@@ -281,7 +296,7 @@ export default function Bandi() {
     return Array.from(set).sort()
   }, [bandi])
 
-  const { sortedAttivi, sortedScaduti } = useMemo(() => {
+  const { sortedAttivi, sortedDaRevisionare, sortedScaduti } = useMemo(() => {
     const filterRegione = (b: Bando): boolean => {
       if (!regioneFilter) return true
       try {
@@ -315,8 +330,9 @@ export default function Bandi() {
     }
     const filtered = bandi.filter(searchFn)
     return {
-      sortedAttivi: filtered.filter(b => !isExpired(b)).sort(sortFn),
-      sortedScaduti: filtered.filter(isExpired).sort(sortFn),
+      sortedAttivi: filtered.filter(b => b.review_status !== 'da_revisionare' && !isExpired(b)).sort(sortFn),
+      sortedDaRevisionare: filtered.filter(b => b.review_status === 'da_revisionare').sort(sortFn),
+      sortedScaduti: filtered.filter(b => b.review_status !== 'da_revisionare' && isExpired(b)).sort(sortFn),
     }
   }, [bandi, debouncedQuery, regioneFilter, sortKey, sortDir])
 
@@ -392,19 +408,29 @@ export default function Bandi() {
                 className={`quick-filter-btn${quickFilter === 'tutti' ? ' active' : ''}`}
                 onClick={() => setQuickFilter('tutti')}
               >
-                Tutti ({bandi.length})
+                <span>Tutti</span>
+                <span className="quick-filter-count">{bandi.length}</span>
               </button>
               <button
                 className={`quick-filter-btn${quickFilter === 'attivi' ? ' active' : ''}`}
                 onClick={() => setQuickFilter('attivi')}
               >
-                Attivi ({totalAttivi})
+                <span>Attivi</span>
+                <span className="quick-filter-count">{totalAttivi}</span>
+              </button>
+              <button
+                className={`quick-filter-btn${quickFilter === 'da_revisionare' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('da_revisionare')}
+              >
+                <span>Da revisionare</span>
+                <span className="quick-filter-count">{totalDaRevisionare}</span>
               </button>
               <button
                 className={`quick-filter-btn${quickFilter === 'scaduti' ? ' active' : ''}`}
                 onClick={() => setQuickFilter('scaduti')}
               >
-                Scaduti ({totalScaduti})
+                <span>Scaduti</span>
+                <span className="quick-filter-count">{totalScaduti}</span>
               </button>
             </div>
             {regioni.length > 0 && (
@@ -422,9 +448,9 @@ export default function Bandi() {
           {quickFilter === 'tutti' && (
             <>
               <BandoTable
-                rows={sortedAttivi}
+                rows={[...sortedDaRevisionare, ...sortedAttivi]}
                 dimmed={false}
-                emptyMsg={query ? `Nessun bando attivo per "${query}"` : 'Nessun bando attivo'}
+                emptyMsg={query ? `Nessun bando per "${query}"` : 'Nessun bando attivo o da revisionare'}
                 {...tableProps}
               />
               {totalScaduti > 0 && (
@@ -457,6 +483,15 @@ export default function Bandi() {
               rows={sortedAttivi}
               dimmed={false}
               emptyMsg={query ? `Nessun bando attivo per "${query}"` : 'Nessun bando attivo'}
+              {...tableProps}
+            />
+          )}
+
+          {quickFilter === 'da_revisionare' && (
+            <BandoTable
+              rows={sortedDaRevisionare}
+              dimmed={false}
+              emptyMsg={query ? `Nessun bando da revisionare per "${query}"` : 'Nessun bando da revisionare'}
               {...tableProps}
             />
           )}

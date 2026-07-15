@@ -117,6 +117,7 @@ def test_validate_bando_ritorna_keys_attese(bando_minimo):
     assert "warnings" in result
     assert "null_percentage" in result
     assert "needs_manual_review" in result
+    assert "critical_gaps" in result
 
 
 def test_validate_bando_needs_manual_review_true(bando_minimo):
