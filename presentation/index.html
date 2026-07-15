@@ -217,7 +217,7 @@
 
     /* Cover */
     #slide-1 { padding: 0; }
-    .cover-shell { display: grid; grid-template-columns: 57.5% 42.5%; height: 100%; }
+    .cover-shell { display: grid; grid-template-columns: 52% 48%; height: 100%; }
     .cover-copy {
       position: relative;
       z-index: 3;
@@ -229,23 +229,12 @@
         radial-gradient(circle at 9% 90%, rgba(214,233,230,.78), transparent 25%),
         var(--paper);
     }
-    .cover-copy::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: calc(var(--u) * -3.8);
-      width: calc(var(--u) * 8);
-      height: 100%;
-      background: var(--paper);
-      clip-path: polygon(0 0, 52% 0, 100% 100%, 0 100%);
-      z-index: -1;
-    }
     .official-logo-crop {
       position: relative;
       width: calc(var(--u) * 36.5);
       height: calc(var(--u) * 21.8);
       overflow: hidden;
-      margin: calc(var(--u) * -2.1) 0 calc(var(--u) * .1) calc(var(--u) * -.45);
+      margin: calc(var(--u) * -2.1) 0 calc(var(--u) * 1.75) calc(var(--u) * -.45);
     }
     .official-logo-crop img {
       position: absolute;
@@ -302,7 +291,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: calc(var(--u) * 5.6) calc(var(--u) * 3.6) calc(var(--u) * 4.6) calc(var(--u) * 4.2);
+      padding: calc(var(--u) * 4.8) calc(var(--u) * 2.4) calc(var(--u) * 4.2) calc(var(--u) * 3.2);
       background:
         radial-gradient(circle at 82% 14%, rgba(23,130,122,.7), transparent 31%),
         linear-gradient(155deg, #0a5450 0%, #063c39 72%, #042f2d 100%);
@@ -330,17 +319,16 @@
     .app-window {
       position: relative;
       z-index: 2;
-      width: calc(var(--u) * 39.5);
-      height: calc(var(--u) * 29.2);
-      display: grid;
-      grid-template-columns: calc(var(--u) * 8.2) 1fr;
+      width: calc(var(--u) * 48);
+      aspect-ratio: 1902 / 918;
       overflow: hidden;
       border: 1px solid rgba(255,255,255,.28);
       border-radius: calc(var(--u) * 1.25);
       background: var(--surface);
       box-shadow: var(--shadow-deep);
-      transform: rotate(-1deg) translateX(calc(var(--u) * .6));
+      transform: translateX(calc(var(--u) * .6));
     }
+    .app-window img { width: 100%; height: 100%; display: block; object-fit: contain; background: var(--surface); }
     .app-side { background: #f7f7f7; border-right: 1px solid var(--line); padding: calc(var(--u) * 1) calc(var(--u) * .65); }
     .app-brand { font-family: var(--display); font-size: calc(var(--u) * .62); font-weight: 800; color: var(--ink); padding: calc(var(--u) * .4); margin-bottom: calc(var(--u) * .75); }
     .app-brand span { color: var(--teal-600); }
@@ -833,36 +821,19 @@
             <div class="official-logo-crop reveal d1" aria-label="BandoMatch AI">
               <img src="assets/bandomatch-logo-transparent.png" alt="Logo ufficiale BandoMatch AI">
             </div>
-            <div class="cover-label reveal d2">Progetto finale · per Commercialisti</div>
+            <div class="cover-label reveal d2">per Commercialisti</div>
             <h1 id="title-1" class="reveal d2">Dai bandi ai clienti <span>compatibili.</span></h1>
             <p class="cover-intro reveal d3">Un sistema di valutazione preliminare che trasforma documenti complessi in criteri strutturati, confrontabili e verificabili.</p>
             <div class="cover-meta reveal d4">
-              <div><strong>Matteo Pizziconi</strong><br>Autore del progetto</div>
+              <div><strong>Matteo Pizziconi</strong></div>
               <div class="meta-line"></div>
-              <div>AI Projects Development<br>ITS ICT Academy Roma</div>
+              <div>ITS ICT Academy Roma</div>
             </div>
           </div>
           <div class="cover-visual">
             <div class="cover-orbit"></div>
-            <div class="app-window reveal d3" aria-label="Mockup della dashboard BandoMatch AI">
-              <aside class="app-side">
-                <div class="app-brand">BandoMatch<span> AI</span></div>
-                <div class="nav-mini on">Dashboard</div>
-                <div class="nav-mini">Bandi</div>
-                <div class="nav-mini">Clienti</div>
-                <div class="nav-mini">Carica bando</div>
-              </aside>
-              <div class="app-main">
-                <div class="app-top"><h3>Dashboard</h3><span>Valutazione preliminare</span></div>
-                <div class="kpi-row">
-                  <div class="kpi"><span>Bandi</span><strong>14</strong></div>
-                  <div class="kpi"><span>Clienti</span><strong>5</strong></div>
-                  <div class="kpi"><span>Da verificare</span><strong>1</strong></div>
-                </div>
-                <div class="dash-label">Opportunità con clienti compatibili</div>
-                <div class="opportunity"><span class="signal"></span><div><h4>Digitalizzazione delle imprese</h4><p>Fonte e PDF sempre disponibili</p></div><span class="match">Ammissibile</span></div>
-                <div class="opportunity warning"><span class="signal"></span><div><h4>Investimenti produttivi</h4><p>Un requisito richiede controllo</p></div><span class="match">Da verificare</span></div>
-              </div>
+            <div class="app-window reveal d3">
+              <img src="assets/dashboard-current.png" alt="Dashboard aggiornata di BandoMatch AI con i bandi organizzati per stato">
             </div>
             <div class="cover-side-note reveal d5">L’AI comprende i bandi. Le regole locali li confrontano con i clienti.</div>
           </div>

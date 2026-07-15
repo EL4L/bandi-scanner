@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
 import { useApiMutation, useDashboard } from '../lib/queries'
@@ -11,10 +10,10 @@ import {
   dashboardCategory,
 } from '../lib/dashboard-shared'
 
-type DashboardFilter = 'tutti' | DashboardCategory
+type DashboardFilter = 'tutti' | 'ammissibili' | 'da_revisionare' | 'non_ammissibili' | 'scaduti'
 type DashboardSort = 'score' | 'scadenza' | 'titolo'
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 9
 const EMPTY_CARDS: DashboardBandoCard[] = []
 
 function IconRefresh() {
@@ -33,14 +32,10 @@ function IconSearch() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 }
 
-function IconChevron() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-}
-
-function categoryLabel(category: DashboardCategory): string {
+function categoryLabel(category: DashboardCategory, card: DashboardBandoCard): string {
   if (category === 'ammissibili') return 'Ammissibile'
-  if (category === 'da_verificare') return 'Da verificare'
-  if (category === 'non_ammissibili') return 'Senza clienti ammissibili'
+  if (category === 'da_verificare') return card.review_status === 'da_revisionare' ? 'Da revisionare' : 'Da verificare'
+  if (category === 'non_ammissibili') return 'Non ammissibili'
   return 'Scaduto'
 }
 
@@ -48,44 +43,68 @@ function formatContributo(card: DashboardBandoCard): string {
   return card.contributo_max && card.contributo_max !== 'N/D' ? card.contributo_max : 'Non rilevato'
 }
 
-function DashboardBandoRow({ card, onOpen }: { card: DashboardBandoCard; onOpen: () => void }) {
+function eligibleClientsCount(card: DashboardBandoCard): number {
+  return card.matches.filter(match => (
+    match.ammissibilita?.ammissibile === true
+    && match.breakdown.status !== 'da_verificare'
+  )).length
+}
+
+function allViewOrder(card: DashboardBandoCard): number {
+  const category = dashboardCategory(card)
+  if (category === 'ammissibili') return 0
+  if (card.review_status === 'da_revisionare') return 1
+  if (category === 'da_verificare') return 2
+  if (category === 'non_ammissibili') return 3
+  return 4
+}
+
+function DashboardBandoTile({ card }: { card: DashboardBandoCard }) {
   const category = dashboardCategory(card)
   const match = bestMatch(card)
   const showScore = category === 'ammissibili' && match
+  const eligibleCount = eligibleClientsCount(card)
 
   return (
-    <button className="dashboard-bando-row" type="button" onClick={onOpen}>
-      <span className={`dashboard-bando-status-rail dashboard-bando-status-rail--${category}`} aria-hidden="true" />
-      <span className="dashboard-bando-identity">
+    <article className={`dashboard-bando-card dashboard-bando-card--${category}`}>
+      <div className="dashboard-bando-card-topline">
+        <span className={`dashboard-status-badge dashboard-status-badge--${category}`}>{categoryLabel(category, card)}</span>
+        {showScore && <span className="dashboard-score-pill" title="Migliore compatibilità rilevata">{match.score}%</span>}
+      </div>
+
+      <div className="dashboard-bando-identity">
         <strong>{card.titolo || `Bando #${card.id}`}</strong>
         <small>{card.ente || 'Ente non rilevato'}</small>
-      </span>
-      <span className="dashboard-bando-data dashboard-bando-data--scadenza">
-        <small>Scadenza</small>
-        <strong>{card.scadenza && card.scadenza !== 'N/D' ? card.scadenza : 'Non rilevata'}</strong>
-        {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 && <em>{card.giorni_alla_scadenza} giorni</em>}
-      </span>
-      <span className="dashboard-bando-data dashboard-bando-data--contributo">
-        <small>Contributo massimo</small>
-        <strong>{formatContributo(card)}</strong>
-      </span>
-      <span className="dashboard-bando-match">
-        {showScore ? (
-          <>
-            <span><small>Miglior cliente</small><strong>{match.nome}</strong></span>
-            <b className="dashboard-score-pill">{match.score}%</b>
-          </>
+      </div>
+
+      <div className="dashboard-bando-facts">
+        <div className="dashboard-bando-data">
+          <small>Scadenza</small>
+          <strong>{card.scadenza && card.scadenza !== 'N/D' ? card.scadenza : 'Non rilevata'}</strong>
+          {card.giorni_alla_scadenza !== null && card.giorni_alla_scadenza >= 0 && <em>{card.giorni_alla_scadenza} giorni</em>}
+        </div>
+        <div className="dashboard-bando-data">
+          <small>Contributo massimo</small>
+          <strong>{formatContributo(card)}</strong>
+        </div>
+      </div>
+
+      <div className="dashboard-bando-card-footer">
+        {category === 'ammissibili' ? (
+          <><span>Profili compatibili</span><strong>{eligibleCount}</strong></>
+        ) : category === 'da_verificare' ? (
+          <span>{card.review_status === 'da_revisionare' ? 'Estrazione da revisionare' : 'Richiede una verifica professionale'}</span>
+        ) : category === 'scaduti' ? (
+          <span>Termine di presentazione superato</span>
         ) : (
-          <span className={`dashboard-status-badge dashboard-status-badge--${category}`}>{categoryLabel(category)}</span>
+          <span>Nessun profilo compatibile rilevato</span>
         )}
-      </span>
-      <span className="dashboard-bando-chevron"><IconChevron /></span>
-    </button>
+      </div>
+    </article>
   )
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
   const { data, isLoading: loading, error: queryError } = useDashboard<DashboardData>()
   const [filter, setFilter] = useState<DashboardFilter>('tutti')
   const [search, setSearch] = useState('')
@@ -112,15 +131,25 @@ export default function Dashboard() {
     return result
   }, [cards])
 
+  const revisionCount = useMemo(
+    () => cards.filter(card => card.review_status === 'da_revisionare').length,
+    [cards],
+  )
+
   const filteredCards = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase('it')
     const result = cards.filter(card => {
-      if (filter !== 'tutti' && dashboardCategory(card) !== filter) return false
+      if (filter === 'da_revisionare' && card.review_status !== 'da_revisionare') return false
+      if (filter !== 'tutti' && filter !== 'da_revisionare' && dashboardCategory(card) !== filter) return false
       if (!normalizedSearch) return true
       return `${card.titolo} ${card.ente || ''}`.toLocaleLowerCase('it').includes(normalizedSearch)
     })
 
     return [...result].sort((a, b) => {
+      if (filter === 'tutti') {
+        const categoryDifference = allViewOrder(a) - allViewOrder(b)
+        if (categoryDifference !== 0) return categoryDifference
+      }
       if (sort === 'titolo') return a.titolo.localeCompare(b.titolo, 'it')
       if (sort === 'scadenza') {
         const aDays = a.giorni_alla_scadenza ?? Number.MAX_SAFE_INTEGER
@@ -165,8 +194,8 @@ export default function Dashboard() {
   const filters: Array<{ key: DashboardFilter; label: string; count: number }> = [
     { key: 'tutti', label: 'Tutti', count: cards.length },
     { key: 'ammissibili', label: 'Ammissibili', count: counts.ammissibili },
-    { key: 'da_verificare', label: 'Da verificare', count: counts.da_verificare },
-    { key: 'non_ammissibili', label: 'Senza clienti ammissibili', count: counts.non_ammissibili },
+    { key: 'da_revisionare', label: 'Da revisionare', count: revisionCount },
+    { key: 'non_ammissibili', label: 'Non ammissibili', count: counts.non_ammissibili },
     { key: 'scaduti', label: 'Scaduti', count: counts.scaduti },
   ]
 
@@ -175,7 +204,7 @@ export default function Dashboard() {
       <div className="topbar dashboard-topbar">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Panoramica bandi e compatibilità clienti</p>
+          <p className="page-subtitle">Panoramica sintetica dei bandi. Le schede dettagliate restano nell'Archivio bandi.</p>
         </div>
         <div className="topbar-actions">
           {data?.has_export_data && <a href={apiHref('/api/export/matching.csv')} download className="btn"><IconDownload /> Esporta CSV</a>}
@@ -214,13 +243,9 @@ export default function Dashboard() {
         </label>
       </div>
 
-      <div className="dashboard-list-summary">
-        <strong>{filteredCards.length}</strong> {filteredCards.length === 1 ? 'bando' : 'bandi'}
-      </div>
-
       {visibleCards.length > 0 ? (
         <div className="dashboard-bando-list">
-          {visibleCards.map(card => <DashboardBandoRow key={card.id} card={card} onOpen={() => navigate(`/dashboard/bandi/${card.id}`)} />)}
+          {visibleCards.map(card => <DashboardBandoTile key={card.id} card={card} />)}
         </div>
       ) : (
         <div className="dashboard-empty-filter"><strong>Nessun bando trovato</strong><span>Modifica il filtro o il testo di ricerca.</span></div>

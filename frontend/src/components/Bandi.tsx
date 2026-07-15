@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { toast } from '../toast'
 import { apiHref, withApiKey } from '../apiKey'
-import { useBandi, useApiMutation } from '../lib/queries'
+import { useBandi, useDashboard, useApiMutation } from '../lib/queries'
+import { dashboardCategory, type DashboardCategory, type DashboardData } from '../lib/dashboard-shared'
 import { ModalScheda, type SchedaModalData } from './ModalScheda'
 
 interface Bando {
@@ -18,16 +19,12 @@ interface Bando {
   review_reasons: string[]
 }
 
-type QuickFilter = 'tutti' | 'attivi' | 'da_revisionare' | 'scaduti'
-type SortKey = 'scadenza' | 'contributo'
+type QuickFilter = 'tutti' | 'ammissibili' | 'da_revisionare' | 'non_ammissibili' | 'scaduti'
+type SortKey = 'titolo' | 'scadenza' | 'contributo'
 type SortDir = 'asc' | 'desc'
 
 type SchedaModal = SchedaModalData
 const EMPTY_BANDI: Bando[] = []
-
-function isExpired(b: Bando): boolean {
-  return b.giorni_alla_scadenza !== null && b.giorni_alla_scadenza < 0
-}
 
 const MESI_SHORT = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic']
 
@@ -67,9 +64,6 @@ function IconChevronUp() {
 }
 function IconChevronDown() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', width: 12, height: 12, marginLeft: 3 }}><polyline points="6 9 12 15 18 9"/></svg>
-}
-function IconChevronDownSm() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
 }
 function IconTrash() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
@@ -205,7 +199,7 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
         </colgroup>
         <thead>
           <tr>
-            <th>Titolo</th>
+            <th className="sortable" onClick={() => handleSort('titolo')}>Titolo <SortIcon col="titolo" /></th>
             <th>Ente</th>
             <th className="sortable" onClick={() => handleSort('scadenza')}>Scadenza <SortIcon col="scadenza" /></th>
             <th className="sortable" onClick={() => handleSort('contributo')}>Contributo max <SortIcon col="contributo" /></th>
@@ -231,13 +225,13 @@ function BandoTable({ rows, dimmed, emptyMsg, schedaLoading, onScheda, handleSor
 // ── Main component ─────────────────────────────────────────
 export default function Bandi() {
   const { data, isLoading: loading, error: queryError } = useBandi<{ bandi: Bando[] }>()
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useDashboard<DashboardData>()
   const bandi = data?.bandi ?? EMPTY_BANDI
-  const error = queryError ? 'Errore nel caricamento dei bandi.' : null
+  const error = queryError || dashboardError ? 'Errore nel caricamento dei bandi.' : null
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('tutti')
   const [regioneFilter, setRegioneFilter] = useState('')
-  const [showScaduti, setShowScaduti] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>('scadenza')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [openScheda, setOpenScheda] = useState<SchedaModal | null>(null)
@@ -281,9 +275,18 @@ export default function Bandi() {
     }
   }
 
-  const totalDaRevisionare = useMemo(() => bandi.filter(b => b.review_status === 'da_revisionare').length, [bandi])
-  const totalAttivi = useMemo(() => bandi.filter(b => b.review_status !== 'da_revisionare' && !isExpired(b)).length, [bandi])
-  const totalScaduti = useMemo(() => bandi.filter(b => b.review_status !== 'da_revisionare' && isExpired(b)).length, [bandi])
+  const categoryByBandoId = useMemo(() => {
+    const categories = new Map<number, DashboardCategory>()
+    for (const card of dashboardData?.cards ?? []) categories.set(card.id, dashboardCategory(card))
+    return categories
+  }, [dashboardData])
+
+  const filterCounts = useMemo(() => ({
+    ammissibili: bandi.filter(b => categoryByBandoId.get(b.id) === 'ammissibili').length,
+    da_revisionare: bandi.filter(b => b.review_status === 'da_revisionare').length,
+    non_ammissibili: bandi.filter(b => categoryByBandoId.get(b.id) === 'non_ammissibili').length,
+    scaduti: bandi.filter(b => categoryByBandoId.get(b.id) === 'scaduti').length,
+  }), [bandi, categoryByBandoId])
 
   const regioni = useMemo(() => {
     const set = new Set<string>()
@@ -296,7 +299,7 @@ export default function Bandi() {
     return Array.from(set).sort()
   }, [bandi])
 
-  const { sortedAttivi, sortedDaRevisionare, sortedScaduti } = useMemo(() => {
+  const filteredBandi = useMemo(() => {
     const filterRegione = (b: Bando): boolean => {
       if (!regioneFilter) return true
       try {
@@ -316,7 +319,9 @@ export default function Bandi() {
     }
     const sortFn = (a: Bando, b: Bando) => {
       let cmp = 0
-      if (sortKey === 'scadenza') {
+      if (sortKey === 'titolo') {
+        cmp = (a.titolo ?? '').localeCompare(b.titolo ?? '', 'it')
+      } else if (sortKey === 'scadenza') {
         const aVal = a.giorni_alla_scadenza
         const bVal = b.giorni_alla_scadenza
         if (aVal === null && bVal === null) cmp = 0
@@ -328,13 +333,14 @@ export default function Bandi() {
       }
       return sortDir === 'asc' ? cmp : -cmp
     }
-    const filtered = bandi.filter(searchFn)
-    return {
-      sortedAttivi: filtered.filter(b => b.review_status !== 'da_revisionare' && !isExpired(b)).sort(sortFn),
-      sortedDaRevisionare: filtered.filter(b => b.review_status === 'da_revisionare').sort(sortFn),
-      sortedScaduti: filtered.filter(b => b.review_status !== 'da_revisionare' && isExpired(b)).sort(sortFn),
+    const matchesQuickFilter = (b: Bando): boolean => {
+      if (quickFilter === 'tutti') return true
+      if (quickFilter === 'da_revisionare') return b.review_status === 'da_revisionare'
+      return categoryByBandoId.get(b.id) === quickFilter
     }
-  }, [bandi, debouncedQuery, regioneFilter, sortKey, sortDir])
+
+    return bandi.filter(searchFn).filter(matchesQuickFilter).sort(sortFn)
+  }, [bandi, categoryByBandoId, debouncedQuery, quickFilter, regioneFilter, sortKey, sortDir])
 
   const handleDeleteRequest = useCallback((id: number) => setConfirmDeleteId(id), [])
   const handleDeleteCancel = useCallback(() => setConfirmDeleteId(null), [])
@@ -362,7 +368,15 @@ export default function Bandi() {
     onDeleteConfirm: handleDeleteConfirm, onDeleteCancel: handleDeleteCancel, deleting,
   }
 
-  if (loading) {
+  const emptyFilterLabel: Record<QuickFilter, string> = {
+    tutti: 'Nessun bando',
+    ammissibili: 'Nessun bando ammissibile',
+    da_revisionare: 'Nessun bando da revisionare',
+    non_ammissibili: 'Nessun bando non ammissibile',
+    scaduti: 'Nessun bando scaduto',
+  }
+
+  if (loading || dashboardLoading) {
     return <div className="loading-center"><div className="spinner" /> Caricamento bandi…</div>
   }
 
@@ -412,25 +426,32 @@ export default function Bandi() {
                 <span className="quick-filter-count">{bandi.length}</span>
               </button>
               <button
-                className={`quick-filter-btn${quickFilter === 'attivi' ? ' active' : ''}`}
-                onClick={() => setQuickFilter('attivi')}
+                className={`quick-filter-btn${quickFilter === 'ammissibili' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('ammissibili')}
               >
-                <span>Attivi</span>
-                <span className="quick-filter-count">{totalAttivi}</span>
+                <span>Ammissibili</span>
+                <span className="quick-filter-count">{filterCounts.ammissibili}</span>
               </button>
               <button
                 className={`quick-filter-btn${quickFilter === 'da_revisionare' ? ' active' : ''}`}
                 onClick={() => setQuickFilter('da_revisionare')}
               >
                 <span>Da revisionare</span>
-                <span className="quick-filter-count">{totalDaRevisionare}</span>
+                <span className="quick-filter-count">{filterCounts.da_revisionare}</span>
+              </button>
+              <button
+                className={`quick-filter-btn${quickFilter === 'non_ammissibili' ? ' active' : ''}`}
+                onClick={() => setQuickFilter('non_ammissibili')}
+              >
+                <span>Non ammissibili</span>
+                <span className="quick-filter-count">{filterCounts.non_ammissibili}</span>
               </button>
               <button
                 className={`quick-filter-btn${quickFilter === 'scaduti' ? ' active' : ''}`}
                 onClick={() => setQuickFilter('scaduti')}
               >
                 <span>Scaduti</span>
-                <span className="quick-filter-count">{totalScaduti}</span>
+                <span className="quick-filter-count">{filterCounts.scaduti}</span>
               </button>
             </div>
             {regioni.length > 0 && (
@@ -445,65 +466,12 @@ export default function Bandi() {
             )}
           </div>
 
-          {quickFilter === 'tutti' && (
-            <>
-              <BandoTable
-                rows={[...sortedDaRevisionare, ...sortedAttivi]}
-                dimmed={false}
-                emptyMsg={query ? `Nessun bando per "${query}"` : 'Nessun bando attivo o da revisionare'}
-                {...tableProps}
-              />
-              {totalScaduti > 0 && (
-                <>
-                  <button
-                    className={`scaduti-toggle${showScaduti ? ' open' : ''}`}
-                    onClick={() => setShowScaduti(v => !v)}
-                  >
-                    <IconChevronDownSm />
-                    {showScaduti ? 'Nascondi bandi scaduti' : 'Mostra bandi scaduti'}
-                    <span className="scaduti-count">{sortedScaduti.length}</span>
-                  </button>
-                  {showScaduti && (
-                    <div style={{ marginTop: 'var(--space-2)' }}>
-                      <BandoTable
-                        rows={sortedScaduti}
-                        dimmed={true}
-                        emptyMsg={query ? `Nessun bando scaduto per "${query}"` : 'Nessun bando scaduto'}
-                        {...tableProps}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-
-          {quickFilter === 'attivi' && (
-            <BandoTable
-              rows={sortedAttivi}
-              dimmed={false}
-              emptyMsg={query ? `Nessun bando attivo per "${query}"` : 'Nessun bando attivo'}
-              {...tableProps}
-            />
-          )}
-
-          {quickFilter === 'da_revisionare' && (
-            <BandoTable
-              rows={sortedDaRevisionare}
-              dimmed={false}
-              emptyMsg={query ? `Nessun bando da revisionare per "${query}"` : 'Nessun bando da revisionare'}
-              {...tableProps}
-            />
-          )}
-
-          {quickFilter === 'scaduti' && (
-            <BandoTable
-              rows={sortedScaduti}
-              dimmed={true}
-              emptyMsg={query ? `Nessun bando scaduto per "${query}"` : 'Nessun bando scaduto'}
-              {...tableProps}
-            />
-          )}
+          <BandoTable
+            rows={filteredBandi}
+            dimmed={quickFilter === 'scaduti'}
+            emptyMsg={query ? `${emptyFilterLabel[quickFilter]} per "${query}"` : emptyFilterLabel[quickFilter]}
+            {...tableProps}
+          />
         </>
       )}
 
